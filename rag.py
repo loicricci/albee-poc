@@ -25,16 +25,23 @@ def _read_text_file(path: str) -> str:
 
 
 def _load_documents() -> List[str]:
-    """Charge tous les fichiers texte/markdown de data/ sauf persona."""
+    """Charge tous les fichiers texte/markdown de data/ et ses sous-dossiers sauf persona."""
     docs: List[str] = []
+    
+    # Load from root data/ directory
     for fname in os.listdir(DATA_DIR):
         if fname == PERSONA_FILE:
             continue
         full = os.path.join(DATA_DIR, fname)
         if os.path.isdir(full):
-            continue
-        if fname.lower().endswith((".md", ".txt")):
+            # Recursively load from subdirectories (like contributions/)
+            for sub_fname in os.listdir(full):
+                sub_full = os.path.join(full, sub_fname)
+                if os.path.isfile(sub_full) and sub_fname.lower().endswith((".md", ".txt")):
+                    docs.append(_read_text_file(sub_full))
+        elif fname.lower().endswith((".md", ".txt")):
             docs.append(_read_text_file(full))
+    
     return docs
 
 
@@ -102,6 +109,11 @@ def _build_index():
 
 # Construire l'index à l'import
 _build_index()
+
+
+def reload_index():
+    """Reconstruit l'index avec tous les documents disponibles (y compris les nouvelles contributions)."""
+    _build_index()
 
 
 def search(query: str, k: int = 4) -> List[Tuple[str, float]]:
