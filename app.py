@@ -1,8 +1,9 @@
 import streamlit as st
-from agent import generate_reply
+from agent import generate_reply, AGENT_CONFIGS
 import os
 from datetime import datetime
-import rag
+import rag_multi
+import url_scraper
 
 st.set_page_config(
     page_title="Gabee • Loïc Twin",
@@ -380,12 +381,35 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ---------- AGENT SELECTION ----------
+if "agent_id" not in st.session_state:
+    st.session_state["agent_id"] = "loic"
+
+# Agent selector in sidebar or top
+agent_options = {agent_id: config["name"] for agent_id, config in AGENT_CONFIGS.items()}
+selected_agent = st.selectbox(
+    "Select Agent",
+    options=list(agent_options.keys()),
+    format_func=lambda x: agent_options[x],
+    key="agent_selector",
+    index=list(agent_options.keys()).index(st.session_state["agent_id"])
+)
+
+if selected_agent != st.session_state["agent_id"]:
+    st.session_state["agent_id"] = selected_agent
+    # Clear history when switching agents
+    if "history" in st.session_state:
+        st.session_state["history"] = []
+    st.rerun()
+
+current_config = AGENT_CONFIGS[st.session_state["agent_id"]]
+
 # ---------- HEADER ----------
 st.markdown(
-    """
+    f"""
     <div class="gabee-header">
         <div class="gabee-logo">
-            <div class="gabee-title">GABEE // LOÏC TWIN CONSOLE</div>
+            <div class="gabee-title">{current_config["title"]}</div>
             <div class="gabee-subtitle">personal digital presence interface</div>
         </div>
         <div class="gabee-status">
@@ -427,7 +451,7 @@ if st.session_state["history"]:
             label = "YOU"
             label_class = "user"
         else:
-            label = "LOÏC-GABEE"
+            label = current_config["name"]
             label_class = "assistant"
         
         message_html = f"""
@@ -449,12 +473,33 @@ if st.session_state["history"]:
             st.rerun()
 
 # ---------- PROMPT ----------
-user_input = st.chat_input("Ask something to your Loïc-Gabee twin...")
+agent_name = current_config["name"].replace("-", " ").title()
+user_input = st.chat_input(f"Ask something to {agent_name}...")
 
 if user_input:
     # Add user message to history
     st.session_state["history"].append({"role": "user", "content": user_input})
     history_for_agent = st.session_state["history"][:-1]
+    
+    # Check for URLs in the message and scrape them
+    urls = url_scraper.extract_urls(user_input)
+    url_status_placeholder = st.empty()
+    
+    scraped_count = 0
+    if urls:
+        with url_status_placeholder.container():
+            st.info(f"🔗 Detected {len(urls)} URL(s). Scraping content...")
+        
+        # Actually scrape the URLs here to show results
+        scraped_urls = url_scraper.scrape_urls_from_text(user_input, max_urls=3)
+        scraped_count = len(scraped_urls)
+        
+        if scraped_count > 0:
+            with url_status_placeholder.container():
+                st.success(f"✅ Successfully scraped {scraped_count} URL(s). Analyzing content...")
+        elif urls:
+            with url_status_placeholder.container():
+                st.warning(f"⚠️ Could not scrape {len(urls)} URL(s). They may be inaccessible or require authentication.")
     
     # Create container for streaming
     st.markdown('<div class="gabee-conversation">', unsafe_allow_html=True)
@@ -470,11 +515,15 @@ if user_input:
         unsafe_allow_html=True
     )
     
+    # Clear URL status after displaying user message
+    if urls:
+        url_status_placeholder.empty()
+    
     # Stream assistant response with typing indicator
     st.markdown(
-        '''
+        f'''
         <div class="gabee-message assistant">
-            <div class="gabee-message-label assistant">LOÏC-GABEE</div>
+            <div class="gabee-message-label assistant">{current_config["name"]}</div>
             <div class="gabee-message-content">
         ''',
         unsafe_allow_html=True
@@ -487,7 +536,7 @@ if user_input:
     token_buffer = ""
     buffer_size = 3  # Update every 3 tokens for smoother streaming
     
-    for token in generate_reply(history_for_agent, user_input, stream=True):
+    for token in generate_reply(history_for_agent, user_input, agent_id=st.session_state["agent_id"], stream=True):
         token_buffer += token
         if len(token_buffer) >= buffer_size:
             full_response += token_buffer
@@ -516,8 +565,12 @@ col_reload1, col_reload2, col_reload3 = st.columns([1, 1, 1])
 with col_reload2:
     if st.button("🔄  RELOAD KNOWLEDGE BASE", use_container_width=True, help="Manually refresh the RAG index with all documents"):
         try:
-            rag.reload_index()
-            st.success("✅ Knowledge base reloaded successfully!")
+            current_agent_id = st.session_state["agent_id"]
+            config = AGENT_CONFIGS[current_agent_id]
+            data_dir = "data" if current_agent_id == "loic" else "data/victor_hugo"
+            persona_file = "persona_loic.md" if current_agent_id == "loic" else "persona_victor_hugo.md"
+            rag_multi.reload_index(config["knowledge_base_id"], data_dir, persona_file)
+            st.success(f"✅ {current_config['name']} knowledge base reloaded successfully!")
         except Exception as e:
             st.error(f"❌ Failed to reload: {str(e)}")
 
@@ -553,8 +606,16 @@ with st.expander("➕  ADD NEW CONTRIBUTION", expanded=False):
             # Create contribution filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             safe_title = "".join(c if c.isalnum() or c in " _-" else "" for c in contrib_title).replace(" ", "_")
+            
+            # Save to appropriate directory based on current agent
+            current_agent_id = st.session_state["agent_id"]
+            if current_agent_id == "victor_hugo":
+                contrib_dir = os.path.join("data", "victor_hugo", "contributions")
+            else:
+                contrib_dir = os.path.join("data", "contributions")
+            
             filename = f"{contrib_topic.lower()}_{timestamp}_{safe_title}.md"
-            filepath = os.path.join("data", "contributions", filename)
+            filepath = os.path.join(contrib_dir, filename)
             
             # Create contribution content with metadata
             contribution_md = f"""---
@@ -570,13 +631,16 @@ Contributor: {contrib_email}
 """
             
             # Save the file
-            os.makedirs(os.path.join("data", "contributions"), exist_ok=True)
+            os.makedirs(contrib_dir, exist_ok=True)
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(contribution_md)
             
             # Reload the RAG index to include the new contribution immediately
             try:
-                rag.reload_index()
+                config = AGENT_CONFIGS[current_agent_id]
+                data_dir = "data" if current_agent_id == "loic" else "data/victor_hugo"
+                persona_file = "persona_loic.md" if current_agent_id == "loic" else "persona_victor_hugo.md"
+                rag_multi.reload_index(config["knowledge_base_id"], data_dir, persona_file)
                 st.success(f"✅ Contribution saved and indexed! File: `{filename}`")
                 st.info("💡 The new information is now available to the agent immediately!")
             except Exception as e:
