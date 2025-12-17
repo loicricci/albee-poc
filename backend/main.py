@@ -24,6 +24,20 @@ from .models import (
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # -----------------------------
 # DB session dependency
@@ -396,40 +410,6 @@ def create_conversation_with_avee(
     db.refresh(convo)
     return {"id": str(convo.id), "avee_id": str(avee_uuid), "layer_used": str(convo.layer_used)}
 
-@app.post("/avees/{avee_id}/permissions")
-def set_avee_permission(
-    avee_id: str,
-    viewer_user_id: str,
-    max_layer: str,
-    db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    owner_uuid = _parse_uuid(user_id, "user_id")
-    avee_uuid = _parse_uuid(avee_id, "avee_id")
-    viewer_uuid = _parse_uuid(viewer_user_id, "viewer_user_id")
-
-    if max_layer not in ("public", "friends", "intimate"):
-        raise HTTPException(status_code=400, detail="Invalid max_layer")
-
-    a = db.query(Avee).filter(Avee.id == avee_uuid).first()
-    if not a:
-        raise HTTPException(status_code=404, detail="Avee not found")
-    if a.owner_user_id != owner_uuid:
-        raise HTTPException(status_code=403, detail="Only owner can change permissions")
-
-    perm = db.query(AveePermission).filter(
-        AveePermission.avee_id == avee_uuid,
-        AveePermission.viewer_user_id == viewer_uuid,
-    ).first()
-
-    if perm:
-        perm.max_layer = max_layer
-    else:
-        perm = AveePermission(avee_id=avee_uuid, viewer_user_id=viewer_uuid, max_layer=max_layer)
-        db.add(perm)
-
-    db.commit()
-    return {"ok": True}
 
 @app.post("/avees/{avee_id}/permissions")
 def set_avee_permission(
