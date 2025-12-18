@@ -26,14 +26,12 @@ app = FastAPI()
 
 from fastapi.middleware.cors import CORSMiddleware
 
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -212,6 +210,26 @@ def list_my_conversations(
 # -----------------------------
 # Profile
 # -----------------------------
+@app.get("/me/profile")
+def get_my_profile(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    user_uuid = _parse_uuid(user_id, "user_id")
+
+    p = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    return {
+        "user_id": str(p.user_id),
+        "handle": p.handle,
+        "display_name": p.display_name,
+        "bio": p.bio,
+        "avatar_url": p.avatar_url,
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+    }
+
 @app.post("/me/profile")
 def upsert_my_profile(
     handle: str,
@@ -486,25 +504,32 @@ def add_training_document(
     for i, (chunk, vec) in enumerate(zip(chunks, vectors)):
         vec_str = "[" + ",".join(str(x) for x in vec) + "]"
 
-    db.execute(
-        text("""
-            insert into document_chunks
-              (document_id, avee_id, layer, chunk_index, content, embedding)
-            values
-              (:document_id, :avee_id, :layer, :chunk_index, :content, (:embedding)::vector)
-        """),
-        {
-            "document_id": str(doc.id),
-            "avee_id": str(avee_uuid),
-            "layer": layer,
-            "chunk_index": i,
-            "content": chunk,
-            "embedding": vec_str,
-        }
-    )
+        db.execute(
+            text("""
+                insert into document_chunks
+                  (document_id, avee_id, layer, chunk_index, content, embedding)
+                values
+                  (:document_id, :avee_id, :layer, :chunk_index, :content, (:embedding)::vector)
+            """),
+            {
+                "document_id": str(doc.id),
+                "avee_id": str(avee_uuid),
+                "layer": layer,
+                "chunk_index": i,
+                "content": chunk,
+                "embedding": vec_str,
+            }
+        )
 
     db.commit()
-    return {"ok": True, "document_id": str(doc.id), "chunks": len(chunks), "layer": layer}
+
+    return {
+        "ok": True,
+        "document_id": str(doc.id),
+        "chunks": len(chunks),
+        "layer": layer,
+    }
+
 
 @app.post("/rag/search")
 def rag_search(
@@ -653,3 +678,60 @@ def chat_ask(
         "answer": answer,
         "used_chunks": len(rows),
     }
+
+@app.post("/relationships/follow-by-handle")
+def follow_by_handle(
+    handle: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    from_uuid = _parse_uuid(user_id, "user_id")
+    h = handle.strip().lower()
+
+    p = db.query(Profile).filter(Profile.handle == h).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    to_uuid = p.user_id
+    if from_uuid == to_uuid:
+        raise HTTPException(status_code=400, detail="Cannot follow yourself")
+
+    existing = db.query(Relationship).filter(
+        Relationship.from_user_id == from_uuid,
+        Relationship.to_user_id == to_uuid,
+        Relationship.type == "follow",
+    ).first()
+    if existing:
+        return {"ok": True}
+
+    db.add(Relationship(from_user_id=from_uuid, to_user_id=to_uuid, type="follow"))
+    db.commit()
+    return {"ok": True}
+
+@app.get("/network/following-avees")
+def list_following_avees(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    me = _parse_uuid(user_id, "user_id")
+
+    rows = (
+        db.query(Avee, Profile)
+        .join(Relationship, Relationship.to_user_id == Avee.owner_user_id)
+        .join(Profile, Profile.user_id == Avee.owner_user_id)
+        .filter(Relationship.from_user_id == me, Relationship.type == "follow")
+        .order_by(Avee.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "avee_id": str(a.id),
+            "avee_handle": a.handle,
+            "avee_display_name": a.display_name,
+            "avee_avatar_url": a.avatar_url,
+            "owner_handle": p.handle,
+            "owner_display_name": p.display_name,
+        }
+        for (a, p) in rows
+    ]

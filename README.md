@@ -1,5 +1,7 @@
 # Gabee - Social AI Platform
 
+**Version**: 0.3.0
+
 A social AI platform where users create and interact with personalized AI digital twins called "Avees". Each Avee has layer-based access control (public/friends/intimate) and uses RAG (Retrieval Augmented Generation) powered by PostgreSQL + pgvector for context-aware conversations.
 
 ## 🎯 Overview
@@ -36,6 +38,7 @@ The application consists of:
 
 ### Backend: FastAPI REST API (`backend/`)
 - RESTful API with comprehensive endpoints
+- CORS middleware configured for frontend integration
 - PostgreSQL with pgvector extension for vector similarity search
 - Supabase authentication integration
 - OpenAI integration for embeddings and chat completions
@@ -58,8 +61,17 @@ gabee-poc/
 ├── frontend/                       # Next.js frontend
 │   ├── src/
 │   │   ├── app/                    # Next.js app router pages
-│   │   │   ├── login/              # Login page
-│   │   │   └── app/                # Main app page
+│   │   │   ├── (auth)/             # Authentication pages
+│   │   │   │   ├── login/          # Login page
+│   │   │   │   └── signup/         # Signup page
+│   │   │   ├── (app)/              # Authenticated app pages
+│   │   │   │   ├── profile/        # User profile page
+│   │   │   │   ├── my-avees/       # Manage Avees
+│   │   │   │   │   └── [handle]/   # Individual Avee management
+│   │   │   │   ├── chat/           # Chat interface
+│   │   │   │   │   └── [handle]/   # Chat with specific Avee
+│   │   │   │   └── network/        # Social network/following
+│   │   │   └── page.tsx            # Landing page
 │   │   └── lib/
 │   │       ├── supabaseClient.ts   # Supabase client configuration
 │   │       └── api.ts              # API client utilities
@@ -143,7 +155,7 @@ gabee-poc/
 - **SQLAlchemy 2.0.34** - ORM and database management
 - **PostgreSQL** (via `psycopg[binary] 3.2.13`) - Database with pgvector extension
 - **Supabase** - Authentication provider
-- **OpenAI** - Embeddings (`text-embedding-3-small`) and chat completions (`gpt-4o-mini`)
+- **OpenAI 1.57.0** - Embeddings (`text-embedding-3-small`) and chat completions (`gpt-4o-mini`)
 - **httpx 0.27.2** - HTTP client for Supabase API calls
 
 ### Database Extensions
@@ -213,8 +225,9 @@ gabee-poc/
    ```bash
    uvicorn backend.main:app --reload --port 8000
    ```
-   API will be available at `http://localhost:8000`
-   API docs available at `http://localhost:8000/docs`
+   API will be available at `http://localhost:8000`  
+   API docs available at `http://localhost:8000/docs`  
+   CORS is configured for `http://localhost:3000` (Next.js frontend)
 
 ### Frontend Setup
 
@@ -347,6 +360,10 @@ All endpoints require authentication via Supabase JWT token in the `Authorizatio
 - `GET /debug/db-test` - Database connectivity test
 
 ### Profiles
+- `GET /me/profile`
+  - Get current user's profile
+  - Returns: Profile object with `user_id`, `handle`, `display_name`, `bio`, `avatar_url`, `created_at`
+
 - `POST /me/profile?handle={handle}&display_name={name}&bio={bio}&avatar_url={url}`
   - Create or update user profile
   - Returns: `{"ok": true, "user_id": "...", "handle": "..."}`
@@ -506,24 +523,19 @@ curl -X POST "http://localhost:8000/chat/ask?conversation_id=CONV_ID&question=Wh
 
 ## ⚠️ Current Limitations & Notes
 
-1. **Duplicate Endpoint**: There are two identical `/avees/{avee_id}/permissions` endpoints in the code (lines 399 and 434 in main.py) - one should be removed
+1. **Legacy Code**: The Streamlit frontend (`app.py`) and related files are legacy POC code and not integrated with the new backend
 
-2. **OpenAI Package**: The `openai` package is not in `backend/requirements.txt` but is used - should be added
+2. **Database ENUMs**: Requires PostgreSQL ENUM types (`avee_layer`, `relationship_type`) to be created in the database - if using Supabase, these may already exist
 
-3. **Legacy Code**: The Streamlit frontend (`app.py`) and related files are legacy POC code and not integrated with the new backend
+3. **pgvector**: Requires pgvector extension to be installed in PostgreSQL
 
-4. **Database ENUMs**: Requires PostgreSQL ENUM types (`avee_layer`, `relationship_type`) to be created in the database - if using Supabase, these may already exist
+4. **CORS**: Currently configured for localhost:3000 - update `allow_origins` in `backend/main.py` for production
 
-5. **pgvector**: Requires pgvector extension to be installed in PostgreSQL
-
-6. **Frontend**: Next.js frontend is in early stages - login and basic app structure exist
+5. **Frontend**: Next.js frontend is actively being developed with authentication, profile management, Avee management, and chat features
 
 ## 🔮 Future Enhancements
 
 Potential improvements:
-- Remove duplicate endpoint
-- Add OpenAI package to requirements.txt
-- Complete Next.js frontend implementation
 - Add conversation history retrieval endpoints
 - Add user message storage in chat/ask endpoint
 - Add streaming responses for chat
@@ -531,8 +543,13 @@ Potential improvements:
 - Add Avee update endpoints
 - Add relationship management (unfollow, etc.)
 - Add search/discovery features for public Avees
+- Production CORS configuration
+- Enhanced error handling and validation
+- Rate limiting
+- Analytics and usage tracking
 
 ---
 
+**Version**: 0.3.0  
 **Status**: Active Development  
 **Last Updated**: December 2024
