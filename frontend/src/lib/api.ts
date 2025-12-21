@@ -1,3 +1,5 @@
+"use client";
+
 import { supabase } from "@/lib/supabaseClient";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
@@ -7,8 +9,29 @@ async function getToken(): Promise<string> {
   if (error) throw new Error(error.message);
 
   const token = data.session?.access_token;
-  if (!token) throw new Error("No access token in session");
+  if (!token) throw new Error("Not logged in (no access token)");
   return token;
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  ms = 15000
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } catch (e: any) {
+    // Give a clearer message on timeout
+    if (e?.name === "AbortError") {
+      throw new Error("Request timeout. Is the backend running?");
+    }
+    throw e;
+  } finally {
+    clearTimeout(id);
+  }
 }
 
 export async function apiFetch(path: string, init?: RequestInit) {
@@ -16,17 +39,21 @@ export async function apiFetch(path: string, init?: RequestInit) {
 
   const token = await getToken();
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetchWithTimeout(`${API_BASE}${path}`, {
     ...init,
     headers: {
       ...(init?.headers || {}),
       Authorization: `Bearer ${token}`,
+      Accept: "application/json",
     },
   });
 
+  // Bubble status code in error so pages can handle 404/401 cleanly
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    const err: any = new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    err.status = res.status;
+    throw err;
   }
 
   const contentType = res.headers.get("content-type") || "";
@@ -35,7 +62,13 @@ export async function apiFetch(path: string, init?: RequestInit) {
 }
 
 export async function getMyProfile() {
-  return apiFetch("/me/profile", { method: "GET" });
+  try {
+    return await apiFetch("/me/profile", { method: "GET" });
+  } catch (e: any) {
+    // 404 is normal for "profile not created yet"
+    if (e?.status === 404) return null;
+    throw e;
+  }
 }
 
 export async function saveMyProfile(params: {
@@ -44,23 +77,23 @@ export async function saveMyProfile(params: {
   bio?: string;
   avatar_url?: string;
 }) {
-  const q = new URLSearchParams();
-  q.set("handle", params.handle);
-  if (params.display_name !== undefined) q.set("display_name", params.display_name);
-  if (params.bio !== undefined) q.set("bio", params.bio);
-  if (params.avatar_url !== undefined) q.set("avatar_url", params.avatar_url);
-
-  return apiFetch(`/me/profile?${q.toString()}`, { method: "POST" });
+  return apiFetch("/me/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      handle: params.handle,
+      display_name: params.display_name || null,
+      bio: params.bio || null,
+      avatar_url: params.avatar_url || null,
+    }),
+  });
 }
 
 export async function getMyAvees() {
   return apiFetch("/me/avees", { method: "GET" });
 }
 
-export async function createAvee(params: {
-  handle: string;
-  display_name?: string;
-}) {
+export async function createAvee(params: { handle: string; display_name?: string }) {
   const q = new URLSearchParams();
   q.set("handle", params.handle);
   if (params.display_name) q.set("display_name", params.display_name);
@@ -71,6 +104,15 @@ export async function createAvee(params: {
 export async function getAveeByHandle(handle: string) {
   return apiFetch(`/avees/${encodeURIComponent(handle)}`, { method: "GET" });
 }
+
+export async function updateAvee(params: { aveeId: string; persona: string }) {
+  return apiFetch(`/avees/${params.aveeId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ persona: params.persona }),
+  });
+}
+
 
 export async function addTrainingDocument(params: {
   aveeId: string;
@@ -112,9 +154,22 @@ export async function chatAsk(params: {
   const q = new URLSearchParams();
   q.set("handle", params.aveeHandle);
   if (params.layer) q.set("layer", params.layer);
-
-  // send question as query param (works with your current backend style)
   q.set("question", params.question);
 
   return apiFetch(`/chat/ask?${q.toString()}`, { method: "POST" });
+}
+
+export async function listAveePermissions(aveeId: string) {
+  return apiFetch(`/avees/${aveeId}/permissions`, { method: "GET" });
+}
+
+export async function deleteAveePermission(params: {
+  aveeId: string;
+  viewerUserId: string;
+}) {
+  const q = new URLSearchParams();
+  q.set("viewer_user_id", params.viewerUserId);
+  return apiFetch(`/avees/${params.aveeId}/permissions?${q.toString()}`, {
+    method: "DELETE",
+  });
 }

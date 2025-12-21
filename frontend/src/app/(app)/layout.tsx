@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 function NavItem({ href, label }: { href: string; label: string }) {
@@ -34,21 +34,67 @@ function pageTitle(pathname: string) {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+
   const [ready, setReady] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Minimal auth guard (MVP)
+  const title = useMemo(() => pageTitle(pathname), [pathname]);
+
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
+    let alive = true;
+
+    async function syncSession() {
+      const { data, error } = await supabase.auth.getSession();
+
+      // Debug (remove later)
+      // eslint-disable-next-line no-console
+      console.log("getSession error:", error);
+      // eslint-disable-next-line no-console
+      console.log("session exists:", !!data.session);
+      // eslint-disable-next-line no-console
+      console.log("email:", data.session?.user?.email);
+      // eslint-disable-next-line no-console
+      console.log("token prefix:", data.session?.access_token?.slice(0, 20));
+
+      if (!alive) return;
+
       if (!data.session) {
+        setUserEmail(null);
+        setReady(true); // ready so we can redirect cleanly
         router.push("/login");
         return;
       }
 
       setUserEmail(data.session.user?.email ?? null);
       setReady(true);
-    })();
+    }
+
+    // Initial sync
+    syncSession();
+
+    // Listen to login/logout changes
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Debug (remove later)
+      // eslint-disable-next-line no-console
+      console.log("auth event:", _event, "session:", !!session);
+
+      if (!alive) return;
+
+      if (!session) {
+        setUserEmail(null);
+        setReady(true);
+        router.push("/login");
+        return;
+      }
+
+      setUserEmail(session.user?.email ?? null);
+      setReady(true);
+    });
+
+    return () => {
+      alive = false;
+      sub.subscription.unsubscribe();
+    };
   }, [router]);
 
   async function logout() {
@@ -65,7 +111,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="mx-auto flex max-w-6xl gap-6 p-6">
         {/* Sidebar */}
         <aside className="w-56 shrink-0">
-          {/* Brand link to /app */}
           <Link
             href="/app"
             className="mb-4 flex items-center gap-2 rounded-md px-2 py-2 hover:bg-gray-100"
@@ -88,7 +133,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Topbar */}
           <div className="mb-4 flex items-center justify-between rounded-lg border p-3">
             <div className="text-sm text-gray-600">
-              {pageTitle(pathname)}
+              {title}
               {userEmail ? (
                 <span className="ml-3 text-xs text-gray-500">• {userEmail}</span>
               ) : null}

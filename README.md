@@ -1,6 +1,6 @@
 # Gabee - Social AI Platform
 
-**Version**: 0.3.0
+**Version**: 0.4.0
 
 A social AI platform where users create and interact with personalized AI digital twins called "Avees". Each Avee has layer-based access control (public/friends/intimate) and uses RAG (Retrieval Augmented Generation) powered by PostgreSQL + pgvector for context-aware conversations.
 
@@ -291,6 +291,7 @@ NEXT_PUBLIC_API_BASE=http://localhost:8000  # Required: Backend API base URL
 - `display_name` (String)
 - `avatar_url` (Text)
 - `bio` (Text)
+- `persona` (Text) - Custom persona text for the Avee (up to 40k chars)
 - `created_at` (Timestamp with timezone)
 
 #### `avee_layers`
@@ -381,7 +382,17 @@ All endpoints require authentication via Supabase JWT token in the `Authorizatio
   - List all Avees owned by authenticated user
   - Returns: Array of Avee objects
 
-- `POST /avees/{avee_id}/documents?layer={layer}&title={title}&content={content}&source={source}`
+- `PATCH /avees/{avee_id}`
+  - Update Avee persona (owner only)
+  - Body: `{"persona": "custom persona text..."}`
+  - Persona max length: 40,000 characters
+  - Returns: `{"ok": true, "avee_id": "..."}`
+
+- `GET /avees/{avee_id}/permissions`
+  - List all permissions for an Avee (owner only)
+  - Returns: Array of permission objects with `viewer_user_id` and `max_layer`
+
+- `POST /avees/{avee_id}/permissions?viewer_user_id={uuid}&max_layer={layer}`
   - Add training document to an Avee
   - Automatically chunks and embeds the content
   - Returns: `{"ok": true, "document_id": "...", "chunks": N, "layer": "..."}`
@@ -391,10 +402,22 @@ All endpoints require authentication via Supabase JWT token in the `Authorizatio
   - `max_layer` must be one of: 'public', 'friends', 'intimate'
   - Returns: `{"ok": true, ...}`
 
+- `DELETE /avees/{avee_id}/permissions?viewer_user_id={uuid}`
+  - Delete permission for a viewer (owner only)
+  - Returns: `{"ok": true}`
+
 ### Relationships
 - `POST /relationships/follow?to_user_id={uuid}`
-  - Follow a user
+  - Follow a user by user ID
   - Returns: `{"ok": true}`
+
+- `POST /relationships/follow-by-handle?handle={handle}`
+  - Follow a user by profile handle
+  - Returns: `{"ok": true}`
+
+- `GET /network/following-avees`
+  - List all Avees owned by users you follow
+  - Returns: Array of Avee objects with owner information
 
 ### Conversations
 
@@ -430,66 +453,162 @@ All endpoints require authentication via Supabase JWT token in the `Authorizatio
 
 - `POST /chat/ask?conversation_id={uuid}&question={question}`
   - Ask a question and get AI response using RAG
-  - Automatically searches for relevant context
-  - Uses layer-appropriate system prompt
-  - Stores assistant message automatically
-  - Returns: `{"conversation_id": "...", "layer_used": "...", "answer": "...", "used_chunks": N}`
+  - Question max length: 4,000 characters
+  - Automatically searches for relevant context via pgvector
+  - Loads custom persona from Avee.persona field
+  - Uses multi-layered prompt system (layer prompt + persona + rules + context)
+  - Stores both user question and assistant response
+  - Returns: `{"conversation_id": "...", "layer_used": "...", "answer": "...", "used_chunks": N, "used_persona": true/false}`
 
 ## 💡 How It Works
+
+### Data Flow Overview
+
+The application follows a clear data flow from user input to AI response, with RAG (Retrieval Augmented Generation) playing a central role in query processing. Below are detailed flow descriptions for each major operation.
+
+### Quick Answer: RAG & Persona in Queries
+
+**RAG Processing**: ✅ **YES, RAG is fully processed in queries**
+- Every `/chat/ask` and `/rag/search` request performs vector similarity search
+- Query is embedded using OpenAI, then matched against document chunks via pgvector
+- Layer-based filtering ensures users only see accessible content
+- Retrieved chunks are used as context in AI responses
+
+**Persona/System Prompts**: ✅ **FULLY IMPLEMENTED**
+- RAG provides factual context from documents
+- System prompts provide persona/behavior instructions
+- **Current state**: Custom personas are stored in `Avee.persona` field and used in chat
+- Each Avee can have its own unique persona text (up to 40k characters)
+- Layer-based base prompts (public/friends/intimate) are combined with custom persona
+- Persona rules prevent prompt injection and ensure character consistency
 
 ### Avee Creation Flow
 
 1. User creates a profile with a handle
 2. User creates an Avee with a unique handle
-3. System automatically creates three layer entries (public, friends, intimate)
-4. Owner gets intimate permission by default
+3. System automatically creates three `AveeLayer` entries (public, friends, intimate) in the database
+   - **Note**: `system_prompt` field is created but set to `None` (not currently used)
+4. Owner gets `intimate` permission by default via `AveePermission` record
 
 ### Document Training Flow
 
-1. Owner adds a document to an Avee at a specific layer
-2. Document is chunked into ~1200 character segments with overlap
-3. Each chunk is embedded using OpenAI `text-embedding-3-small`
-4. Embeddings are stored in PostgreSQL as pgvector columns
-5. Chunks are linked to the document and Avee
+1. Owner adds a document to an Avee at a specific layer via `POST /avees/{avee_id}/documents`
+2. Document content is stored in `documents` table with layer metadata
+3. Document is chunked into ~1200 character segments with 120 character overlap using `chunk_text()` from `rag_utils.py`
+4. Each chunk is embedded using OpenAI `text-embedding-3-small` model via `embed_texts()` from `openai_embed.py`
+5. Embeddings are stored in PostgreSQL `document_chunks` table as pgvector `vector` type
+6. Each chunk record includes: `document_id`, `avee_id`, `layer`, `chunk_index`, `content`, and `embedding` (vector)
 
 ### Conversation Flow
 
-1. User creates conversation with an Avee
-2. System resolves maximum accessible layer based on permissions
-3. Conversation is tagged with the resolved layer
-4. Messages are stored with the layer context
+1. User creates conversation with an Avee via `POST /conversations/with-avee`
+2. System resolves maximum accessible layer based on permissions (see Permission Resolution below)
+3. Conversation is created with `avee_id` and `layer_used` fields set
+4. If conversation already exists with same user + Avee, it's reused (MVP ergonomics)
+5. All messages are stored with the `layer_used` context for audit/tracking
 
-### RAG Search Flow
+### RAG Search Flow (Query Processing)
 
-1. Query is embedded using OpenAI
-2. pgvector similarity search finds relevant chunks
-3. Layer filtering ensures user only sees accessible content:
-   - `public` layer: only public chunks
-   - `friends` layer: public + friends chunks
-   - `intimate` layer: all chunks
-4. Top K chunks returned with similarity scores
+**Endpoint**: `POST /rag/search`
 
-### Chat Flow
+RAG is **actively processed** in queries through the following steps:
 
-1. User asks a question
-2. RAG search finds relevant context chunks
-3. System prompt selected based on layer:
-   - `public`: "You are the public version of this person. Be factual and safe."
-   - `friends`: "You are speaking as a trusted friend. Be warmer but respectful."
-   - `intimate`: "You are a close, intimate digital presence. Be personal and deep."
-4. Context chunks + system prompt + question sent to OpenAI
-5. Response generated and stored as assistant message
+1. **Query Embedding**: User's query text is embedded using OpenAI `text-embedding-3-small`
+   ```python
+   q_vec = embed_texts([query.strip()])[0]
+   ```
+
+2. **Vector Similarity Search**: PostgreSQL pgvector performs cosine similarity search
+   ```sql
+   SELECT dc.content, dc.layer, 1 - (dc.embedding <=> :qvec::vector) as score
+   FROM document_chunks dc
+   WHERE dc.avee_id = :avee_id
+   ORDER BY dc.embedding <=> :qvec::vector ASC
+   ```
+
+3. **Layer Filtering**: SQL query filters chunks based on conversation's `layer_used`:
+   - `public` layer: only `public` chunks
+   - `friends` layer: `public` + `friends` chunks  
+   - `intimate` layer: all chunks (`public`, `friends`, `intimate`)
+
+4. **Top K Retrieval**: Returns top K most similar chunks (default K=5) with similarity scores
+
+5. **Response**: Returns chunk content, layer, document_id, and similarity scores
+
+### Chat Flow (Complete Query-to-Response Pipeline)
+
+**Endpoint**: `POST /chat/ask`
+
+This is the primary conversation endpoint that combines RAG retrieval with AI response generation:
+
+1. **Input Validation**: Validates conversation exists, user has access, and conversation has an `avee_id`
+
+2. **RAG Processing** (same as RAG Search Flow above):
+   - Query is embedded
+   - Vector similarity search finds top 5 relevant chunks
+   - Layer filtering applied based on `conversation.layer_used`
+
+3. **Context Assembly**: Retrieved chunks are concatenated into context string
+   ```python
+   context = "\n".join(r[0] for r in rows) if rows else ""
+   ```
+
+4. **Avee Persona Loading**: Fetches custom persona text from `Avee.persona` field
+   ```python
+   a = db.query(Avee).filter(Avee.id == convo.avee_id).first()
+   persona_text = (a.persona or "").strip()
+   ```
+
+5. **System Prompt Construction**: Multi-layered prompt system:
+   - **Layer Prompt**: Base behavior for access level
+     - `public`: "You are the public version of this person. Be factual, helpful, and safe."
+     - `friends`: "You are speaking as a trusted friend. Be warm, honest, and respectful."
+     - `intimate`: "You are a close, intimate digital presence. Be personal, deep, and respectful."
+   - **Custom Persona**: Owner-defined persona text from database (if set)
+   - **Persona Rules**: Anti-jailbreak protection preventing prompt injection
+
+6. **Message Construction**: Multi-part message array:
+   ```python
+   messages = [
+       {"role": "system", "content": layer_prompt},           # Base layer behavior
+       {"role": "system", "content": "PERSONA:\n" + persona_text},  # Custom persona (if exists)
+       {"role": "system", "content": persona_rules},          # Anti-jailbreak rules
+       {"role": "system", "content": "CONTEXT:\n" + context}, # RAG-retrieved chunks
+       {"role": "user", "content": question},                 # User's question
+   ]
+   ```
+
+7. **User Message Storage**: User's question is stored in `messages` table before API call
+
+8. **OpenAI Completion**: Messages sent to OpenAI GPT-4o-mini
+   ```python
+   completion = client.chat.completions.create(model="gpt-4o-mini", messages=messages)
+   ```
+
+9. **Response Storage**: Assistant's response is stored in `messages` table with `layer_used`
+
+10. **Return**: Response includes conversation_id, layer_used, answer, chunks used, and `used_persona` flag
 
 ### Permission Resolution
 
 When a user interacts with an Avee:
-1. System checks `avee_permissions` table for viewer's max_layer
-2. If no permission exists, defaults to 'public'
-3. Owner always has 'intimate' access (checked separately)
+1. System checks `avee_permissions` table for viewer's `max_layer`
+2. If no permission record exists, defaults to `'public'`
+3. Owner always has `'intimate'` access (checked via `avee.owner_user_id == viewer_user_id`)
 4. Resolved layer is used for:
-   - Conversation layer_used
-   - RAG search filtering
-   - System prompt selection
+   - `Conversation.layer_used` field
+   - RAG search filtering (SQL WHERE clause)
+   - System prompt selection (hardcoded mapping)
+
+### Key Data Flow Points
+
+**RAG Processing**: ✅ **YES** - RAG is fully integrated and processed in every `/chat/ask` and `/rag/search` query. Vector embeddings, similarity search, and layer filtering all work as designed.
+
+**Persona/System Prompts**: ✅ **YES** - Custom personas are fully functional:
+- Each Avee has a `persona` field (Text, up to 40k chars) for custom persona definition
+- Personas are loaded from database and injected into every chat response
+- Multi-layered prompt system: base layer prompt + custom persona + anti-jailbreak rules + RAG context
+- Owners can update personas via `PATCH /avees/{avee_id}` endpoint
 
 ## 📝 Usage Examples
 
@@ -523,33 +642,57 @@ curl -X POST "http://localhost:8000/chat/ask?conversation_id=CONV_ID&question=Wh
 
 ## ⚠️ Current Limitations & Notes
 
-1. **Legacy Code**: The Streamlit frontend (`app.py`) and related files are legacy POC code and not integrated with the new backend
+1. **Custom Personas**: ✅ **Fully Functional** - Each Avee can have custom persona stored in `Avee.persona` field and used in chat
 
-2. **Database ENUMs**: Requires PostgreSQL ENUM types (`avee_layer`, `relationship_type`) to be created in the database - if using Supabase, these may already exist
+2. **RAG Processing**: ✅ **Fully Functional** - RAG is processed in all queries via vector similarity search with layer filtering
 
-3. **pgvector**: Requires pgvector extension to be installed in PostgreSQL
+3. **Database Schema Migration Needed**: 
+   - The `Avee` model now includes a `persona` TEXT column
+   - If upgrading from earlier version, run: `ALTER TABLE avees ADD COLUMN IF NOT EXISTS persona TEXT;`
+   - Or use SQLAlchemy to create missing columns
 
-4. **CORS**: Currently configured for localhost:3000 - update `allow_origins` in `backend/main.py` for production
+4. **Legacy Code**: The Streamlit frontend (`app.py`) and related files are legacy POC code and not integrated with the new backend
 
-5. **Frontend**: Next.js frontend is actively being developed with authentication, profile management, Avee management, and chat features
+5. **Database ENUMs**: Requires PostgreSQL ENUM types (`avee_layer`, `relationship_type`) to be created in the database - if using Supabase, these may already exist
+
+6. **pgvector**: Requires pgvector extension to be installed in PostgreSQL
+
+7. **CORS**: Currently configured for localhost:3000 - update `allow_origins` in `backend/main.py` for production
+
+8. **Frontend**: Next.js frontend is actively being developed with authentication, profile management, Avee management, and chat features
+
+9. **Database Connection**: If experiencing timeout errors with IPv6 addresses, update DATABASE_URL to use Supabase's direct connection or session pooler on port 5432
 
 ## 🔮 Future Enhancements
 
 Potential improvements:
-- Add conversation history retrieval endpoints
-- Add user message storage in chat/ask endpoint
-- Add streaming responses for chat
+- Add conversation history retrieval endpoints (retrieve full message history)
+- Add streaming responses for chat (real-time token streaming)
 - Add document deletion/update endpoints
-- Add Avee update endpoints
-- Add relationship management (unfollow, etc.)
+- Add Avee update endpoints (edit handle, display_name, bio, avatar_url - currently only persona can be updated)
+- Add relationship management endpoints (unfollow, list followers, etc.)
+- Add per-layer persona customization using `AveeLayer.system_prompt` (currently only base Avee.persona is used)
 - Add search/discovery features for public Avees
 - Production CORS configuration
 - Enhanced error handling and validation
 - Rate limiting
 - Analytics and usage tracking
+- Conversation title generation
+- Message reactions/feedback
 
 ---
 
-**Version**: 0.3.0  
+**Version**: 0.4.0  
 **Status**: Active Development  
 **Last Updated**: December 2024
+
+## 🎉 What's New in v0.4.0
+
+- ✅ **Custom Persona System**: Each Avee now has a customizable persona stored in database
+- ✅ **Persona Update Endpoint**: `PATCH /avees/{avee_id}` to update persona (up to 40k chars)
+- ✅ **Enhanced Chat Flow**: Multi-layered prompt system with custom persona + RAG context
+- ✅ **Anti-Jailbreak Protection**: Persona rules prevent prompt injection attacks
+- ✅ **User Message Storage**: User questions now stored in conversation history
+- ✅ **Improved Response Metadata**: Chat responses include `used_persona` flag
+- 🔧 **Bug Fix**: Fixed duplicate import statement in main.py
+- 📝 **Documentation**: Complete data flow analysis in README

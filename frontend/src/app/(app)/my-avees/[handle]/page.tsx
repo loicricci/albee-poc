@@ -8,6 +8,7 @@ import {
   chatAsk,
   getAveeByHandle,
   setAveePermission,
+  updateAvee, // ✅ NEW
 } from "@/lib/api";
 
 type Avee = {
@@ -16,6 +17,9 @@ type Avee = {
   display_name?: string | null;
   bio?: string | null;
   avatar_url?: string | null;
+
+  // ✅ NEW: persona is returned only for the owner (recommended backend behavior)
+  persona?: string | null;
 };
 
 export default function AveeEditorPage() {
@@ -26,6 +30,11 @@ export default function AveeEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [avee, setAvee] = useState<Avee | null>(null);
+
+  // ✅ Persona
+  const [persona, setPersona] = useState("");
+  const [personaSaving, setPersonaSaving] = useState(false);
+  const [personaMsg, setPersonaMsg] = useState<string | null>(null);
 
   // Training
   const [trainLayer, setTrainLayer] = useState<"public" | "friends" | "intimate">(
@@ -51,18 +60,28 @@ export default function AveeEditorPage() {
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<string | null>(null);
 
+  const personaMeta = useMemo(() => {
+    const lines = persona ? persona.split("\n").length : 0;
+    return { chars: persona.length, lines };
+  }, [persona]);
+
   async function load() {
     setLoading(true);
     setError(null);
     setOkMsg(null);
     setAnswer(null);
+    setPersonaMsg(null);
 
     try {
       const data = await getAveeByHandle(handle);
       setAvee(data);
+
+      // ✅ persona is optional (owner-only). If not present, keep it empty.
+      setPersona((data?.persona || "").toString());
     } catch (e: any) {
       setError(e.message || "Failed to load Avee");
       setAvee(null);
+      setPersona("");
     } finally {
       setLoading(false);
     }
@@ -71,6 +90,32 @@ export default function AveeEditorPage() {
   useEffect(() => {
     if (handle) load();
   }, [handle]);
+
+  async function onSavePersona() {
+    if (!avee?.id) return;
+
+    setPersonaSaving(true);
+    setError(null);
+    setOkMsg(null);
+    setPersonaMsg(null);
+
+    try {
+      const p = persona.trim();
+
+      // Keep the same limit as backend (40k) to fail early in UI
+      if (p.length > 40000) {
+        throw new Error("Persona too long (max 40,000 characters)");
+      }
+
+      await updateAvee({ aveeId: avee.id, persona: p });
+      setPersona(p);
+      setPersonaMsg("Persona saved.");
+    } catch (e: any) {
+      setPersonaMsg(e.message || "Failed to save persona");
+    } finally {
+      setPersonaSaving(false);
+    }
+  }
 
   async function onAddDoc() {
     if (!avee?.id) return;
@@ -149,13 +194,12 @@ export default function AveeEditorPage() {
         question: q,
       });
 
-      // backend might return {answer:"..."} or {text:"..."} or a string
-      const text =
+      const textOut =
         typeof res === "string"
           ? res
           : res.answer || res.text || JSON.stringify(res, null, 2);
 
-      setAnswer(text);
+      setAnswer(textOut);
     } catch (e: any) {
       setError(e.message || "Failed to ask");
     } finally {
@@ -244,7 +288,50 @@ export default function AveeEditorPage() {
             </div>
           </div>
 
-          {/* 2) Training */}
+          {/* ✅ 2) Persona */}
+          <div className="mb-6 rounded-lg border p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-sm font-medium">Persona</div>
+              <div className="text-xs text-gray-500">
+                {personaMeta.chars} chars • {personaMeta.lines} lines
+              </div>
+            </div>
+
+            <div className="mb-2 text-xs text-gray-600">
+              This defines the personality, tone, values, and boundaries of this Avee.
+              It is injected into chat as a system prompt. (Owner only.)
+            </div>
+
+            <textarea
+              className="h-56 w-full rounded border px-3 py-2 text-sm font-mono"
+              value={persona}
+              onChange={(e) => {
+                setPersona(e.target.value);
+                setPersonaMsg(null);
+              }}
+              placeholder="Paste the full persona here (up to ~500 lines)…"
+            />
+
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                onClick={onSavePersona}
+                disabled={personaSaving}
+                className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+              >
+                {personaSaving ? "Saving…" : "Save persona"}
+              </button>
+
+              {personaMsg ? (
+                <div className="text-sm text-gray-600">{personaMsg}</div>
+              ) : null}
+            </div>
+
+            <div className="mt-2 text-xs text-gray-500">
+              Tip: write short rules. Tone, do/don’t, boundaries, and how it behaves in public vs friends vs intimate.
+            </div>
+          </div>
+
+          {/* 3) Training */}
           <div className="mb-6 rounded-lg border p-4">
             <div className="mb-2 text-sm font-medium">Training data</div>
 
@@ -308,7 +395,7 @@ export default function AveeEditorPage() {
             </div>
           </div>
 
-          {/* 3) Permissions */}
+          {/* 4) Permissions */}
           <div className="mb-6 rounded-lg border p-4">
             <div className="mb-2 text-sm font-medium">Permissions</div>
 
@@ -354,7 +441,7 @@ export default function AveeEditorPage() {
             </div>
           </div>
 
-          {/* 4) Test */}
+          {/* 5) Test */}
           <div className="rounded-lg border p-4">
             <div className="mb-2 text-sm font-medium">Test this Avee</div>
 

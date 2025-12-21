@@ -28,7 +28,15 @@ class Avee(Base):
     display_name = Column(String)
     avatar_url = Column(Text)
     bio = Column(Text)
+
+    # NEW (Step 2): persona prompt text stored per Avee
+    persona = Column(Text)
+
+    # NEW (Phase 3): AI-generated insights about conversation patterns
+    # persona_notes = Column(Text)  # TODO: Add this column to DB first with migration
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
 
 class AveeLayer(Base):

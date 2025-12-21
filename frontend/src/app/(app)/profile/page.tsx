@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getMyProfile, saveMyProfile } from "@/lib/api";
+import { uploadImageToBucket } from "@/lib/upload";
 
 type Profile = {
   user_id?: string;
@@ -43,6 +44,9 @@ function friendlyError(msg: string) {
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
@@ -89,12 +93,11 @@ export default function ProfilePage() {
         setInfo(null);
 
         const data = await getMyProfile();
-
         if (!alive) return;
 
-        // If profile exists, populate.
         if (data?.handle) {
           const next: Profile = {
+            user_id: data.user_id, // ✅ keep user_id for avatar folder
             handle: data.handle || "",
             display_name: data.display_name || "",
             bio: data.bio || "",
@@ -105,27 +108,29 @@ export default function ProfilePage() {
           setHasProfile(true);
           setInfo(null);
         } else {
-          // "No profile yet" (some implementations return empty object)
           setHasProfile(false);
-          setInitial({
+          const empty: Profile = {
             handle: "",
             display_name: "",
             bio: "",
             avatar_url: "",
-          });
+          };
+          setForm(empty);
+          setInitial(empty);
           setInfo("No profile yet. Fill the form and click Save.");
         }
       } catch (e: any) {
-        // Important: treat 404 as normal (no profile yet)
         const msg = String(e?.message || "");
         if (msg.includes("404")) {
           setHasProfile(false);
-          setInitial({
+          const empty: Profile = {
             handle: "",
             display_name: "",
             bio: "",
             avatar_url: "",
-          });
+          };
+          setForm(empty);
+          setInitial(empty);
           setInfo("No profile yet. Fill the form and click Save.");
           setError(null);
         } else {
@@ -160,6 +165,7 @@ export default function ProfilePage() {
       });
 
       const next: Profile = {
+        ...form,
         handle: cleanHandle,
         display_name: (form.display_name || "").trim(),
         bio: (form.bio || "").trim(),
@@ -177,9 +183,32 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleAvatarFile(file: File) {
+    setError(null);
+    setOk(null);
+
+    const folder = form.user_id || normalizedHandle || "me";
+
+    setUploadingAvatar(true);
+    try {
+      const { publicUrl } = await uploadImageToBucket({
+        bucket: "avatars",
+        folder,
+        file,
+      });
+
+      setForm((f) => ({ ...f, avatar_url: publicUrl }));
+      setOk("Avatar uploaded. Click Save to store it.");
+    } catch (e: any) {
+      setError(friendlyError(e?.message || "Avatar upload failed"));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
   if (loading) return <div className="text-sm text-gray-600">Loading…</div>;
 
-  const saveDisabled = saving || !!handleError || !isDirty;
+  const saveDisabled = saving || uploadingAvatar || !!handleError || !isDirty;
 
   return (
     <div className="max-w-xl">
@@ -208,10 +237,9 @@ export default function ProfilePage() {
             className="w-full rounded border px-3 py-2 text-sm"
             value={form.handle || ""}
             onChange={(e) => setForm((f) => ({ ...f, handle: e.target.value }))}
-            onBlur={() =>
-              setForm((f) => ({ ...f, handle: normalizeHandle(f.handle || "") }))
-            }
+            onBlur={() => setForm((f) => ({ ...f, handle: normalizeHandle(f.handle || "") }))}
             placeholder="loic"
+            disabled={uploadingAvatar}
           />
           <div className="mt-1 text-xs text-gray-500">
             Public username. Lowercase. Letters, numbers, "-" and "_".
@@ -233,6 +261,7 @@ export default function ProfilePage() {
             value={form.display_name || ""}
             onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
             placeholder="Loic"
+            disabled={uploadingAvatar}
           />
         </div>
 
@@ -245,31 +274,76 @@ export default function ProfilePage() {
             value={form.bio || ""}
             onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
             placeholder="Short bio…"
+            disabled={uploadingAvatar}
           />
         </div>
 
         {/* Avatar */}
         <div>
-          <label className="mb-1 block text-sm">Avatar URL</label>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded bg-gray-100 overflow-hidden flex items-center justify-center text-xs text-gray-500">
-              {form.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={form.avatar_url} alt="" className="h-10 w-10 object-cover" />
-              ) : (
-                "IMG"
-              )}
-            </div>
+          <label className="mb-1 block text-sm">Avatar</label>
+
+          <label
+            className={[
+              "block w-full rounded border p-3 cursor-pointer select-none",
+              dragging ? "border-black" : "border-gray-300",
+              uploadingAvatar ? "opacity-60" : "",
+            ].join(" ")}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragging(true);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragging(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragging(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragging(false);
+              const file = e.dataTransfer.files?.[0];
+              if (file) void handleAvatarFile(file);
+            }}
+          >
             <input
-              className="flex-1 rounded border px-3 py-2 text-sm"
-              value={form.avatar_url || ""}
-              onChange={(e) => setForm((f) => ({ ...f, avatar_url: e.target.value }))}
-              placeholder="https://..."
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              disabled={uploadingAvatar}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleAvatarFile(file);
+              }}
             />
-          </div>
-          <div className="mt-1 text-xs text-gray-500">
-            Optional. Use a direct image URL.
-          </div>
+
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded bg-gray-100 overflow-hidden flex items-center justify-center text-xs text-gray-500">
+                {form.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.avatar_url} alt="" className="h-12 w-12 object-cover" />
+                ) : (
+                  "IMG"
+                )}
+              </div>
+
+              <div className="flex-1">
+                <div className="text-sm">
+                  {uploadingAvatar ? "Uploading…" : "Drop image here, or click to upload"}
+                </div>
+                <div className="mt-1 text-xs text-gray-500">PNG, JPG, WEBP. Max 5MB.</div>
+              </div>
+            </div>
+          </label>
+
+          {form.avatar_url ? (
+            <div className="mt-2 text-xs text-gray-500 break-all">{form.avatar_url}</div>
+          ) : null}
         </div>
 
         {/* Actions */}
@@ -282,9 +356,7 @@ export default function ProfilePage() {
             {saving ? "Saving…" : hasProfile ? "Save changes" : "Create profile"}
           </button>
 
-          {!isDirty ? (
-            <div className="text-xs text-gray-500">No changes to save.</div>
-          ) : null}
+          {!isDirty ? <div className="text-xs text-gray-500">No changes to save.</div> : null}
         </div>
       </div>
     </div>
