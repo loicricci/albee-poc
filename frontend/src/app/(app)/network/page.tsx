@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
+import { ChatButton } from "@/components/ChatButton";
 
-type FollowingAvee = {
+type FollowingAgent = {
   avee_id: string;
   avee_handle: string;
   avee_display_name?: string | null;
   avee_avatar_url?: string | null;
+  avee_bio?: string | null;
+  owner_user_id: string;
   owner_handle: string;
   owner_display_name?: string | null;
 };
@@ -54,13 +58,24 @@ async function apiPostQuery<T>(
   return (txt ? JSON.parse(txt) : { ok: true }) as T;
 }
 
-export default function NetworkPage() {
+function NetworkContent() {
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [items, setItems] = useState<FollowingAvee[]>([]);
+  const [items, setItems] = useState<FollowingAgent[]>([]);
   const [handleInput, setHandleInput] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
+  
+  // Search suggestions state
+  const [searchResults, setSearchResults] = useState<FollowingAgent[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Suggested agents state
+  const [suggestedAgents, setSuggestedAgents] = useState<FollowingAgent[]>([]);
+  const [loadingSuggested, setLoadingSuggested] = useState(true);
 
   const normalizedHandle = useMemo(() => handleInput.trim().toLowerCase(), [handleInput]);
 
@@ -70,7 +85,7 @@ export default function NetworkPage() {
 
     try {
       const token = await getAccessToken();
-      const data = await apiGet<FollowingAvee[]>("/network/following-avees", token);
+      const data = await apiGet<FollowingAgent[]>("/network/following-agents", token);
       setItems(Array.isArray(data) ? data : []);
       setPhase("ready");
     } catch (e: any) {
@@ -79,161 +94,528 @@ export default function NetworkPage() {
     }
   };
 
+  const loadSuggestedAgents = async () => {
+    setLoadingSuggested(true);
+    try {
+      const token = await getAccessToken();
+      const url = new URL(`${apiBase()}/network/search-agents`);
+      url.searchParams.set("query", "");
+      url.searchParams.set("limit", "6");
+
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestedAgents(Array.isArray(data) ? data : []);
+      }
+    } catch (e: any) {
+      console.error("Failed to load suggested agents:", e);
+      setSuggestedAgents([]);
+    } finally {
+      setLoadingSuggested(false);
+    }
+  };
+
+  const searchAgents = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const token = await getAccessToken();
+      const url = new URL(`${apiBase()}/network/search-agents`);
+      url.searchParams.set("query", query);
+      url.searchParams.set("limit", "8");
+
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(Array.isArray(data) ? data : []);
+        setShowDropdown(true);
+      }
+    } catch (e: any) {
+      console.error("Search error:", e);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search effect
   useEffect(() => {
-    // eslint-disable-next-line no-console
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (handleInput.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchAgents(handleInput);
+      }, 300);
+    } else {
+      setSearchResults([]);
+      setShowDropdown(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleInput]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
     console.log("API_BASE:", process.env.NEXT_PUBLIC_API_BASE);
     load();
+    loadSuggestedAgents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const follow = async () => {
-    if (!normalizedHandle) return;
+  const follow = async (handleToFollow?: string) => {
+    const targetHandle = handleToFollow || normalizedHandle;
+    if (!targetHandle) return;
 
     setIsFollowing(true);
     setErrorMsg("");
 
     try {
       const token = await getAccessToken();
-      await apiPostQuery("/relationships/follow-by-handle", { handle: normalizedHandle }, token);
+      await apiPostQuery("/relationships/follow-agent-by-handle", { handle: targetHandle }, token);
 
       setHandleInput("");
+      setSearchResults([]);
+      setShowDropdown(false);
       await load();
+      await loadSuggestedAgents(); // Refresh suggested agents
     } catch (e: any) {
-      setErrorMsg(e?.message || "Failed to follow.");
+      setErrorMsg(e?.message || "Failed to follow agent.");
     } finally {
       setIsFollowing(false);
     }
   };
 
+  const selectAgent = (agent: FollowingAgent) => {
+    follow(agent.avee_handle);
+  };
+
   return (
-    <div className="p-6 max-w-5xl">
-      <div className="mb-6">
-        <div className="text-sm text-gray-500">Network</div>
-        <div className="text-2xl font-semibold">Following</div>
-        <div className="text-sm text-gray-600 mt-1">
-          Follow a person by handle, then chat with their Avee.
-        </div>
+    <div className="mx-auto max-w-5xl">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-[#0B0B0C]">Network</h1>
+        <p className="mt-2 text-[#2E3A59]/70">
+          Follow agents to chat with them
+        </p>
       </div>
 
+      {/* Error Message */}
       {errorMsg ? (
-        <div className="mb-4 text-sm border border-red-200 bg-red-50 text-red-700 rounded px-3 py-2">
-          {errorMsg}
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 animate-slide-up">
+          <svg className="h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="flex-1">
+            <div className="text-sm font-medium text-red-800">{errorMsg}</div>
+          </div>
+          <button onClick={() => setErrorMsg("")} className="text-red-600 hover:text-red-800">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       ) : null}
 
-      {/* Follow box */}
-      <div className="border rounded-lg p-4 mb-6">
-        <div className="font-medium mb-2">Follow someone</div>
-        <div className="flex gap-2">
-          <input
-            className="flex-1 border rounded px-3 py-2 text-sm"
-            placeholder="handle (example: tom-avee)"
-            value={handleInput}
-            onChange={(e) => setHandleInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") follow();
-            }}
-            disabled={isFollowing}
-          />
-          <button
-            className="bg-black text-white rounded px-4 py-2 text-sm disabled:opacity-50"
-            disabled={!normalizedHandle || isFollowing}
-            onClick={follow}
-          >
-            Follow
-          </button>
-          <button
-            className="border rounded px-4 py-2 text-sm disabled:opacity-50"
-            disabled={phase === "loading"}
-            onClick={load}
-          >
-            Refresh
-          </button>
+      {/* Suggested Agents */}
+      {!loadingSuggested && suggestedAgents.length > 0 && (
+        <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-6 py-4">
+            <h2 className="font-semibold text-[#0B0B0C]">Suggested Agents</h2>
+            <p className="mt-1 text-sm text-[#2E3A59]/70">Discover agents you might like to follow</p>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {suggestedAgents.map((agent) => (
+                <div
+                  key={agent.avee_id}
+                  className="group relative flex flex-col overflow-hidden rounded-xl border border-[#E6E6E6] bg-gradient-to-br from-white to-[#FAFAFA] p-4 transition-all hover:border-[#2E3A59] hover:shadow-md"
+                >
+                  <div className="flex flex-col items-center text-center flex-grow">
+                    {/* Avatar */}
+                    <div className="mb-3 h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center shadow-sm">
+                      {agent.avee_avatar_url ? (
+                        <img src={agent.avee_avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </div>
+
+                    {/* Agent Info */}
+                    <h3 className="font-semibold text-[#0B0B0C] truncate w-full">
+                      {agent.avee_display_name || agent.avee_handle}
+                    </h3>
+                    <p className="text-sm text-[#2E3A59]/70 truncate w-full">@{agent.avee_handle}</p>
+                    
+                    {/* Bio with fixed height */}
+                    <div className="mt-2 h-10 w-full">
+                      {agent.avee_bio && (
+                        <p className="text-xs text-[#2E3A59]/70 line-clamp-2">
+                          {agent.avee_bio}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="mt-2 text-xs text-[#2E3A59]/50">
+                      by {agent.owner_display_name || agent.owner_handle}
+                    </p>
+                  </div>
+
+                  {/* Follow Button - always at bottom */}
+                  <button
+                    onClick={() => selectAgent(agent)}
+                    disabled={isFollowing}
+                    className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#1a2236] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isFollowing ? (
+                      <>
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Following...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Follow
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="text-xs text-gray-500 mt-2">
-          Tip: you’re following the person (profile handle), then we show their Avees.
+      )}
+
+      {/* Follow box */}
+      <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+        <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-6 py-4">
+          <h2 className="font-semibold text-[#0B0B0C]">Follow an Agent</h2>
+          <p className="mt-1 text-sm text-[#2E3A59]/70">Find and follow agents by their handle</p>
+        </div>
+        <div className="p-6">
+          <div className="flex gap-3">
+            <div className="relative flex-1" ref={dropdownRef}>
+              <svg
+                className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              <input
+                className="w-full rounded-lg border border-[#E6E6E6] py-3 pl-10 pr-10 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                placeholder="Enter agent handle (e.g., victor-hugo)"
+                value={handleInput}
+                onChange={(e) => setHandleInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") follow();
+                }}
+                onFocus={() => {
+                  if (searchResults.length > 0) setShowDropdown(true);
+                }}
+                disabled={isFollowing}
+              />
+              {isSearching && (
+                <svg className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#2E3A59]" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              )}
+              
+              {/* Dropdown with search results */}
+              {showDropdown && searchResults.length > 0 && (
+                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-[#E6E6E6] bg-white shadow-lg">
+                  <div className="max-h-96 overflow-y-auto">
+                    {searchResults.map((agent) => (
+                      <button
+                        key={agent.avee_id}
+                        onClick={() => selectAgent(agent)}
+                        className="w-full border-b border-[#E6E6E6] px-4 py-3 text-left transition-colors hover:bg-[#2E3A59]/5 last:border-b-0"
+                        disabled={isFollowing}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center">
+                            {agent.avee_avatar_url ? (
+                              <img src={agent.avee_avatar_url} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-[#0B0B0C] truncate">
+                              {agent.avee_display_name || agent.avee_handle}
+                              <span className="ml-2 text-sm text-[#2E3A59]/70 font-normal">@{agent.avee_handle}</span>
+                            </div>
+                            {agent.avee_bio && (
+                              <p className="text-xs text-[#2E3A59]/70 truncate">{agent.avee_bio}</p>
+                            )}
+                            <p className="text-xs text-[#2E3A59]/50">
+                              by {agent.owner_display_name || agent.owner_handle}
+                            </p>
+                          </div>
+                          <svg className="h-5 w-5 shrink-0 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No results message */}
+              {showDropdown && !isSearching && searchResults.length === 0 && handleInput.trim().length >= 2 && (
+                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-[#E6E6E6] bg-white shadow-lg">
+                  <div className="px-4 py-6 text-center text-sm text-[#2E3A59]/70">
+                    <svg className="mx-auto mb-2 h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    No agents found matching "{handleInput}"
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              className="flex items-center gap-2 rounded-lg bg-[#2E3A59] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!normalizedHandle || isFollowing}
+              onClick={() => follow()}
+            >
+              {isFollowing ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Following...
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Follow
+                </>
+              )}
+            </button>
+            <button
+              className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
+              disabled={phase === "loading"}
+              onClick={load}
+            >
+              <svg className={`h-4 w-4 ${phase === "loading" ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
+          <div className="mt-3 rounded-lg bg-[#2E3A59]/5 border border-[#2E3A59]/20 p-3 text-xs text-[#2E3A59]">
+            <strong>Tip:</strong> Follow agents directly to interact with them. Access levels are controlled by the agent owner.
+          </div>
         </div>
       </div>
 
       {/* List */}
-      <div className="border rounded-lg">
-        <div className="px-4 py-3 border-b flex items-center justify-between">
-          <div className="font-medium">Avees you can interact with</div>
-          <div className="text-sm text-gray-500">
-            {phase === "loading" ? "Loading…" : `${items.length} item(s)`}
+      <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#E6E6E6] px-6 py-4">
+          <div>
+            <h2 className="font-semibold text-[#0B0B0C]">Following</h2>
+            <p className="mt-1 text-sm text-[#2E3A59]/70">
+              {phase === "loading" ? "Loading..." : `${items.length} agent${items.length !== 1 ? "s" : ""}`}
+            </p>
           </div>
         </div>
 
         {phase === "error" ? (
-          <div className="p-4 text-sm text-gray-600">
-            Could not load your network. Check backend is running and endpoints exist.
-          </div>
-        ) : null}
-
-        {phase !== "error" && items.length === 0 ? (
-          <div className="p-4 text-sm text-gray-600">
-            You’re not following anyone yet. Add a handle above.
-          </div>
-        ) : null}
-
-        <div className="divide-y">
-          {items.map((x) => (
-            <div key={x.avee_id} className="p-4 flex items-center justify-between gap-4">
-              <div className="min-w-0 flex items-center gap-3">
-                <div className="h-10 w-10 rounded bg-gray-100 overflow-hidden flex items-center justify-center text-xs text-gray-500">
-                  {x.avee_avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={x.avee_avatar_url} alt="" className="h-10 w-10 object-cover" />
-                  ) : (
-                    "AVEE"
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <div className="font-medium truncate">
-                    {x.avee_display_name || x.avee_handle}
-                    <span className="text-gray-500 font-normal"> @{x.avee_handle}</span>
-                  </div>
-                  <div className="text-sm text-gray-600 truncate">
-                    Owner: {x.owner_display_name || x.owner_handle} (@{x.owner_handle})
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Link
-                  className="bg-black text-white rounded px-3 py-2 text-sm"
-                  href={`/chat/${encodeURIComponent(x.avee_handle)}`}
-                >
-                  Chat
-                </Link>
-
-                <Link
-                  className="border rounded px-3 py-2 text-sm"
-                  href={`/my-avees/${encodeURIComponent(x.avee_handle)}`}
-                  title="If you own it you can edit; otherwise it may 403"
-                >
-                  View
-                </Link>
-              </div>
+          <div className="p-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
             </div>
-          ))}
-        </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to load network</h3>
+            <p className="text-sm text-gray-600 mb-4">Check that the backend is running and endpoints exist</p>
+            <button
+              onClick={load}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#001f98] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Try Again
+            </button>
+          </div>
+        ) : null}
+
+        {phase === "loading" ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center gap-3 text-gray-600">
+              <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span className="text-sm font-medium">Loading your network...</span>
+            </div>
+          </div>
+        ) : null}
+
+        {phase === "ready" && items.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#2E3A59]/10 to-[#2E3A59]/5">
+              <svg className="h-10 w-10 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">No agents followed yet</h3>
+            <p className="text-sm text-[#2E3A59]/70 mb-6">Follow an agent to start chatting</p>
+          </div>
+        ) : null}
+
+        {phase === "ready" && items.length > 0 && (
+          <div className="divide-y divide-[#E6E6E6]">
+            {items.map((x) => (
+              <div key={x.avee_id} className="group px-6 py-5 transition-colors hover:bg-[#2E3A59]/5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-4">
+                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center shadow-sm">
+                      {x.avee_avatar_url ? (
+                        <img src={x.avee_avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-[#0B0B0C] truncate">
+                        {x.avee_display_name || x.avee_handle}
+                        <span className="ml-2 text-[#2E3A59]/70 font-normal">@{x.avee_handle}</span>
+                      </h3>
+                      <p className="text-sm text-[#2E3A59]/70 truncate">
+                        Owner: {x.owner_display_name || x.owner_handle} <span className="text-[#2E3A59]/50">(@{x.owner_handle})</span>
+                      </p>
+                      {x.avee_bio && (
+                        <p className="text-xs text-[#2E3A59]/70 mt-1 line-clamp-1">{x.avee_bio}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <ChatButton
+                      handle={x.avee_handle}
+                      displayName={x.avee_display_name || x.avee_handle}
+                      className="flex items-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#1a2236] hover:shadow-md"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      Chat
+                    </ChatButton>
+
+                    <Link
+                      className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      href={`/my-agents/${encodeURIComponent(x.avee_handle)}`}
+                      title="View agent details"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      View
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Notes */}
-      <div className="mt-6 text-xs text-gray-500">
-        Notes:
-        <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li>
-            “Chat” opens a conversation using your existing chat flow.
-          </li>
-          <li>
-            The “Layer” you get is enforced server-side by permissions at conversation creation time.
-          </li>
-        </ul>
+      <div className="mt-6 overflow-hidden rounded-xl border border-[#2E3A59]/20 bg-gradient-to-br from-[#2E3A59]/5 to-[#FAFAFA] shadow-sm">
+        <div className="p-6">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#0B0B0C]">
+            <svg className="h-5 w-5 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            How It Works
+          </h3>
+          <ul className="space-y-2 text-sm text-[#2E3A59]">
+            <li className="flex items-start gap-2">
+              <svg className="h-5 w-5 shrink-0 text-[#2E3A59] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span><strong>Follow agents directly:</strong> You now follow agents themselves, not their owners</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <svg className="h-5 w-5 shrink-0 text-[#2E3A59] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span><strong>Chat instantly:</strong> Once you follow an agent, you can chat with it</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <svg className="h-5 w-5 shrink-0 text-[#2E3A59] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span><strong>Access controlled by owner:</strong> The agent owner determines your access level (public/friends/intimate)</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
 }
- 
+
+export default function NetworkPage() {
+  return (
+    <NewLayoutWrapper>
+      <NetworkContent />
+    </NewLayoutWrapper>
+  );
+}

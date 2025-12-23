@@ -1,0 +1,8 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Top triangle pointing down -->
+  <path d="M256 256 L426 150 L426 182 L286 272 L426 362 L426 394 L256 288 Z" fill="currentColor"/>
+  <!-- Bottom triangle pointing up -->
+  <path d="M256 256 L86 362 L86 330 L226 240 L86 150 L86 118 L256 224 Z" fill="currentColor"/>
+</svg>
+
+

@@ -1,0 +1,327 @@
+"use client";
+
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+
+type Agent = {
+  id: string;
+  handle: string;
+  display_name?: string | null;
+  avatar_url?: string | null;
+};
+
+type QuickUpdateComposerProps = {
+  agents: Agent[];
+};
+
+const TOPIC_PRESETS = [
+  { value: "work", label: "🏢 Work" },
+  { value: "family", label: "👨‍👩‍👧 Family" },
+  { value: "projects", label: "💼 Projects" },
+  { value: "goals", label: "🎯 Goals" },
+  { value: "learning", label: "📚 Learning" },
+  { value: "travel", label: "🌍 Travel" },
+  { value: "thoughts", label: "💭 Thoughts" },
+  { value: "news", label: "📰 News" },
+  { value: "other", label: "📌 Other" },
+];
+
+async function getAccessToken(): Promise<string> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw new Error(error.message);
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not logged in");
+  return token;
+}
+
+function apiBase(): string {
+  const base = process.env.NEXT_PUBLIC_API_BASE;
+  if (!base) throw new Error("Missing NEXT_PUBLIC_API_BASE");
+  return base;
+}
+
+export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<string>("");
+  const [content, setContent] = useState("");
+  const [topic, setTopic] = useState("work");
+  const [layer, setLayer] = useState<"public" | "friends" | "intimate">("public");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const selectedAgentData = agents.find((a) => a.id === selectedAgent);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!content.trim() || !selectedAgent) return;
+
+    setSubmitting(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const token = await getAccessToken();
+
+      // Generate title from first line or words of content
+      const title = content
+        .split("\n")[0]
+        .slice(0, 100)
+        .trim() || "Quick Update";
+
+      const res = await fetch(`${apiBase()}/agents/${selectedAgent}/updates`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          content: content.trim(),
+          topic,
+          layer,
+          is_pinned: false,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to post update: ${res.status}`);
+      }
+
+      // Success!
+      setContent("");
+      setSuccess(true);
+      setExpanded(false);
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (e: any) {
+      setError(e.message || "Failed to post update");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (agents.length === 0) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-[#E6E6E6] bg-[#FAFAFA] p-8 text-center">
+        <svg className="mx-auto h-12 w-12 text-[#2E3A59]/40 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">No agents yet</h3>
+        <p className="text-sm text-[#2E3A59]/70 mb-4">
+          Create an agent to start posting updates
+        </p>
+        <a
+          href="/my-agents"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
+        >
+          Create Agent
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Success message */}
+      {success && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 animate-slide-up">
+          <svg className="h-5 w-5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <div className="text-sm font-medium text-green-800">Update posted successfully!</div>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+        {/* Header */}
+        <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-[#2E3A59] to-[#1a2236]">
+                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="font-semibold text-[#0B0B0C]">What's new?</h2>
+                <p className="text-sm text-[#2E3A59]/70">Share an update with your followers</p>
+              </div>
+            </div>
+            {!expanded && (
+              <button
+                onClick={() => setExpanded(true)}
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Post Update
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Composer */}
+        {expanded && (
+          <form onSubmit={handleSubmit} className="p-6">
+            {/* Error message */}
+            {error && (
+              <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Agent Selector */}
+            <div className="mb-4">
+              <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                Post as <span className="text-red-600">*</span>
+              </label>
+              <select
+                value={selectedAgent}
+                onChange={(e) => setSelectedAgent(e.target.value)}
+                className="w-full rounded-lg border border-[#E6E6E6] px-4 py-2.5 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                required
+              >
+                <option value="">Select an agent...</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.display_name || agent.handle} (@{agent.handle})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Selected Agent Preview */}
+            {selectedAgentData && (
+              <div className="mb-4 flex items-center gap-3 rounded-lg border border-[#2E3A59]/20 bg-[#2E3A59]/5 p-3">
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-[#2E3A59]/30 bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center">
+                  {selectedAgentData.avatar_url ? (
+                    <img src={selectedAgentData.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-[#0B0B0C] truncate">
+                    {selectedAgentData.display_name || selectedAgentData.handle}
+                  </div>
+                  <div className="text-xs text-[#2E3A59]/70">
+                    Posting to followers of @{selectedAgentData.handle}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="mb-4">
+              <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                What's happening? <span className="text-red-600">*</span>
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Share an update, announcement, or thought..."
+                className="h-32 w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20 resize-none"
+                maxLength={10000}
+                required
+              />
+              <div className="mt-1 flex items-center justify-between text-xs text-[#2E3A59]/70">
+                <span>This will become part of your agent's knowledge</span>
+                <span>{content.length} / 10,000</span>
+              </div>
+            </div>
+
+            {/* Options */}
+            <div className="mb-4 grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Topic</label>
+                <select
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  className="w-full rounded-lg border border-[#E6E6E6] px-3 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                >
+                  {TOPIC_PRESETS.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Visibility</label>
+                <select
+                  value={layer}
+                  onChange={(e) => setLayer(e.target.value as any)}
+                  className="w-full rounded-lg border border-[#E6E6E6] px-3 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                >
+                  <option value="public">🌍 Public - Everyone</option>
+                  <option value="friends">👥 Friends Only</option>
+                  <option value="intimate">🔒 Intimate Only</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setExpanded(false);
+                  setContent("");
+                  setError(null);
+                }}
+                className="rounded-lg border border-[#E6E6E6] px-6 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={submitting || !content.trim() || !selectedAgent}
+              >
+                {submitting ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Posting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    Post Update
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Collapsed state with quick info */}
+        {!expanded && (
+          <div className="px-6 py-4 text-sm text-[#2E3A59]/70">
+            <div className="flex items-center justify-between">
+              <span>Post updates that become part of your agent's knowledge base</span>
+              <span className="text-xs text-[#2E3A59]/50">{agents.length} agent{agents.length !== 1 ? "s" : ""} available</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+

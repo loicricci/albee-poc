@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { ChatProvider } from "@/components/ChatContext";
+import { ChatModalContainer } from "@/components/ChatModal";
+import { AgentCacheProvider } from "@/components/AgentCache";
 
 function NavItem({ href, label }: { href: string; label: string }) {
   const pathname = usePathname();
@@ -25,7 +28,7 @@ function NavItem({ href, label }: { href: string; label: string }) {
 function pageTitle(pathname: string) {
   if (pathname === "/app" || pathname.startsWith("/app/")) return "App";
   if (pathname === "/profile" || pathname.startsWith("/profile/")) return "Profile";
-  if (pathname === "/my-avees" || pathname.startsWith("/my-avees/")) return "My Avees";
+  if (pathname === "/my-agents" || pathname.startsWith("/my-agents/")) return "My Agents";
   if (pathname === "/network" || pathname.startsWith("/network/")) return "Network";
   if (pathname.startsWith("/chat/")) return "Chat";
   return "App";
@@ -39,6 +42,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const title = useMemo(() => pageTitle(pathname), [pathname]);
+  
+  // Check if we're on pages that use the new layout - if so, render without the sidebar layout
+  const usesNewLayout = pathname === "/app" || pathname === "/profile" || pathname === "/my-agents" || pathname === "/my-avees" || pathname === "/network" || pathname === "/notifications" || pathname === "/backoffice" || pathname.startsWith("/app/") || pathname.startsWith("/profile/") || pathname.startsWith("/my-agents/") || pathname.startsWith("/my-avees/") || pathname.startsWith("/network/") || pathname.startsWith("/notifications/") || pathname.startsWith("/backoffice/");
 
   useEffect(() => {
     let alive = true;
@@ -106,9 +112,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <div className="p-6 text-sm text-gray-600">Loading…</div>;
   }
 
+  // If it uses the new layout, render without the sidebar layout
+  if (usesNewLayout) {
+    return (
+      <AgentCacheProvider>
+        <ChatProvider>
+          {children}
+          <ChatModalContainer />
+        </ChatProvider>
+      </AgentCacheProvider>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto flex max-w-6xl gap-6 p-6">
+      <AgentCacheProvider>
+        <ChatProvider>
+          <div className="mx-auto flex max-w-6xl gap-6 p-6">
         {/* Sidebar */}
         <aside className="w-56 shrink-0">
           <Link
@@ -117,13 +137,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             title="Go to App"
           >
             <div className="h-8 w-8 rounded bg-black" />
-            <div className="text-lg font-semibold">Avee</div>
+            <div className="text-lg font-semibold">Agent</div>
           </Link>
 
           <nav className="space-y-1">
             <NavItem href="/app" label="App" />
             <NavItem href="/profile" label="Profile" />
-            <NavItem href="/my-avees" label="My Avees" />
+            <NavItem href="/my-agents" label="My Agents" />
             <NavItem href="/network" label="Network" />
           </nav>
         </aside>
@@ -149,7 +169,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div className="rounded-lg border p-4">{children}</div>
         </main>
+        <ChatModalContainer />
       </div>
+      </ChatProvider>
+      </AgentCacheProvider>
     </div>
   );
 }

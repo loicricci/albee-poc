@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Premium Color Palette */
+  --black: #0A0A0A;
+  --dark-gray: #1A1A1A;
+  --light-gray: #8F96A3;
+  --white: #FFFFFF;
+  --electric-blue: #0066FF;
+  
+  /* Primary Colors */
+  --background: #FFFFFF;
+  --foreground: #0A0A0A;
+  
+  /* Brand Colors */
+  --primary: #0066FF;
+  --primary-hover: #0052CC;
+  --primary-light: #E6F0FF;
+  --primary-dark: #0047B3;
+  
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @theme inline {
@@ -14,13 +33,71 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0A0A0A;
+    --foreground: #FFFFFF;
   }
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Improved focus states */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-base);
+}
+
+.animate-slide-up {
+  animation: slideUp var(--transition-slow);
+}
+
+/* Electric Blue Glow Effect */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.3);
+}
+
+.glow-blue-hover:hover {
+  box-shadow: 0 0 30px rgba(0, 102, 255, 0.4), 0 10px 25px -5px rgba(0, 102, 255, 0.2);
+  transition: box-shadow var(--transition-base);
 }

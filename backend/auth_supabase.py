@@ -36,3 +36,24 @@ async def get_current_user_id(
 
     user = r.json()
     return user["id"]
+
+
+async def get_current_user(
+    creds: HTTPAuthorizationCredentials = Depends(security),
+) -> dict:
+    """Get the full user object including email"""
+    token = creds.credentials
+
+    url = f"{SUPABASE_URL}/auth/v1/user"
+    headers = {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": f"Bearer {token}",
+    }
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(url, headers=headers)
+
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid Supabase token")
+
+    return r.json()
