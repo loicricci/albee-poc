@@ -34,6 +34,11 @@ app = FastAPI()
 
 from fastapi.middleware.cors import CORSMiddleware
 
+import os
+
+# Get allowed origins from environment or use defaults
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -41,7 +46,11 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
-    ],
+        # Production origins will be added here
+        # Add your Vercel deployment URLs below:
+        # "https://gabee-poc.vercel.app",
+        # "https://gabee-poc-*.vercel.app",
+    ] + ALLOWED_ORIGINS,  # Add custom origins from environment variable
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

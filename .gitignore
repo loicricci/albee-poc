@@ -1,4 +1,12 @@
-venv/
-.env
+node_modules/
+.next/
+out/
 __pycache__/
-version.txt
+*.pyc
+.env
+.env.local
+.env*.local
+backend/.env
+frontend/.env.local
+venv/
+.DS_Store
