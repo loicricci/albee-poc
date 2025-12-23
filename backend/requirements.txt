@@ -12,4 +12,3 @@ numpy>=1.24.0  # For cosine similarity calculations
 requests>=2.31.0  # For web scraping and search APIs
 beautifulsoup4>=4.12.0  # For HTML parsing
 lxml>=4.9.0  # Better HTML parser for BeautifulSoup
-

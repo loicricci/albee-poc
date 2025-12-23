@@ -33,27 +33,37 @@ from models import (
 app = FastAPI()
 
 from fastapi.middleware.cors import CORSMiddleware
-
 import os
 
-# Get allowed origins from environment or use defaults
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
+def _get_allowed_origins() -> list[str]:
+    # Comma-separated list in Railway, ex:
+    # ALLOWED_ORIGINS="https://myapp.vercel.app,https://myapp.com"
+    raw = os.getenv("ALLOWED_ORIGINS", "")
+    env_origins = [o.strip() for o in raw.split(",") if o.strip()]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+    local_origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
-        # Production origins will be added here
-        # Add your Vercel deployment URLs below:
-        # "https://gabee-poc.vercel.app",
-        # "https://gabee-poc-*.vercel.app",
-    ] + ALLOWED_ORIGINS,  # Add custom origins from environment variable
+    ]
+
+    # Remove duplicates while preserving order
+    seen = set()
+    origins = []
+    for o in local_origins + env_origins:
+        if o not in seen:
+            seen.add(o)
+            origins.append(o)
+    return origins
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_get_allowed_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
+    expose_headers=["Content-Type"],
 )
 
 from dotenv import load_dotenv
