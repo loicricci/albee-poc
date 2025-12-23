@@ -11,9 +11,9 @@ from typing import List, Optional
 import uuid
 from datetime import datetime
 
-from .db import SessionLocal
-from .auth_supabase import get_current_user_id
-from .models import Avee, AgentUpdate, AgentFollower, UpdateReadStatus, Profile
+from db import SessionLocal
+from auth_supabase import get_current_user_id
+from models import Avee, AgentUpdate, AgentFollower, UpdateReadStatus, Profile
 
 router = APIRouter()
 

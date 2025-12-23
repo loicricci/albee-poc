@@ -11,11 +11,11 @@ from typing import Optional, List
 import uuid
 from datetime import datetime
 
-from .db import SessionLocal
-from .auth_supabase import get_current_user_id
-from .models import AgentUpdate, Avee, Document, DocumentChunk
-from .rag_utils import chunk_text
-from .openai_embed import embed_texts
+from db import SessionLocal
+from auth_supabase import get_current_user_id
+from models import AgentUpdate, Avee, Document, DocumentChunk
+from rag_utils import chunk_text
+from openai_embed import embed_texts
 
 router = APIRouter()
 

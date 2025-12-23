@@ -8,17 +8,17 @@ import io
 
 from pydantic import BaseModel  # ✅ added
 
-from .models import Document, DocumentChunk
-from .rag_utils import chunk_text
-from .openai_embed import embed_texts
-from . import voice_service
+from models import Document, DocumentChunk
+from rag_utils import chunk_text
+from openai_embed import embed_texts
+import voice_service
 
 from openai import OpenAI
 client = OpenAI()
 
-from .db import SessionLocal
-from .auth_supabase import get_current_user_id
-from .models import (
+from db import SessionLocal
+from auth_supabase import get_current_user_id
+from models import (
     Conversation,
     Message,
     Profile,
@@ -60,19 +60,19 @@ from dotenv import load_dotenv
 load_dotenv("backend/.env")
 
 # Import enhanced chat router
-from .chat_enhanced import router as chat_enhanced_router
+from chat_enhanced import router as chat_enhanced_router
 app.include_router(chat_enhanced_router, tags=["chat-enhanced"])
 
 # Import admin router
-from .admin import router as admin_router, require_admin
+from admin import router as admin_router, require_admin
 app.include_router(admin_router, tags=["admin"])
 
 # Import agent updates router
-from .agent_updates import router as agent_updates_router
+from agent_updates import router as agent_updates_router
 app.include_router(agent_updates_router, tags=["agent-updates"])
 
 # Import feed router
-from .feed import router as feed_router
+from feed import router as feed_router
 app.include_router(feed_router, tags=["feed"])
 
 
@@ -395,7 +395,7 @@ def create_avee(
             print(f"[Agent Creation] Starting automatic web research for agent {a.id} on topic: {topic}")
             
             try:
-                from .web_research import research_and_format_for_agent
+                from web_research import research_and_format_for_agent
                 
                 # Perform web research
                 documents = research_and_format_for_agent(topic, max_sources=research_max_sources)
@@ -1035,7 +1035,7 @@ def kickstart_agent_with_web_research(
     Returns:
         Summary of research results and documents added
     """
-    from .web_research import research_and_format_for_agent
+    from web_research import research_and_format_for_agent
     
     owner_uuid = _parse_uuid(user_id, "user_id")
     avee_uuid = _parse_uuid(avee_id, "avee_id")
@@ -1506,7 +1506,7 @@ def chat_ask(
     remaining_slots = max(1, 5 - num_updates)  # Reserve at least 1 slot for other docs
     
     if other_candidates:
-        from .reranker import rerank_chunks
+        from reranker import rerank_chunks
         top_other = rerank_chunks(q, other_candidates, top_k=remaining_slots)
     else:
         top_other = []

@@ -9,9 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func
 
-from .db import SessionLocal
-from .auth_supabase import get_current_user_id, get_current_user
-from .models import (
+from db import SessionLocal
+from auth_supabase import get_current_user_id, get_current_user
+from models import (
     Profile,
     Avee,
     Document,

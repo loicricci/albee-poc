@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 import json
 
-from .openai_embed import embed_texts
+from openai_embed import embed_texts
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
