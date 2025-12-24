@@ -433,7 +433,6 @@ async def chat_stream(
         yield format_sse({"event": "start", "model": "gpt-4o" if use_gpt4o else "gpt-4o-mini"})
         
         # Create new DB session for async generator
-        from .db import SessionLocal
         async_db = SessionLocal()
         
         try:

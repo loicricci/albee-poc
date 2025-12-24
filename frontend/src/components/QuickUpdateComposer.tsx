@@ -12,6 +12,7 @@ type Agent = {
 
 type QuickUpdateComposerProps = {
   agents: Agent[];
+  onUpdatePosted?: () => void; // Callback to refresh feed after posting
 };
 
 const TOPIC_PRESETS = [
@@ -40,7 +41,7 @@ function apiBase(): string {
   return base;
 }
 
-export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
+export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateComposerProps) {
   const [expanded, setExpanded] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<string>("");
   const [content, setContent] = useState("");
@@ -93,6 +94,11 @@ export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
       setSuccess(true);
       setExpanded(false);
 
+      // Trigger feed refresh callback if provided
+      if (onUpdatePosted) {
+        onUpdatePosted();
+      }
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
     } catch (e: any) {
@@ -104,17 +110,17 @@ export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
 
   if (agents.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[#E6E6E6] bg-[#FAFAFA] p-8 text-center">
-        <svg className="mx-auto h-12 w-12 text-[#2E3A59]/40 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="rounded-2xl border-2 border-dashed border-[#E6E6E6] bg-[#FAFAFA] p-6 md:p-8 text-center">
+        <svg className="mx-auto h-10 w-10 md:h-12 md:w-12 text-[#2E3A59]/40 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
-        <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">No agents yet</h3>
+        <h3 className="text-base md:text-lg font-semibold text-[#0B0B0C] mb-2">No agents yet</h3>
         <p className="text-sm text-[#2E3A59]/70 mb-4">
           Create an agent to start posting updates
         </p>
         <a
           href="/my-agents"
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 md:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
         >
           Create Agent
         </a>
@@ -138,28 +144,29 @@ export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
 
       <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
         {/* Header */}
-        <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-[#2E3A59] to-[#1a2236]">
-                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 md:px-6 py-3 md:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+              <div className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#2E3A59] to-[#1a2236]">
+                <svg className="h-4 w-4 md:h-5 md:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </div>
-              <div>
-                <h2 className="font-semibold text-[#0B0B0C]">What's new?</h2>
-                <p className="text-sm text-[#2E3A59]/70">Share an update with your followers</p>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-sm md:text-base text-[#0B0B0C]">What's new?</h2>
+                <p className="text-xs md:text-sm text-[#2E3A59]/70 hidden sm:block">Share an update with your followers</p>
               </div>
             </div>
             {!expanded && (
               <button
                 onClick={() => setExpanded(true)}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
+                className="flex items-center gap-1.5 md:gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 shrink-0"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-3.5 w-3.5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Post Update
+                <span className="hidden sm:inline">Post Update</span>
+                <span className="sm:hidden">Post</span>
               </button>
             )}
           </div>
@@ -167,11 +174,11 @@ export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
 
         {/* Composer */}
         {expanded && (
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className="p-4 md:p-6">
             {/* Error message */}
             {error && (
-              <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="mb-4 flex items-start gap-2 md:gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs md:text-sm text-red-800">
+                <svg className="h-4 w-4 md:h-5 md:w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <span>{error}</span>
@@ -241,7 +248,7 @@ export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
             </div>
 
             {/* Options */}
-            <div className="mb-4 grid grid-cols-2 gap-4">
+            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Topic</label>
                 <select
@@ -272,7 +279,7 @@ export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -280,14 +287,14 @@ export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
                   setContent("");
                   setError(null);
                 }}
-                className="rounded-lg border border-[#E6E6E6] px-6 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                className="rounded-lg border border-[#E6E6E6] px-4 md:px-6 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
                 disabled={submitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 md:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={submitting || !content.trim() || !selectedAgent}
               >
                 {submitting ? (
@@ -313,10 +320,10 @@ export function QuickUpdateComposer({ agents }: QuickUpdateComposerProps) {
 
         {/* Collapsed state with quick info */}
         {!expanded && (
-          <div className="px-6 py-4 text-sm text-[#2E3A59]/70">
-            <div className="flex items-center justify-between">
-              <span>Post updates that become part of your agent's knowledge base</span>
-              <span className="text-xs text-[#2E3A59]/50">{agents.length} agent{agents.length !== 1 ? "s" : ""} available</span>
+          <div className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm text-[#2E3A59]/70">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+              <span className="text-xs md:text-sm">Post updates that become part of your agent's knowledge base</span>
+              <span className="text-xs text-[#2E3A59]/50 shrink-0">{agents.length} agent{agents.length !== 1 ? "s" : ""} available</span>
             </div>
           </div>
         )}

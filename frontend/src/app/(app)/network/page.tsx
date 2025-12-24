@@ -224,9 +224,9 @@ function NetworkContent() {
   return (
     <div className="mx-auto max-w-5xl">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#0B0B0C]">Network</h1>
-        <p className="mt-2 text-[#2E3A59]/70">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#0B0B0C]">Network</h1>
+        <p className="mt-2 text-sm sm:text-base text-[#2E3A59]/70">
           Follow agents to chat with them
         </p>
       </div>
@@ -251,54 +251,57 @@ function NetworkContent() {
       {/* Suggested Agents */}
       {!loadingSuggested && suggestedAgents.length > 0 && (
         <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-6 py-4">
-            <h2 className="font-semibold text-[#0B0B0C]">Suggested Agents</h2>
-            <p className="mt-1 text-sm text-[#2E3A59]/70">Discover agents you might like to follow</p>
+          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 sm:px-6 py-3 sm:py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Suggested Agents</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Discover agents you might like to follow</p>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {suggestedAgents.map((agent) => (
                 <div
                   key={agent.avee_id}
-                  className="group relative flex flex-col overflow-hidden rounded-xl border border-[#E6E6E6] bg-gradient-to-br from-white to-[#FAFAFA] p-4 transition-all hover:border-[#2E3A59] hover:shadow-md"
+                  className="group relative flex flex-col overflow-hidden rounded-xl border border-[#E6E6E6] bg-gradient-to-br from-white to-[#FAFAFA] p-3 sm:p-4 transition-all hover:border-[#2E3A59] hover:shadow-md"
                 >
-                  <div className="flex flex-col items-center text-center flex-grow">
-                    {/* Avatar */}
-                    <div className="mb-3 h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center shadow-sm">
-                      {agent.avee_avatar_url ? (
-                        <img src={agent.avee_avatar_url} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                    </div>
+                  <div className="flex-1 flex flex-col">
+                    <div className="flex items-start gap-3 mb-3">
+                      {/* Avatar */}
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center shadow-sm">
+                        {agent.avee_avatar_url ? (
+                          <img src={agent.avee_avatar_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </div>
 
-                    {/* Agent Info */}
-                    <h3 className="font-semibold text-[#0B0B0C] truncate w-full">
-                      {agent.avee_display_name || agent.avee_handle}
-                    </h3>
-                    <p className="text-sm text-[#2E3A59]/70 truncate w-full">@{agent.avee_handle}</p>
+                      {/* Agent Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-[#0B0B0C] truncate text-sm">
+                          {agent.avee_display_name || agent.avee_handle}
+                        </h3>
+                        <p className="text-xs text-[#2E3A59]/70 truncate">@{agent.avee_handle}</p>
+                        <p className="mt-0.5 text-xs text-[#2E3A59]/50 truncate">
+                          by {agent.owner_display_name || agent.owner_handle}
+                        </p>
+                      </div>
+                    </div>
                     
-                    {/* Bio with fixed height */}
-                    <div className="mt-2 h-10 w-full">
+                    {/* Bio - with minimum height to ensure alignment */}
+                    <div className="min-h-[40px] mb-3 flex items-start">
                       {agent.avee_bio && (
-                        <p className="text-xs text-[#2E3A59]/70 line-clamp-2">
+                        <p className="text-xs text-[#2E3A59]/70 line-clamp-2 leading-relaxed">
                           {agent.avee_bio}
                         </p>
                       )}
                     </div>
-
-                    <p className="mt-2 text-xs text-[#2E3A59]/50">
-                      by {agent.owner_display_name || agent.owner_handle}
-                    </p>
                   </div>
 
                   {/* Follow Button - always at bottom */}
                   <button
                     onClick={() => selectAgent(agent)}
                     disabled={isFollowing}
-                    className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#1a2236] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#1a2236] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isFollowing ? (
                       <>
@@ -326,15 +329,15 @@ function NetworkContent() {
 
       {/* Follow box */}
       <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-        <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-6 py-4">
-          <h2 className="font-semibold text-[#0B0B0C]">Follow an Agent</h2>
-          <p className="mt-1 text-sm text-[#2E3A59]/70">Find and follow agents by their handle</p>
+        <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 sm:px-6 py-3 sm:py-4">
+          <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Follow an Agent</h2>
+          <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Find and follow agents by their handle</p>
         </div>
-        <div className="p-6">
-          <div className="flex gap-3">
-            <div className="relative flex-1" ref={dropdownRef}>
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
+            <div className="relative flex-1 w-full sm:w-auto" ref={dropdownRef}>
               <svg
-                className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                className="absolute left-3 top-1/2 h-4 w-4 sm:h-5 sm:w-5 -translate-y-1/2 text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -347,8 +350,8 @@ function NetworkContent() {
                 />
               </svg>
               <input
-                className="w-full rounded-lg border border-[#E6E6E6] py-3 pl-10 pr-10 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
-                placeholder="Enter agent handle (e.g., victor-hugo)"
+                className="w-full rounded-lg border border-[#E6E6E6] py-2.5 sm:py-3 pl-9 sm:pl-10 pr-10 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                placeholder="Search agents..."
                 value={handleInput}
                 onChange={(e) => setHandleInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -422,9 +425,10 @@ function NetworkContent() {
               )}
             </div>
             <button
-              className="flex items-center gap-2 rounded-lg bg-[#2E3A59] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!normalizedHandle || isFollowing}
               onClick={() => follow()}
+              title="Follow"
             >
               {isFollowing ? (
                 <>
@@ -432,21 +436,22 @@ function NetworkContent() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Following...
+                  <span className="hidden sm:inline">Following...</span>
                 </>
               ) : (
                 <>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Follow
+                  <span className="hidden sm:inline">Follow</span>
                 </>
               )}
             </button>
             <button
-              className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
               disabled={phase === "loading"}
               onClick={load}
+              title="Refresh"
             >
               <svg className={`h-4 w-4 ${phase === "loading" ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -462,10 +467,10 @@ function NetworkContent() {
 
       {/* List */}
       <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#E6E6E6] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[#E6E6E6] px-4 sm:px-6 py-3 sm:py-4">
           <div>
-            <h2 className="font-semibold text-[#0B0B0C]">Following</h2>
-            <p className="mt-1 text-sm text-[#2E3A59]/70">
+            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Following</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
               {phase === "loading" ? "Loading..." : `${items.length} agent${items.length !== 1 ? "s" : ""}`}
             </p>
           </div>
@@ -519,34 +524,38 @@ function NetworkContent() {
         {phase === "ready" && items.length > 0 && (
           <div className="divide-y divide-[#E6E6E6]">
             {items.map((x) => (
-              <div key={x.avee_id} className="group px-6 py-5 transition-colors hover:bg-[#2E3A59]/5">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex min-w-0 flex-1 items-center gap-4">
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center shadow-sm">
+              <div key={x.avee_id} className="group px-4 sm:px-6 py-4 sm:py-5 transition-colors hover:bg-[#2E3A59]/5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center shadow-sm">
                       {x.avee_avatar_url ? (
                         <img src={x.avee_avatar_url} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-6 w-6 sm:h-7 sm:w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-[#0B0B0C] truncate">
+                      <h3 className="text-sm sm:text-base font-semibold text-[#0B0B0C] truncate">
                         {x.avee_display_name || x.avee_handle}
-                        <span className="ml-2 text-[#2E3A59]/70 font-normal">@{x.avee_handle}</span>
+                        <span className="ml-2 text-xs sm:text-sm text-[#2E3A59]/70 font-normal hidden sm:inline">@{x.avee_handle}</span>
                       </h3>
-                      <p className="text-sm text-[#2E3A59]/70 truncate">
+                      <p className="text-xs sm:text-sm text-[#2E3A59]/70 truncate sm:hidden">
+                        @{x.avee_handle}
+                      </p>
+                      <p className="text-xs sm:text-sm text-[#2E3A59]/70 truncate hidden sm:block">
                         Owner: {x.owner_display_name || x.owner_handle} <span className="text-[#2E3A59]/50">(@{x.owner_handle})</span>
                       </p>
                       {x.avee_bio && (
-                        <p className="text-xs text-[#2E3A59]/70 mt-1 line-clamp-1">{x.avee_bio}</p>
+                        <p className="text-xs text-[#2E3A59]/70 mt-1 line-clamp-1 hidden sm:block">{x.avee_bio}</p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
+                  {/* Desktop: Full buttons with text */}
+                  <div className="hidden sm:flex shrink-0 items-center gap-2">
                     <ChatButton
                       handle={x.avee_handle}
                       displayName={x.avee_display_name || x.avee_handle}
@@ -570,6 +579,30 @@ function NetworkContent() {
                       View
                     </Link>
                   </div>
+
+                  {/* Mobile: Icon-only buttons */}
+                  <div className="flex sm:hidden shrink-0 items-center gap-1.5">
+                    <ChatButton
+                      handle={x.avee_handle}
+                      displayName={x.avee_display_name || x.avee_handle}
+                      className="flex items-center justify-center rounded-lg bg-[#2E3A59] p-2.5 text-white shadow-sm transition-all hover:bg-[#1a2236]"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </ChatButton>
+
+                    <Link
+                      className="flex items-center justify-center rounded-lg border border-[#E6E6E6] p-2.5 text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      href={`/my-agents/${encodeURIComponent(x.avee_handle)}`}
+                      title="View agent details"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -579,14 +612,14 @@ function NetworkContent() {
 
       {/* Notes */}
       <div className="mt-6 overflow-hidden rounded-xl border border-[#2E3A59]/20 bg-gradient-to-br from-[#2E3A59]/5 to-[#FAFAFA] shadow-sm">
-        <div className="p-6">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#0B0B0C]">
-            <svg className="h-5 w-5 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="p-4 sm:p-6">
+          <h3 className="mb-3 flex items-center gap-2 text-sm sm:text-base font-semibold text-[#0B0B0C]">
+            <svg className="h-5 w-5 text-[#2E3A59] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             How It Works
           </h3>
-          <ul className="space-y-2 text-sm text-[#2E3A59]">
+          <ul className="space-y-2 text-xs sm:text-sm text-[#2E3A59]">
             <li className="flex items-start gap-2">
               <svg className="h-5 w-5 shrink-0 text-[#2E3A59] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

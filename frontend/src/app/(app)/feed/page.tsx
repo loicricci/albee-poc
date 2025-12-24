@@ -130,39 +130,39 @@ function AveeFeedCard({ avee }: { avee: typeof mockFeedData[0] }) {
   const [isStarred, setIsStarred] = useState(avee.isStarred);
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm transition-all hover:shadow-lg">
       {/* Update count badge */}
-      <div className="absolute right-6 top-6 flex flex-col items-center rounded-xl border-2 border-blue-100 bg-gradient-to-br from-[#e6eaff] to-[#f0f2ff] px-4 py-2">
-        <div className="text-lg font-bold text-[#001f98]">{avee.updateCount}</div>
-        <div className="text-xs font-medium text-gray-600">updates</div>
+      <div className="absolute right-4 top-4 md:right-6 md:top-6 flex flex-col items-center rounded-xl border-2 border-blue-100 bg-gradient-to-br from-[#e6eaff] to-[#f0f2ff] px-3 py-1.5 md:px-4 md:py-2">
+        <div className="text-base md:text-lg font-bold text-[#001f98]">{avee.updateCount}</div>
+        <div className="text-xs font-medium text-gray-600 hidden sm:block">updates</div>
       </div>
 
       {/* Main content */}
-      <div className="mb-4 flex items-start gap-4">
+      <div className="mb-3 md:mb-4 flex items-start gap-3 md:gap-4">
         {/* Avatar */}
-        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm">
+        <div className="h-12 w-12 md:h-16 md:w-16 shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm">
           {avee.avatarUrl ? (
             <img src={avee.avatarUrl} alt={avee.name} className="h-full w-full object-cover" />
           ) : (
-            <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6 md:h-8 md:w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           )}
         </div>
 
         {/* Avee info */}
-        <div className="flex-1 min-w-0 pr-20">
+        <div className="flex-1 min-w-0 pr-16 md:pr-20">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold text-gray-900 truncate">{avee.name}</h3>
+            <h3 className="text-base md:text-lg font-bold text-gray-900 truncate">{avee.name}</h3>
             <button
               onClick={() => setIsStarred(!isStarred)}
-              className="shrink-0 text-xl transition-transform hover:scale-110"
+              className="shrink-0 text-lg md:text-xl transition-transform hover:scale-110"
               aria-label={isStarred ? "Unstar" : "Star"}
             >
               {isStarred ? "⭐" : "☆"}
             </button>
           </div>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs md:text-sm text-gray-500">
             @{avee.handle} · {formatFollowers(avee.followers)} followers
           </p>
           <p className="mt-1 text-xs text-gray-400">
@@ -172,14 +172,14 @@ function AveeFeedCard({ avee }: { avee: typeof mockFeedData[0] }) {
       </div>
 
       {/* Latest update box */}
-      <div className="mb-4 rounded-lg border border-blue-200 bg-gradient-to-r from-[#e6eaff] to-[#f0f2ff] px-4 py-3">
-        <p className="text-sm font-medium text-gray-900">{avee.latestNews}</p>
+      <div className="mb-3 md:mb-4 rounded-lg border border-blue-200 bg-gradient-to-r from-[#e6eaff] to-[#f0f2ff] px-3 py-2 md:px-4 md:py-3">
+        <p className="text-xs md:text-sm font-medium text-gray-900">{avee.latestNews}</p>
       </div>
 
       {/* CTA Button */}
       <Link
         href={`/chat/${avee.handle}`}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#001f98] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.02]"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#001f98] px-4 py-2 md:px-6 md:py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.02]"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -198,7 +198,7 @@ function LeftSidebar({
   avees: Avee[];
 }) {
   return (
-    <div className="w-80 shrink-0 space-y-6">
+    <div className="hidden xl:block xl:w-80 shrink-0 space-y-6">
       {/* Profile Card */}
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="bg-[#001f98] p-4">
@@ -362,23 +362,23 @@ function LeftSidebar({
 function TopNavigation({ profile }: { profile: Profile | null }) {
   return (
     <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-xl shadow-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-3 md:py-4">
         {/* Left side - Logo and Search */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
           <Link
             href="/feed"
-            className="group flex items-center gap-2"
+            className="group flex items-center gap-2 shrink-0"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#001f98] shadow-md transition-transform group-hover:scale-105">
-              <span className="text-lg font-bold text-white">A</span>
+            <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-xl bg-[#001f98] shadow-md transition-transform group-hover:scale-105">
+              <span className="text-base md:text-lg font-bold text-white">A</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">AVEE</span>
+            <span className="hidden sm:inline text-xl font-bold text-gray-900">AVEE</span>
           </Link>
 
-          <div className="w-96">
+          <div className="flex-1 max-w-md">
             <div className="relative">
               <svg
-                className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                className="absolute left-3 top-1/2 h-4 w-4 md:h-5 md:w-5 -translate-y-1/2 text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -392,18 +392,18 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
               </svg>
               <input
                 type="text"
-                placeholder="Search Avees..."
-                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="Search..."
+                className="w-full rounded-lg border border-gray-300 bg-white py-1.5 md:py-2 pl-9 md:pl-10 pr-3 md:pr-4 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>
         </div>
 
         {/* Right side - Navigation buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 md:gap-3 shrink-0">
           <Link
             href="/feed"
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-[#001f98]"
+            className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-blue-50 text-[#001f98]"
             title="Home Feed"
           >
             <svg
@@ -412,7 +412,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
               viewBox="0 0 24 24"
               strokeWidth={2}
               stroke="currentColor"
-              className="h-5 w-5"
+              className="h-4 w-4 md:h-5 md:w-5"
             >
               <path
                 strokeLinecap="round"
@@ -424,7 +424,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
 
           <Link
             href="/network"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
+            className="hidden sm:flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
             title="Network"
           >
             <svg
@@ -433,7 +433,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
               viewBox="0 0 24 24"
               strokeWidth={2}
               stroke="currentColor"
-              className="h-5 w-5"
+              className="h-4 w-4 md:h-5 md:w-5"
             >
               <path
                 strokeLinecap="round"
@@ -445,7 +445,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
 
           <Link
             href="/notifications"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
+            className="hidden sm:flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
             title="Notifications"
           >
             <svg
@@ -454,7 +454,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
               viewBox="0 0 24 24"
               strokeWidth={2}
               stroke="currentColor"
-              className="h-5 w-5"
+              className="h-4 w-4 md:h-5 md:w-5"
             >
               <path
                 strokeLinecap="round"
@@ -466,7 +466,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
 
           <Link
             href="/profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#001f98] text-white transition-all hover:bg-[#001670] overflow-hidden border-2 border-transparent hover:border-blue-200"
+            className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-[#001f98] text-white transition-all hover:bg-[#001670] overflow-hidden border-2 border-transparent hover:border-blue-200"
             title="Profile"
           >
             {profile?.avatar_url ? (
@@ -482,7 +482,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
                 viewBox="0 0 24 24"
                 strokeWidth={2}
                 stroke="currentColor"
-                className="h-5 w-5"
+                className="h-4 w-4 md:h-5 md:w-5"
               >
                 <path
                   strokeLinecap="round"
@@ -499,6 +499,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
 }
 
 export default function FeedPage() {
+  // Feed page - sidebar removed for better mobile/tablet experience
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avees, setAvees] = useState<Avee[]>([]);
@@ -540,37 +541,24 @@ export default function FeedPage() {
     <div className="min-h-screen bg-gray-50">
       <TopNavigation profile={profile} />
 
-      <div className="mx-auto flex max-w-7xl gap-6 px-6 py-8">
-        {/* Left Sidebar */}
-        {loading ? (
-          <div className="w-80 shrink-0">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Loading...
-              </div>
-            </div>
-          </div>
-        ) : (
-          <LeftSidebar profile={profile} avees={avees} />
-        )}
-
+      <div className="mx-auto max-w-4xl px-4 md:px-6 py-4 md:py-8">
         {/* Main Feed */}
-        <main className="flex-1">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Your Feed</h1>
+        <main className="w-full">
+          <div className="mb-4 md:mb-6">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Your Feed</h1>
             <p className="mt-1 text-sm text-gray-600">Latest updates from your followed Avees</p>
           </div>
 
           {/* Quick Update Composer */}
-          <div className="mb-6">
-            <QuickUpdateComposer agents={avees} />
+          <div className="mb-4 md:mb-6">
+            <QuickUpdateComposer agents={avees} onUpdatePosted={() => {
+              // For now, just refresh the page to show new updates
+              // In production, you'd want to fetch the feed data properly
+              window.location.reload();
+            }} />
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {mockFeedData.map((avee) => (
               <AveeFeedCard key={avee.id} avee={avee} />
             ))}

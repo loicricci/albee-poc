@@ -115,15 +115,10 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:border-[#2E3A59]/20">
-      {/* Update count badge with unread indicator */}
-      <div className="absolute right-6 top-6 flex flex-col items-center rounded-xl border-2 border-[#2E3A59]/20 bg-gradient-to-br from-[#2E3A59]/10 to-[#2E3A59]/5 px-4 py-2">
-        <div className="flex items-center gap-1">
-          <div className="text-lg font-bold text-[#2E3A59]">{item.total_updates}</div>
-          {item.unread_count > 0 && (
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C8A24A] text-[10px] font-bold text-white">
-              {item.unread_count}
-            </div>
-          )}
+      {/* Update count badge */}
+      <div className="absolute right-6 top-6 flex flex-col items-center gap-1">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A24A] text-lg font-bold text-white shadow-md">
+          {item.unread_count > 0 ? item.unread_count : item.total_updates}
         </div>
         <div className="text-xs font-medium text-[#2E3A59]/70">updates</div>
       </div>
@@ -617,9 +612,9 @@ export default function AppHomePage() {
   return (
     <NewLayoutWrapper>
       <div className="mx-auto flex max-w-7xl gap-6">
-        {/* Left Sidebar */}
+        {/* Left Sidebar - Hidden on smaller screens (< 1024px) */}
         {loading ? (
-          <div className="w-80 shrink-0">
+          <div className="hidden lg:block w-80 shrink-0">
             <div className="rounded-2xl border border-[#E6E6E6] bg-white p-6">
               <div className="flex items-center gap-2 text-sm text-[#2E3A59]/70">
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
@@ -631,7 +626,9 @@ export default function AppHomePage() {
             </div>
           </div>
         ) : (
-          <LeftSidebar profile={profile} avees={avees} recommendations={recommendations} onFollowAgent={handleFollowAgent} />
+          <div className="hidden lg:block">
+            <LeftSidebar profile={profile} avees={avees} recommendations={recommendations} onFollowAgent={handleFollowAgent} />
+          </div>
         )}
 
         {/* Main Feed */}
@@ -653,7 +650,17 @@ export default function AppHomePage() {
 
           {/* Quick Update Composer */}
           <div className="mb-6">
-            <QuickUpdateComposer agents={avees} />
+            <QuickUpdateComposer agents={avees} onUpdatePosted={async () => {
+              // Refresh feed after posting update
+              try {
+                const token = await getAccessToken();
+                const f = await apiGet<FeedResponse>("/feed?limit=10", token);
+                setFeedData(f);
+                localStorage.setItem('app_feed', JSON.stringify(f));
+              } catch (e) {
+                console.error("Failed to refresh feed:", e);
+              }
+            }} />
           </div>
 
           {/* Feed Content */}

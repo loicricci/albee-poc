@@ -421,59 +421,61 @@ export default function AgentEditorPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6">
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agent Editor</h1>
-          <p className="mt-2 text-gray-600">
+      <div className="mb-6 sm:mb-8">
+        <div className="mb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Agent Editor</h1>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">
             Configure <span className="font-semibold">@{handle}</span>
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link
             href="/my-agents"
-            className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back
+            <span className="hidden sm:inline">Back</span>
+            <span className="sm:hidden">Back</span>
           </Link>
           <ChatButton
             handle={handle}
             displayName={agent?.display_name || handle}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            Test Chat
+            <span className="hidden sm:inline">Test Chat</span>
+            <span className="sm:hidden">Chat</span>
           </ChatButton>
           <button
             onClick={load}
-            className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
       </div>
 
       {/* Messages */}
       {error && (
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 animate-slide-up">
-          <svg className="h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="mb-4 sm:mb-6 flex items-start gap-2 sm:gap-3 rounded-lg border border-red-200 bg-red-50 p-3 sm:p-4 animate-slide-up">
+          <svg className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-red-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <div className="flex-1">
-            <div className="text-sm font-medium text-red-800">{error}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs sm:text-sm font-medium text-red-800 break-words">{error}</div>
           </div>
-          <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800 shrink-0">
+            <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -481,15 +483,15 @@ export default function AgentEditorPage() {
       )}
 
       {okMsg && (
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 animate-slide-up">
-          <svg className="h-5 w-5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="mb-4 sm:mb-6 flex items-start gap-2 sm:gap-3 rounded-lg border border-green-200 bg-green-50 p-3 sm:p-4 animate-slide-up">
+          <svg className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-green-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <div className="flex-1">
-            <div className="text-sm font-medium text-green-800">{okMsg}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs sm:text-sm font-medium text-green-800 break-words">{okMsg}</div>
           </div>
-          <button onClick={() => setOkMsg(null)} className="text-green-600 hover:text-green-800">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={() => setOkMsg(null)} className="text-green-600 hover:text-green-800 shrink-0">
+            <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -499,24 +501,24 @@ export default function AgentEditorPage() {
       <div className="space-y-6">
         {/* Voice Profile Generation Card */}
         <div className="overflow-hidden rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 shadow-sm">
-          <div className="flex items-center justify-between border-b border-purple-100 bg-white/50 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600">
-                <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-start sm:items-center justify-between border-b border-purple-100 bg-white/50 px-4 sm:px-6 py-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600 shrink-0">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                   <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                 </svg>
               </div>
-              <div>
-                <h2 className="font-semibold text-gray-900">🎙️ AI Profile Generation from Voice</h2>
-                <p className="mt-1 text-sm text-gray-600">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">🎙️ AI Profile Generation from Voice</h2>
+                <p className="mt-1 text-xs sm:text-sm text-gray-600">
                   Record a 30-second intro and let AI create your persona
                 </p>
               </div>
             </div>
             <button
               onClick={() => setShowVoiceSection(!showVoiceSection)}
-              className="rounded-lg p-2 transition-colors hover:bg-white/50"
+              className="rounded-lg p-2 transition-colors hover:bg-white/50 shrink-0 ml-2"
             >
               <svg
                 className={`h-5 w-5 text-gray-600 transition-transform ${
@@ -532,13 +534,13 @@ export default function AgentEditorPage() {
           </div>
 
           {showVoiceSection && (
-            <div className="p-6">
-              <div className="mb-4 rounded-lg border border-purple-200 bg-white p-4 text-sm">
+            <div className="p-4 sm:p-6">
+              <div className="mb-4 rounded-lg border border-purple-200 bg-white p-3 sm:p-4 text-xs sm:text-sm">
                 <div className="flex items-start gap-3">
-                  <svg className="h-5 w-5 shrink-0 text-purple-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-purple-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z" />
                   </svg>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="font-semibold text-gray-900 mb-1">How it works:</div>
                     <ol className="list-decimal list-inside space-y-1 text-gray-700">
                       <li>Record a 30-second voice introduction talking about yourself</li>
@@ -559,14 +561,14 @@ export default function AgentEditorPage() {
               )}
 
               {generatingFromVoice && (
-                <div className="flex items-center gap-3 rounded-lg border border-purple-200 bg-white p-6">
-                  <svg className="h-8 w-8 animate-spin text-purple-600" viewBox="0 0 24 24">
+                <div className="flex items-start sm:items-center gap-3 rounded-lg border border-purple-200 bg-white p-4 sm:p-6">
+                  <svg className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-purple-600 shrink-0" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <div>
-                    <div className="font-semibold text-gray-900">Generating your profile...</div>
-                    <div className="text-sm text-gray-600 mt-1">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm sm:text-base font-semibold text-gray-900">Generating your profile...</div>
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1">
                       Transcribing audio and analyzing your personality with GPT-4o
                     </div>
                   </div>
@@ -574,39 +576,39 @@ export default function AgentEditorPage() {
               )}
 
               {voiceGenerationResult && (
-                <div className="space-y-4 rounded-lg border border-purple-200 bg-white p-6">
+                <div className="space-y-3 sm:space-y-4 rounded-lg border border-purple-200 bg-white p-4 sm:p-6">
                   <div>
-                    <div className="mb-2 text-sm font-semibold text-gray-900">📝 Transcript:</div>
-                    <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700 italic">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">📝 Transcript:</div>
+                    <div className="rounded-lg bg-gray-50 p-2 sm:p-3 text-xs sm:text-sm text-gray-700 italic break-words">
                       "{voiceGenerationResult.transcript}"
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-sm font-semibold text-gray-900">🎭 Generated Persona:</div>
-                    <div className="max-h-40 overflow-y-auto rounded-lg bg-gray-50 p-3 text-xs font-mono text-gray-700">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">🎭 Generated Persona:</div>
+                    <div className="max-h-32 sm:max-h-40 overflow-y-auto rounded-lg bg-gray-50 p-2 sm:p-3 text-xs font-mono text-gray-700 break-words">
                       {voiceGenerationResult.persona}
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-sm font-semibold text-gray-900">📋 Generated Bio:</div>
-                    <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">📋 Generated Bio:</div>
+                    <div className="rounded-lg bg-gray-50 p-2 sm:p-3 text-xs sm:text-sm text-gray-700 break-words">
                       {voiceGenerationResult.bio}
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-sm font-semibold text-gray-900">✨ Display Name:</div>
-                    <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">✨ Display Name:</div>
+                    <div className="rounded-lg bg-gray-50 p-2 sm:p-3 text-xs sm:text-sm text-gray-700 break-words">
                       {voiceGenerationResult.display_name}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-2">
                     <button
                       onClick={applyVoiceProfile}
-                      className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -618,7 +620,7 @@ export default function AgentEditorPage() {
                         setVoiceGenerationResult(null);
                         setShowVoiceSection(false);
                       }}
-                      className="rounded-lg border border-gray-300 px-6 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                      className="rounded-lg border border-gray-300 px-4 sm:px-6 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
                     >
                       Discard
                     </button>
@@ -631,14 +633,14 @@ export default function AgentEditorPage() {
 
         {/* Agent Details Card */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 px-6 py-4">
-            <h2 className="font-semibold text-gray-900">Agent Details</h2>
-            <p className="mt-1 text-sm text-gray-600">Basic information and appearance</p>
+          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Agent Details</h2>
+            <p className="mt-1 text-xs sm:text-sm text-gray-600">Basic information and appearance</p>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
               {/* Avatar Upload */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 max-w-xs mx-auto lg:mx-0 w-full">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Avatar</label>
                 <div
                   onDragOver={onAvatarDragOver}
@@ -704,7 +706,7 @@ export default function AgentEditorPage() {
               <div className="lg:col-span-2 space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-900">Handle</label>
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 font-mono">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 font-mono break-all">
                     @{agent.handle}
                   </div>
                   <p className="mt-1 text-xs text-gray-500">Handle cannot be changed</p>
@@ -717,7 +719,7 @@ export default function AgentEditorPage() {
                   </label>
                   <input
                     type="text"
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 sm:py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     value={displayName}
                     onChange={(e) => {
                       setDisplayName(e.target.value);
@@ -734,7 +736,7 @@ export default function AgentEditorPage() {
                     <span className="ml-2 text-xs font-normal text-gray-500">(max 500 chars)</span>
                   </label>
                   <textarea
-                    className="h-24 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="h-24 w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 sm:py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     value={bio}
                     onChange={(e) => {
                       setBio(e.target.value);
@@ -749,7 +751,7 @@ export default function AgentEditorPage() {
             </div>
 
             {detailsMsg && (
-              <div className={`mt-4 rounded-lg px-4 py-3 text-sm ${
+              <div className={`mt-4 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${
                 detailsMsg.includes("success") || detailsMsg.includes("saved")
                   ? "bg-green-50 text-green-800 border border-green-200"
                   : "bg-blue-50 text-blue-800 border border-blue-200"
@@ -758,11 +760,11 @@ export default function AgentEditorPage() {
               </div>
             )}
 
-            <div className="mt-6 flex items-center justify-end">
+            <div className="mt-4 sm:mt-6 flex items-center justify-end">
               <button
                 onClick={onSaveDetails}
                 disabled={detailsSaving || uploadingAvatar}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {detailsSaving ? (
                   <>
@@ -787,20 +789,20 @@ export default function AgentEditorPage() {
 
         {/* Persona Card */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4">
-            <div className="flex items-center justify-between">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50 px-4 sm:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h2 className="font-semibold text-gray-900">Persona</h2>
-                <p className="mt-1 text-sm text-gray-600">Define personality, tone, and behavior</p>
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">Persona</h2>
+                <p className="mt-1 text-xs sm:text-sm text-gray-600">Define personality, tone, and behavior</p>
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 shrink-0">
                 {personaMeta.chars.toLocaleString()} chars · {personaMeta.lines} lines
               </div>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <textarea
-              className="h-64 w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="h-48 sm:h-64 w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 sm:py-3 font-mono text-xs sm:text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               value={persona}
               onChange={(e) => {
                 setPersona(e.target.value);
@@ -810,7 +812,7 @@ export default function AgentEditorPage() {
             />
             
             {personaMsg && (
-              <div className={`mt-3 rounded-lg px-4 py-2 text-sm ${
+              <div className={`mt-3 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm ${
                 personaMsg.includes("success") || personaMsg.includes("saved")
                   ? "bg-green-50 text-green-800"
                   : "bg-red-50 text-red-800"
@@ -819,14 +821,14 @@ export default function AgentEditorPage() {
               </div>
             )}
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="text-xs text-gray-500">
                 Injected as system prompt. Max 40,000 characters.
               </div>
               <button
                 onClick={onSavePersona}
                 disabled={personaSaving}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {personaSaving ? (
                   <>
@@ -856,16 +858,16 @@ export default function AgentEditorPage() {
 
         {/* Training Data Card */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4">
-            <h2 className="font-semibold text-gray-900">Training Data</h2>
-            <p className="mt-1 text-sm text-gray-600">Add knowledge and context for this Agent</p>
+          <div className="border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50 px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Training Data</h2>
+            <p className="mt-1 text-xs sm:text-sm text-gray-600">Add knowledge and context for this Agent</p>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div>
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-1">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Layer</label>
                 <select
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={trainLayer}
                   onChange={(e) => setTrainLayer(e.target.value as any)}
                 >
@@ -875,30 +877,30 @@ export default function AgentEditorPage() {
                 </select>
               </div>
 
-              <div className="md:col-span-2">
+              <div className="sm:col-span-2">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Title (optional)</label>
                 <input
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={trainTitle}
                   onChange={(e) => setTrainTitle(e.target.value)}
                   placeholder="e.g., Bio, FAQ, Memories"
                 />
               </div>
 
-              <div className="md:col-span-3">
+              <div className="sm:col-span-3">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Source (optional)</label>
                 <input
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={trainSource}
                   onChange={(e) => setTrainSource(e.target.value)}
                   placeholder="e.g., LinkedIn, website, notes"
                 />
               </div>
 
-              <div className="md:col-span-3">
+              <div className="sm:col-span-3">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Content</label>
                 <textarea
-                  className="h-40 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="h-32 sm:h-40 w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 sm:py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={trainContent}
                   onChange={(e) => setTrainContent(e.target.value)}
                   placeholder="Paste training content here..."
@@ -910,7 +912,7 @@ export default function AgentEditorPage() {
               <button
                 onClick={onAddDoc}
                 disabled={training}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {training ? (
                   <>
@@ -935,26 +937,26 @@ export default function AgentEditorPage() {
 
         {/* Permissions Card */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4">
-            <h2 className="font-semibold text-gray-900">Permissions</h2>
-            <p className="mt-1 text-sm text-gray-600">Control who can access different layers</p>
+          <div className="border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50 px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Permissions</h2>
+            <p className="mt-1 text-xs sm:text-sm text-gray-600">Control who can access different layers</p>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="md:col-span-2">
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-2">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Viewer Handle</label>
                 <input
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={viewerHandle}
                   onChange={(e) => setViewerHandle(e.target.value)}
                   placeholder="e.g., john-doe"
                 />
               </div>
 
-              <div>
+              <div className="sm:col-span-1">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Max Layer</label>
                 <select
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={maxLayer}
                   onChange={(e) => setMaxLayer(e.target.value as any)}
                 >
@@ -969,7 +971,7 @@ export default function AgentEditorPage() {
               <button
                 onClick={onSetPermission}
                 disabled={savingPerm}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {savingPerm ? (
                   <>
@@ -994,16 +996,16 @@ export default function AgentEditorPage() {
 
         {/* Test Card */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
-            <h2 className="font-semibold text-gray-900">Test Agent</h2>
-            <p className="mt-1 text-sm text-gray-600">Ask questions to test responses</p>
+          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Test Agent</h2>
+            <p className="mt-1 text-xs sm:text-sm text-gray-600">Ask questions to test responses</p>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              <div>
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+              <div className="sm:col-span-1">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Layer</label>
                 <select
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={testLayer}
                   onChange={(e) => setTestLayer(e.target.value as any)}
                 >
@@ -1013,10 +1015,10 @@ export default function AgentEditorPage() {
                 </select>
               </div>
 
-              <div className="md:col-span-3">
+              <div className="sm:col-span-3">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">Question</label>
                 <input
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Ask something..."
@@ -1024,11 +1026,11 @@ export default function AgentEditorPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <button
                 onClick={onAsk}
                 disabled={asking}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {asking ? (
                   <>
@@ -1060,7 +1062,7 @@ export default function AgentEditorPage() {
             </div>
 
             {answer && (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm whitespace-pre-wrap">
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4 text-xs sm:text-sm whitespace-pre-wrap break-words">
                 {answer}
               </div>
             )}

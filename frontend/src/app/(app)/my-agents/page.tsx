@@ -424,27 +424,28 @@ function MyAgentsContent() {
         ) : (
           <div className="divide-y divide-[#E6E6E6]">
             {agents.map((a) => (
-              <div key={a.handle} className="group px-6 py-5 transition-colors hover:bg-[#2E3A59]/5">
-                  <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div key={a.handle} className="group px-4 sm:px-6 py-4 sm:py-5 transition-colors hover:bg-[#2E3A59]/5">
+                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     {a.avatar_url ? (
                       <img
                         src={a.avatar_url}
                         alt={a.display_name || a.handle}
-                        className="h-14 w-14 shrink-0 rounded-xl border-2 border-[#E6E6E6] object-cover shadow-sm"
+                        className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl border-2 border-[#E6E6E6] object-cover shadow-sm"
                       />
                     ) : (
-                      <div className="h-14 w-14 shrink-0 rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center text-white font-bold shadow-sm">
+                      <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center text-white font-bold shadow-sm text-sm sm:text-base">
                         {(a.display_name || a.handle)[0].toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-[#0B0B0C] truncate">{a.display_name || a.handle}</h3>
-                      <p className="text-sm text-[#2E3A59]/70 truncate">@{a.handle}</p>
+                      <h3 className="font-semibold text-[#0B0B0C] truncate text-sm sm:text-base">{a.display_name || a.handle}</h3>
+                      <p className="text-xs sm:text-sm text-[#2E3A59]/70 truncate">@{a.handle}</p>
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
+                  {/* Desktop: Full buttons with text */}
+                  <div className="hidden sm:flex shrink-0 items-center gap-2">
                     <Link
                       className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
                       href={`/my-agents/${a.handle}`}
@@ -474,6 +475,39 @@ function MyAgentsContent() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                       Delete
+                    </button>
+                  </div>
+
+                  {/* Mobile: Icon-only buttons in vertical layout */}
+                  <div className="flex sm:hidden shrink-0 items-center gap-1.5">
+                    <Link
+                      className="flex items-center justify-center rounded-lg border border-[#E6E6E6] p-2.5 text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      href={`/my-agents/${a.handle}`}
+                      title="Edit"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </Link>
+
+                    <ChatButton
+                      handle={a.handle}
+                      displayName={a.display_name || a.handle}
+                      className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] p-2.5 text-white shadow-sm transition-all hover:shadow-md"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </ChatButton>
+
+                    <button
+                      onClick={() => openDeleteConfirm(a)}
+                      className="flex items-center justify-center rounded-lg border border-red-300 p-2.5 text-red-600 transition-colors hover:bg-red-50"
+                      title="Delete"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   </div>
                 </div>
