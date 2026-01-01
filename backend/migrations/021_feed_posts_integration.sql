@@ -29,3 +29,4 @@ WHERE tablename = 'posts'
     AND indexname LIKE 'idx_posts_%'
 ORDER BY indexname;
 
+

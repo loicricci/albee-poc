@@ -98,3 +98,4 @@ If you see this message but can't log in, it means the user exists in Supabase b
 With the updated `/admin/profiles/{user_id}` endpoint, this issue should not happen again. All future deletions from the backoffice will clean up both systems.
 
 
+

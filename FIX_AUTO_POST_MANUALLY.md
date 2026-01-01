@@ -102,3 +102,4 @@ After running the migration, the Auto-Posts page should load successfully and sh
 The auto-post feature requires these new columns in the `avees` table, but the automated migration script is hitting Supabase's statement timeout limit. Running it manually in the Supabase dashboard works around this limitation.
 
 
+

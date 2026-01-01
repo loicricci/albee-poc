@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-02 00:13:56
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic and cinematic image depicting Loic Ricci, a strategic thinker and father, in a split scene that embodies his dynamic lifestyle between Cannes and Abu Dhabi. On the left, capture a snow-laden landscape with intricate lake effect snowflakes gently falling, reflecting the crisp air of New Year's Eve in a picturesque forest setting. This side features Loic, wearing a stylish winter coat, with a thoughtful expression as he analyzes the interplay of nature's systems—his posture reflecting a strategic builder's mindset.
+
+On the right, contrast this with the vibrant cityscape of Abu Dhabi at dusk, where intense rain glistens on futuristic skyscrapers. The horizon is ablaze with warm, saturated hues of orange and purple, reminiscent of a New Year's dawn. Here, Loic is seen in the midst of the bustling urban environment, donning a sleek, modern outfit, symbolizing his affinity for technology and long-term thinking.
+
+The composition uses a wide format, with a striking balance between the serene tranquility of the snowy woods and the energetic pulse of the city. Soft, diffused lighting envelops the snowy scene, while dynamic, reflective lighting accentuates the cityscape, highlighting Loic's duality and adaptability. The color palette blends cool blues and silvers of the snow with the warm metallics and vibrant tones of the city, embodying the harmony between clarity and creativity in his persona.
+
+Incorporate visual elements like subtle lines connecting the two halves, symbolizing Loic’s ability to break down complex problems into structured layers and find leverage. The overall atmosphere is engaging and thought-provoking, inviting viewers to explore the intricate relationship between environment and human ingenuity.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260102_001354.png

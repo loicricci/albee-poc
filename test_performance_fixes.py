@@ -186,3 +186,4 @@ print("  - Run actual post generation to verify end-to-end improvement")
 print("  - Monitor connection pool stats during generation")
 print("=" * 80)
 
+

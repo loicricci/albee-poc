@@ -20,6 +20,7 @@ from models import (
     Profile,
     Avee
 )
+from twitter_posting_service import get_twitter_posting_service
 
 router = APIRouter()
 
@@ -626,3 +627,147 @@ def unshare_post(
     return {"message": "Share removed"}
 
 
+# =====================================
+# TWITTER INTEGRATION ENDPOINTS
+# =====================================
+
+@router.post("/posts/{post_id}/post-to-twitter")
+def post_to_twitter(
+    post_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Manually post to Twitter (for manual approval mode)
+    
+    User must own the agent that created the post
+    """
+    user_uuid = uuid.UUID(user_id)
+    post_uuid = uuid.UUID(post_id)
+    
+    # Get posting service
+    posting_service = get_twitter_posting_service()
+    
+    # Post to Twitter
+    result = posting_service.post_to_twitter(post_uuid, user_uuid, db)
+    
+    if not result["success"]:
+        raise HTTPException(
+            status_code=400,
+            detail=result.get("error", "Failed to post to Twitter")
+        )
+    
+    return {
+        "success": True,
+        "twitter_url": result["twitter_url"],
+        "tweet_id": result.get("tweet_id")
+    }
+
+
+@router.get("/posts/{post_id}/twitter-status")
+def get_post_twitter_status(
+    post_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Check if post can be shared to Twitter
+    
+    Returns status and reason if it can't be posted
+    """
+    post_uuid = uuid.UUID(post_id)
+    
+    # Get post
+    post = db.query(Post).filter(Post.id == post_uuid).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Check if already posted
+    if post.posted_to_twitter:
+        return {
+            "can_post": False,
+            "reason": "Already posted to Twitter",
+            "twitter_url": post.twitter_post_url
+        }
+    
+    # Check if post has an agent
+    if not post.agent_id:
+        return {
+            "can_post": False,
+            "reason": "Post has no associated agent"
+        }
+    
+    # Check agent Twitter status
+    posting_service = get_twitter_posting_service()
+    status = posting_service.can_post_to_twitter(post.agent_id, db)
+    
+    return status
+
+
+@router.get("/posts/pending-twitter")
+def get_pending_twitter_posts(
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Get posts pending Twitter approval for user's agents
+    
+    Returns posts from agents with manual approval mode that haven't been posted yet
+    """
+    user_uuid = uuid.UUID(user_id)
+    
+    # Get user's agents with Twitter enabled and manual mode
+    agents = db.query(Avee).filter(
+        and_(
+            Avee.owner_user_id == user_uuid,
+            Avee.twitter_sharing_enabled == True,
+            Avee.twitter_posting_mode == "manual"
+        )
+    ).all()
+    
+    if not agents:
+        return {"posts": [], "total": 0}
+    
+    agent_ids = [agent.id for agent in agents]
+    
+    # Get posts from these agents that haven't been posted to Twitter
+    posts = db.query(
+        Post,
+        Avee.handle,
+        Avee.display_name,
+        Avee.avatar_url
+    ).join(
+        Avee, Post.agent_id == Avee.id
+    ).filter(
+        and_(
+            Post.agent_id.in_(agent_ids),
+            Post.posted_to_twitter == "false"
+        )
+    ).order_by(
+        desc(Post.created_at)
+    ).limit(limit).all()
+    
+    results = []
+    for post, agent_handle, agent_display_name, agent_avatar_url in posts:
+        # Parse AI metadata
+        try:
+            ai_metadata = json.loads(post.ai_metadata) if post.ai_metadata else {}
+        except:
+            ai_metadata = {}
+        
+        results.append({
+            "id": str(post.id),
+            "title": post.title,
+            "description": post.description,
+            "image_url": post.image_url,
+            "post_type": post.post_type,
+            "ai_metadata": ai_metadata,
+            "agent_id": str(post.agent_id),
+            "agent_handle": agent_handle,
+            "agent_display_name": agent_display_name,
+            "agent_avatar_url": agent_avatar_url,
+            "created_at": post.created_at.isoformat() if post.created_at else None
+        })
+    
+    return {"posts": results, "total": len(results)}

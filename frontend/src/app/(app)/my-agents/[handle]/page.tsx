@@ -10,6 +10,8 @@ import {
   getAgentByHandle,
   setAgentPermission,
   updateAgent,
+  updateAgentTwitterSettings,
+  getTwitterConfig,
 } from "@/lib/api";
 import { uploadImageToBucket } from "@/lib/upload";
 import { ChatButton } from "@/components/ChatButton";
@@ -97,6 +99,14 @@ export default function AgentEditorPage() {
   } | null>(null);
   const [showVoiceSection, setShowVoiceSection] = useState(false);
 
+  // Twitter settings
+  const [twitterSharingEnabled, setTwitterSharingEnabled] = useState(false);
+  const [twitterPostingMode, setTwitterPostingMode] = useState<"auto" | "manual">("manual");
+  const [savingTwitterSettings, setSavingTwitterSettings] = useState(false);
+  const [twitterSettingsMsg, setTwitterSettingsMsg] = useState<string | null>(null);
+  const [userTwitterConfig, setUserTwitterConfig] = useState<{ connected: boolean; twitter_username?: string } | null>(null);
+  const [loadingTwitterConfig, setLoadingTwitterConfig] = useState(true);
+
   const personaMeta = useMemo(() => {
     const lines = persona ? persona.split("\n").length : 0;
     return { chars: persona.length, lines };
@@ -117,6 +127,10 @@ export default function AgentEditorPage() {
       setBio(data?.bio || "");
       setAvatarUrl(data?.avatar_url || "");
       setPersona((data?.persona || "").toString());
+      
+      // Load Twitter settings from agent data
+      setTwitterSharingEnabled(data?.twitter_sharing_enabled === true || data?.twitter_sharing_enabled === "true");
+      setTwitterPostingMode((data?.twitter_posting_mode as "auto" | "manual") || "manual");
     } catch (e: any) {
       setError(e.message || "Failed to load Agent");
       setAgent(null);
@@ -132,6 +146,22 @@ export default function AgentEditorPage() {
   useEffect(() => {
     if (handle) load();
   }, [handle]);
+  
+  // Load user's Twitter connection status
+  useEffect(() => {
+    async function loadTwitterConfig() {
+      try {
+        const config = await getTwitterConfig();
+        setUserTwitterConfig(config);
+      } catch (e) {
+        console.error("Failed to load Twitter config:", e);
+        setUserTwitterConfig(null);
+      } finally {
+        setLoadingTwitterConfig(false);
+      }
+    }
+    loadTwitterConfig();
+  }, []);
 
   async function onSaveDetails() {
     if (!agent?.id) return;
@@ -288,6 +318,22 @@ export default function AgentEditorPage() {
     }
   }
 
+  async function onSaveTwitterSettings() {
+    if (!agent?.id) return;
+
+    setSavingTwitterSettings(true);
+    setTwitterSettingsMsg(null);
+
+    try {
+      await updateAgentTwitterSettings(agent.id, twitterSharingEnabled, twitterPostingMode);
+      setTwitterSettingsMsg("Twitter settings saved successfully.");
+    } catch (e: any) {
+      setTwitterSettingsMsg(e.message || "Failed to save Twitter settings");
+    } finally {
+      setSavingTwitterSettings(false);
+    }
+  }
+
   async function onAddDoc() {
     if (!agent?.id) return;
 
@@ -353,7 +399,15 @@ export default function AgentEditorPage() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
+        const errorText = await res.text();
+        console.error('[File Upload] Error response:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = {};
+        }
         
         // Handle different error response formats
         let errorMessage: string;
@@ -367,9 +421,10 @@ export default function AgentEditorPage() {
         } else if (errorData.detail) {
           errorMessage = JSON.stringify(errorData.detail);
         } else {
-          errorMessage = `Failed to upload file: ${res.status}`;
+          errorMessage = errorText || `Failed to upload file: ${res.status}`;
         }
         
+        console.error('[File Upload] Error message:', errorMessage);
         throw new Error(errorMessage);
       }
 
@@ -1099,6 +1154,179 @@ export default function AgentEditorPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Twitter Settings Card */}
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-cyan-50 px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1DA1F2]">
+                <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">Twitter Integration</h2>
+                <p className="mt-1 text-xs sm:text-sm text-gray-600">Auto-post agent updates to Twitter</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 sm:p-6">
+            {loadingTwitterConfig ? (
+              <div className="flex items-center justify-center py-8">
+                <svg className="h-6 w-6 animate-spin text-gray-400" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="ml-2 text-sm text-gray-500">Loading Twitter status...</span>
+              </div>
+            ) : !userTwitterConfig?.connected ? (
+              <div className="rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 p-6 text-center">
+                <svg className="mx-auto h-12 w-12 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="mt-3 text-sm font-medium text-gray-900">Twitter Not Connected</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  Connect your Twitter account in your profile settings to enable Twitter posting for this agent.
+                </p>
+                <Link
+                  href="/profile"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1DA1F2] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a8cd8]"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Go to Profile Settings
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Connection Status */}
+                <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3">
+                  <div className="flex items-center gap-2">
+                    <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-green-900">
+                      Connected as @{userTwitterConfig.twitter_username}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Enable/Disable Toggle */}
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                        <input
+                          type="checkbox"
+                          checked={twitterSharingEnabled}
+                          onChange={(e) => {
+                            setTwitterSharingEnabled(e.target.checked);
+                            setTwitterSettingsMsg(null);
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-[#1DA1F2] focus:ring-[#1DA1F2]"
+                        />
+                        Enable Twitter Posting
+                      </label>
+                      <p className="mt-1 text-xs text-gray-600">
+                        Allow this agent to post updates to your Twitter account
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Posting Mode Selection */}
+                {twitterSharingEnabled && (
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <label className="block text-sm font-medium text-gray-900 mb-3">
+                      Posting Mode
+                    </label>
+                    <div className="space-y-3">
+                      <label className="flex items-start gap-3 rounded-lg border-2 border-gray-200 p-3 cursor-pointer transition-all hover:border-[#1DA1F2] hover:bg-blue-50/50">
+                        <input
+                          type="radio"
+                          name="postingMode"
+                          value="auto"
+                          checked={twitterPostingMode === "auto"}
+                          onChange={() => {
+                            setTwitterPostingMode("auto");
+                            setTwitterSettingsMsg(null);
+                          }}
+                          className="mt-0.5 h-4 w-4 border-gray-300 text-[#1DA1F2] focus:ring-[#1DA1F2]"
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">Auto-post (Immediate)</div>
+                          <div className="mt-1 text-xs text-gray-600">
+                            Automatically post to Twitter when the agent creates new content
+                          </div>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-3 rounded-lg border-2 border-gray-200 p-3 cursor-pointer transition-all hover:border-[#1DA1F2] hover:bg-blue-50/50">
+                        <input
+                          type="radio"
+                          name="postingMode"
+                          value="manual"
+                          checked={twitterPostingMode === "manual"}
+                          onChange={() => {
+                            setTwitterPostingMode("manual");
+                            setTwitterSettingsMsg(null);
+                          }}
+                          className="mt-0.5 h-4 w-4 border-gray-300 text-[#1DA1F2] focus:ring-[#1DA1F2]"
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">Manual Approval</div>
+                          <div className="mt-1 text-xs text-gray-600">
+                            Review and approve each post before it goes to Twitter
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Message */}
+                {twitterSettingsMsg && (
+                  <div className={`rounded-lg px-4 py-3 text-sm ${
+                    twitterSettingsMsg.includes("success") || twitterSettingsMsg.includes("saved")
+                      ? "bg-green-50 text-green-800 border border-green-200"
+                      : "bg-red-50 text-red-800 border border-red-200"
+                  }`}>
+                    {twitterSettingsMsg}
+                  </div>
+                )}
+
+                {/* Save Button */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={onSaveTwitterSettings}
+                    disabled={savingTwitterSettings}
+                    className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#1DA1F2] to-[#1a8cd8] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {savingTwitterSettings ? (
+                      <>
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Twitter Settings
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

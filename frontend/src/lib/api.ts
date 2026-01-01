@@ -415,3 +415,71 @@ export async function sharePost(postId: string, shareType = "repost", comment?: 
   
   return api.post(`/posts/${postId}/share?${params.toString()}`, {});
 }
+
+// =====================================
+// TWITTER INTEGRATION
+// =====================================
+
+export type TwitterConfig = {
+  connected: boolean;
+  twitter_username?: string;
+  twitter_display_name?: string;
+  twitter_user_id?: string;
+  created_at?: string;
+};
+
+export type TwitterOAuthInit = {
+  auth_url: string;
+  state: string;
+  oauth_token?: string;
+  oauth_token_secret?: string;
+};
+
+export async function initiateTwitterOAuth(): Promise<TwitterOAuthInit> {
+  return api.get("/twitter/oauth/initiate");
+}
+
+export async function getTwitterConfig(): Promise<TwitterConfig> {
+  return api.get("/twitter/config");
+}
+
+export async function disconnectTwitter(): Promise<{ success: boolean; message: string }> {
+  return api.delete("/twitter/config");
+}
+
+export async function getTwitterStatus(): Promise<{
+  server_configured: boolean;
+  user_connected: boolean;
+  config?: TwitterConfig;
+}> {
+  return api.get("/twitter/status");
+}
+
+export async function updateAgentTwitterSettings(
+  agentId: string,
+  enabled: boolean,
+  postingMode: 'auto' | 'manual'
+): Promise<{ ok: boolean; twitter_sharing_enabled: boolean; twitter_posting_mode: string }> {
+  const params = new URLSearchParams();
+  params.set("enabled", enabled.toString());
+  params.set("posting_mode", postingMode);
+  
+  return api.put(`/avees/${agentId}/twitter-settings?${params.toString()}`, {});
+}
+
+export async function postToTwitter(postId: string): Promise<{ success: boolean; twitter_url: string; tweet_id: string }> {
+  return api.post(`/posts/${postId}/post-to-twitter`, {});
+}
+
+export async function getPostTwitterStatus(postId: string): Promise<{
+  can_post: boolean;
+  reason?: string;
+  twitter_url?: string;
+}> {
+  return api.get(`/posts/${postId}/twitter-status`);
+}
+
+export async function getPendingTwitterPosts(limit = 20): Promise<{ posts: PostData[]; total: number }> {
+  return api.get(`/posts/pending-twitter?limit=${limit}`);
+}
+

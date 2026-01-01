@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Text, String, ForeignKey, DateTime, func, Numeric
+from sqlalchemy import Column, Text, String, ForeignKey, DateTime, func, Numeric, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from db import Base
 from sqlalchemy import Enum
@@ -83,6 +83,10 @@ class Avee(Base):
 
     # NEW (Phase 6): Unified messaging - primary agent for user
     is_primary = Column(String, default="false")  # Whether this is the primary agent for the user
+
+    # NEW (Phase 7): Twitter integration
+    twitter_sharing_enabled = Column(Boolean, default=False)  # Whether this agent can share posts to Twitter
+    twitter_posting_mode = Column(Text, default="manual")  # 'auto' or 'manual'
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -538,6 +542,12 @@ class Post(Base):
     comment_count = Column(Integer, default=0)
     share_count = Column(Integer, default=0)
     
+    # Twitter integration
+    posted_to_twitter = Column(Boolean, default=False)  # Whether this post has been shared to Twitter
+    twitter_post_id = Column(Text)  # Twitter tweet ID
+    twitter_post_url = Column(Text)  # Full Twitter URL to the tweet
+    twitter_posted_at = Column(DateTime(timezone=True))  # Timestamp when posted to Twitter
+    
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -597,3 +607,32 @@ class PostShare(Base):
     comment = Column(Text)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# --- Twitter Integration ---
+
+class ProfileTwitterConfig(Base):
+    """Stores Twitter OAuth tokens for user profiles (one per user)"""
+    __tablename__ = "profile_twitter_configs"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), unique=True, nullable=False)
+    twitter_user_id = Column(Text, nullable=False)
+    twitter_username = Column(Text, nullable=False)  # @handle
+    twitter_display_name = Column(Text)
+    access_token = Column(Text, nullable=False)  # Encrypted OAuth token
+    access_secret = Column(Text, nullable=False)  # Encrypted OAuth secret
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class TwitterOAuthState(Base):
+    """Temporary OAuth state tokens for CSRF protection"""
+    __tablename__ = "twitter_oauth_states"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    state = Column(Text, unique=True, nullable=False)
+    oauth_token = Column(Text, nullable=False)  # Request token
+    oauth_token_secret = Column(Text, nullable=False)  # Request token secret
+    user_id = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+

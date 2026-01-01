@@ -90,3 +90,4 @@ To verify the fix:
 - `frontend/src/lib/supabaseClient.ts` - Supabase client configuration
 - `frontend/src/app/(app)/layout.tsx` - Authentication layout wrapper
 
+

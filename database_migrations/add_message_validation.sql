@@ -17,3 +17,4 @@ COMMENT ON COLUMN direct_messages.human_validated IS 'true if agent message was 
 
 
 
+

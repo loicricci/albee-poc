@@ -149,3 +149,4 @@ tail -f /Users/loicricci/.cursor/projects/Users-loicricci-gabee-poc/terminals/15
 
 
 
+

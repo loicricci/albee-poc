@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getMyProfile, saveMyProfile, deleteMyAccount } from "@/lib/api";
+import { getMyProfile, saveMyProfile, deleteMyAccount, getTwitterConfig, initiateTwitterOAuth, disconnectTwitter } from "@/lib/api";
 import { uploadImageToBucket } from "@/lib/upload";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type Profile = {
   user_id?: string;
@@ -83,6 +83,7 @@ function friendlyError(msg: string) {
 
 function ProfileContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -96,6 +97,10 @@ function ProfileContent() {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+
+  // Twitter OAuth state
+  const [twitterConfig, setTwitterConfig] = useState<{ connected: boolean; twitter_username?: string } | null>(null);
+  const [connectingTwitter, setConnectingTwitter] = useState(false);
 
   const [form, setForm] = useState<Profile>({
     handle: "",
@@ -198,6 +203,23 @@ function ProfileContent() {
 
   useEffect(() => {
     let alive = true;
+
+    // Load Twitter config
+    const loadTwitterConfig = async () => {
+      try {
+        const config = await getTwitterConfig();
+        if (alive) {
+          setTwitterConfig(config);
+        }
+      } catch (err) {
+        // Not connected or error - that's ok
+        if (alive) {
+          setTwitterConfig({ connected: false });
+        }
+      }
+    };
+
+    loadTwitterConfig();
 
     // 🚀 PERFORMANCE: Load from cache immediately for instant UI
     const loadFromCache = () => {
@@ -388,6 +410,62 @@ function ProfileContent() {
       alive = false;
     };
   }, []);
+
+  // Check for Twitter OAuth callback status in URL
+  useEffect(() => {
+    const twitterStatus = searchParams.get('twitter');
+    const username = searchParams.get('username');
+    const reason = searchParams.get('reason');
+    
+    if (twitterStatus === 'connected' && username) {
+      setOk(`Successfully connected to Twitter as @${username}!`);
+      // Reload Twitter config
+      getTwitterConfig().then(config => {
+        if (config) {
+          setTwitterConfig(config);
+        }
+      }).catch(console.error);
+      // Clean up URL
+      router.replace('/profile');
+    } else if (twitterStatus === 'error') {
+      setError(`Failed to connect Twitter: ${reason || 'Unknown error'}`);
+      // Clean up URL
+      router.replace('/profile');
+    }
+  }, [searchParams, router]);
+
+  // Twitter OAuth handlers
+  async function handleConnectTwitter() {
+    setConnectingTwitter(true);
+    setError(null);
+    
+    try {
+      const result = await initiateTwitterOAuth();
+      // Store the state in session storage for verification (optional)
+      if (result.state) {
+        sessionStorage.setItem('twitter_oauth_state', result.state);
+      }
+      // Redirect to Twitter authorization
+      window.location.href = result.auth_url;
+    } catch (err: any) {
+      setError("Failed to connect Twitter: " + (err.message || "Unknown error"));
+      setConnectingTwitter(false);
+    }
+  }
+
+  async function handleDisconnectTwitter() {
+    if (!confirm("Disconnect Twitter? Your agents will no longer be able to post to Twitter.")) {
+      return;
+    }
+
+    try {
+      await disconnectTwitter();
+      setTwitterConfig({ connected: false });
+      setOk("Twitter disconnected successfully");
+    } catch (err: any) {
+      setError("Failed to disconnect Twitter: " + (err.message || "Unknown error"));
+    }
+  }
 
   async function onSave() {
     setSaving(true);
@@ -1251,6 +1329,68 @@ function ProfileContent() {
 
           <div className="border-t border-[#E6E6E6]"></div>
 
+          {/* Twitter OAuth Integration */}
+          <div>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-[#0B0B0C] flex items-center gap-2">
+                🐦 Twitter Integration
+              </h2>
+              <p className="text-xs text-[#2E3A59]/70 mt-1">Connect your Twitter account to enable agent posting</p>
+            </div>
+            
+            {twitterConfig?.connected ? (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                      <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="font-medium text-green-900">
+                        Connected as @{twitterConfig.twitter_username}
+                      </div>
+                      <div className="text-sm text-green-700">
+                        Your agents can now post to Twitter
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleDisconnectTwitter}
+                    className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <svg className="h-5 w-5 shrink-0 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm text-blue-800">
+                    <strong>Connect your Twitter account</strong> to enable your agents to post automatically or with your approval.
+                    Each agent can be configured independently.
+                  </div>
+                </div>
+                <button
+                  onClick={handleConnectTwitter}
+                  disabled={connectingTwitter}
+                  className="flex items-center gap-2 rounded-lg bg-[#1DA1F2] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a8cd8] disabled:opacity-50"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                  </svg>
+                  {connectingTwitter ? "Connecting..." : "Connect Twitter Account"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-[#E6E6E6]"></div>
+
           {/* Interests Section */}
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Interests & Hobbies</label>
@@ -1497,4 +1637,5 @@ export default function ProfilePage() {
     </NewLayoutWrapper>
   );
 }
+
 

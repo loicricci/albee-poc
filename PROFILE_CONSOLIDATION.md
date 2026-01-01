@@ -79,3 +79,4 @@ Updated all references from `/account` to `/profile`:
 - Backend API endpoints remain unchanged (still use `/me/account` for deletion, etc.)
 
 
+

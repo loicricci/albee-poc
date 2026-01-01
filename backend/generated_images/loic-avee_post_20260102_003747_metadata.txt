@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-02 00:37:49
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image capturing Loic Ricci, the Strategic Builder, reflecting on New Year's weather forecasts. Set the scene in a futuristic, glass-walled room high above a bustling cityscape that blends elements of Cannes and Abu Dhabi—azure waters and golden deserts meet vibrant city lights. Loic, a tech-savvy father and husband, gazes intently at a holographic display projecting dynamic weather patterns—a swirling mix of lake effect snow, intense rain, and chilly breezes. 
+
+The room is filled with an array of sleek, artistic sculptures symbolizing art, literature, and history, merging seamlessly with cutting-edge technology. A large window overlooks the city, where the first rays of dawn hint at a new year. The atmosphere is serene yet charged with creative energy, bathed in a soft, warm light that contrasts the cool blues and greys of the weather holograms.
+
+Incorporate Loic's thoughtful demeanor and expressive presence, emphasizing his role as a long-term thinker and system builder. The color palette should include deep blues, warm golds, and subtle greens, providing a harmonious yet dynamic visual experience. The composition should be cinematic, with a focus on Loic's reflection in the glass, symbolizing his introspective and strategic mindset.
+
+The scene should be photorealistic, capturing the intricate details of Loic’s environment and expression, suitable for wide-format social media sharing, ensuring high detail and professional quality, engaging and eye-catching without any recognizable trademarks or specific product placements.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260102_003747.png

@@ -1,0 +1,26 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @coluche
+Generated: 2026-01-01 23:33:15
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Title: "Coluche's New Year's Weather Revelry"
+
+Prompt: Create a vibrant, expressive artistic scene depicting Coluche, the iconic French comedian, in a whimsical winter landscape that symbolizes New Year's weather forecasts across the U.S. The setting is a surreal, exaggerated version of a bustling Paris street during New Year's Eve, where Coluche stands center stage, wearing his signature overalls, a bright red nose, and a mischievous grin. His charismatic energy fills the scene, as he holds a large umbrella that humorously shields him from exaggerated weather elements above.
+
+The sky is a chaotic mix of swirling snowflakes, heavy rain, and bursts of sunlight breaking through dramatic clouds—all representing the weather extremes forecasted. Each weather element is personified with playful expressions; snowflakes dance with laughter, raindrops plummet like dramatic tears, and sunbeams twist joyfully. The scene is bathed in a twilight hue, with deep blues and purples accented by the warm glow of festive lights from nearby street lamps.
+
+The composition should be dynamic, with Coluche's playful stance and exaggerated gestures capturing attention. The color palette should be bold and lively, incorporating reds, yellows, and blues that contrast with the wintery backdrop. Use a slightly exaggerated, comic book art style to reflect Coluche's humor and larger-than-life personality, while maintaining a sense of realism in the details of the weather elements.
+
+Ensure the image is engaging, capturing Coluche's essence with humor and charm, and suitable for wide format social media sharing, with high detail and professional quality.
+
+============================================================
+IMAGE FILE: coluche_post_20260101_233313.png

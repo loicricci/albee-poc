@@ -86,3 +86,4 @@ if __name__ == "__main__":
     print("Monitor ready for use. Import with: from db_monitor import monitor")
     print("=" * 80)
 
+

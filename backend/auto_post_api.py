@@ -346,13 +346,58 @@ async def generate_single_post(
         db.execute(update_query, {"avee_id": avee_id})
         db.commit()
         
+        # Check if should auto-post to Twitter
+        post_id = result.get("post_id")
+        twitter_url = None
+        twitter_error = None
+        
+        if post_id:
+            try:
+                from twitter_posting_service import get_twitter_posting_service
+                posting_service = get_twitter_posting_service()
+                
+                # Check if agent should auto-post
+                avee_uuid = uuid.UUID(avee_id)
+                if posting_service.should_auto_post(avee_uuid, db):
+                    # Get agent owner
+                    avee_query = text("""
+                        SELECT owner_user_id FROM avees WHERE id = :avee_id
+                    """)
+                    avee_result = db.execute(avee_query, {"avee_id": avee_id})
+                    avee_row = avee_result.fetchone()
+                    
+                    if avee_row:
+                        owner_user_id = avee_row[0]
+                        post_uuid = uuid.UUID(post_id)
+                        
+                        # Attempt to post to Twitter
+                        twitter_result = posting_service.post_to_twitter(
+                            post_uuid,
+                            owner_user_id,
+                            db
+                        )
+                        
+                        if twitter_result["success"]:
+                            twitter_url = twitter_result.get("twitter_url")
+                            print(f"[AutoPost] Auto-posted to Twitter: {twitter_url}")
+                        else:
+                            twitter_error = twitter_result.get("error")
+                            print(f"[AutoPost] Failed to auto-post to Twitter: {twitter_error}")
+                            
+            except Exception as twitter_exc:
+                twitter_error = str(twitter_exc)
+                print(f"[AutoPost] Twitter auto-post error: {twitter_error}")
+                # Don't fail the post creation if Twitter posting fails
+        
         duration = (datetime.now() - start_time).total_seconds()
         
         return {
             "avee_id": avee_id,
             "handle": handle,
             "success": True,
-            "post_id": result.get("post_id"),
+            "post_id": post_id,
+            "twitter_url": twitter_url,
+            "twitter_error": twitter_error,
             "error": None,
             "duration_seconds": duration
         }
@@ -417,10 +462,54 @@ async def generate_multiple_posts(
             db.execute(update_query, {"avee_id": avee_id})
             db.commit()
             
-            results.append({"handle": handle, "success": True})
+            # Check if should auto-post to Twitter
+            post_id = result.get("post_id")
+            if post_id:
+                try:
+                    from twitter_posting_service import get_twitter_posting_service
+                    posting_service = get_twitter_posting_service()
+                    
+                    avee_uuid = uuid.UUID(avee_id)
+                    if posting_service.should_auto_post(avee_uuid, db):
+                        # Get agent owner
+                        avee_query = text("""
+                            SELECT owner_user_id FROM avees WHERE id = :avee_id
+                        """)
+                        avee_result = db.execute(avee_query, {"avee_id": avee_id})
+                        avee_row = avee_result.fetchone()
+                        
+                        if avee_row:
+                            owner_user_id = avee_row[0]
+                            post_uuid = uuid.UUID(post_id)
+                            
+                            twitter_result = posting_service.post_to_twitter(
+                                post_uuid,
+                                owner_user_id,
+                                db
+                            )
+                            
+                            if twitter_result["success"]:
+                                print(f"[AutoPost] Auto-posted to Twitter for @{handle}")
+                            else:
+                                print(f"[AutoPost] Twitter posting failed for @{handle}: {twitter_result.get('error')}")
+                                
+                except Exception as twitter_exc:
+                    print(f"[AutoPost] Twitter auto-post error for @{handle}: {twitter_exc}")
+            
+            results.append({
+                "avee_id": avee_id,
+                "handle": handle,
+                "success": True,
+                "post_id": post_id
+            })
             
         except Exception as e:
-            results.append({"handle": handle, "success": False, "error": str(e)})
+            results.append({
+                "avee_id": avee_id,
+                "handle": handle,
+                "success": False,
+                "error": str(e)
+            })
     
     db.close()
     

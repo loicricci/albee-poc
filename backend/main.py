@@ -107,6 +107,10 @@ app.include_router(feed_router, tags=["feed"])
 from twitter_api import router as twitter_router
 app.include_router(twitter_router, tags=["twitter"])
 
+# Import Twitter OAuth router
+from twitter_oauth_api import router as twitter_oauth_router
+app.include_router(twitter_oauth_router, tags=["twitter-oauth"])
+
 # Import Auto Post API router
 from auto_post_api import router as auto_post_router
 app.include_router(auto_post_router, tags=["auto-post"])
@@ -1448,8 +1452,8 @@ def list_training_documents(
 @app.post("/avees/{avee_id}/documents/upload-file")
 async def upload_training_file(
     avee_id: str,
-    layer: str = Form(...),
     file: UploadFile = File(...),
+    layer: str = Form(...),
     title: str | None = Form(None),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
@@ -1457,43 +1461,66 @@ async def upload_training_file(
     """
     Upload a file (PDF, Word, Excel, CSV, or image) and extract its content as training data.
     """
+    print(f"[File Upload] avee_id={avee_id}, layer={layer}, filename={file.filename}, title={title}, content_type={file.content_type}")
     from file_processor import process_file, get_supported_extensions
     
-    owner_uuid = _parse_uuid(user_id, "user_id")
-    avee_uuid = _parse_uuid(avee_id, "avee_id")
+    try:
+        owner_uuid = _parse_uuid(user_id, "user_id")
+        avee_uuid = _parse_uuid(avee_id, "avee_id")
+    except Exception as e:
+        print(f"[File Upload] Error parsing UUIDs: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid ID format: {str(e)}")
 
     if layer not in ("public", "friends", "intimate"):
-        raise HTTPException(status_code=400, detail="Invalid layer")
+        print(f"[File Upload] Invalid layer: {layer}")
+        raise HTTPException(status_code=400, detail=f"Invalid layer '{layer}'. Must be one of: public, friends, intimate")
 
+    print(f"[File Upload] Querying for avee: {avee_uuid}")
     a = db.query(Avee).filter(Avee.id == avee_uuid).first()
     if not a:
+        print(f"[File Upload] Avee not found: {avee_uuid}")
         raise HTTPException(status_code=404, detail="Avee not found")
     if a.owner_user_id != owner_uuid:
+        print(f"[File Upload] Permission denied: owner={a.owner_user_id}, user={owner_uuid}")
         raise HTTPException(status_code=403, detail="Only owner can upload training files")
 
     # Check file extension
+    if not file.filename:
+        print(f"[File Upload] No filename provided")
+        raise HTTPException(status_code=400, detail="File must have a filename")
+    
     file_ext = Path(file.filename).suffix.lower()
+    print(f"[File Upload] File extension: {file_ext}")
     supported_extensions = get_supported_extensions()
     
     if file_ext not in supported_extensions:
+        print(f"[File Upload] Unsupported extension: {file_ext}")
         raise HTTPException(
             status_code=400, 
-            detail=f"Unsupported file type. Supported: {', '.join(supported_extensions)}"
+            detail=f"Unsupported file type '{file_ext}'. Supported: {', '.join(supported_extensions)}"
         )
 
     try:
         # Read file content
         file_content = await file.read()
+        print(f"[File Upload] File size: {len(file_content)} bytes")
         
         if len(file_content) > 50 * 1024 * 1024:  # 50MB limit
             raise HTTPException(status_code=400, detail="File too large (max 50MB)")
         
+        if len(file_content) == 0:
+            raise HTTPException(status_code=400, detail="File is empty")
+        
         # Process the file
+        print(f"[File Upload] Processing file...")
         result = process_file(file_content, file.filename, file.content_type or "")
+        print(f"[File Upload] File processed successfully")
         
         # Use extracted text as content
         content = result["text"]
         metadata = result["metadata"]
+        
+        print(f"[File Upload] Extracted text length: {len(content)} chars")
         
         # Create title if not provided
         if not title:
@@ -1511,9 +1538,12 @@ async def upload_training_file(
         db.add(doc)
         db.flush()
 
+        print(f"[File Upload] Document created, chunking...")
         # Chunk and embed
         chunks = chunk_text(doc.content)
         vectors = embed_texts(chunks)
+        
+        print(f"[File Upload] Created {len(chunks)} chunks, embedding...")
 
         for i, (chunk, vec) in enumerate(zip(chunks, vectors)):
             vec_str = "[" + ",".join(str(x) for x in vec) + "]"
@@ -1536,6 +1566,8 @@ async def upload_training_file(
             )
 
         db.commit()
+        
+        print(f"[File Upload] Success! Document ID: {doc.id}")
 
         return {
             "ok": True,
@@ -1547,10 +1579,16 @@ async def upload_training_file(
             "original_filename": metadata["original_filename"],
         }
     
+    except HTTPException:
+        raise
     except ValueError as e:
+        print(f"[File Upload] ValueError: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"[File Upload] Exception: {type(e).__name__}: {e}")
         db.rollback()
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
 
@@ -2124,6 +2162,54 @@ def update_avee(
     db.commit()
 
     return {"ok": True, "avee_id": str(a.id)}
+
+
+@app.put("/avees/{avee_id}/twitter-settings")
+def update_avee_twitter_settings(
+    avee_id: str,
+    enabled: bool,
+    posting_mode: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Update Twitter settings for an agent
+    
+    Args:
+        enabled: Whether Twitter sharing is enabled
+        posting_mode: 'auto' or 'manual'
+    """
+    owner_uuid = _parse_uuid(user_id, "user_id")
+    avee_uuid = _parse_uuid(avee_id, "avee_id")
+    
+    # Validate posting_mode
+    if posting_mode not in ["auto", "manual"]:
+        raise HTTPException(status_code=400, detail="posting_mode must be 'auto' or 'manual'")
+    
+    # Get agent
+    avee = db.query(Avee).filter(Avee.id == avee_uuid).first()
+    if not avee:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Verify ownership
+    if avee.owner_user_id != owner_uuid:
+        raise HTTPException(status_code=403, detail="Only owner can edit this agent")
+    
+    # Update settings
+    avee.twitter_sharing_enabled = "true" if enabled else "false"
+    avee.twitter_posting_mode = posting_mode
+    
+    db.commit()
+    
+    # Invalidate cache
+    invalidate_agent_cache(str(avee_uuid))
+    
+    return {
+        "ok": True,
+        "avee_id": str(avee.id),
+        "twitter_sharing_enabled": enabled,
+        "twitter_posting_mode": posting_mode
+    }
 
 
 @app.delete("/avees/{avee_id}")

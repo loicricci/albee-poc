@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-02 00:26:22
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic, cinematic-style image depicting Loic Ricci, a visionary and strategic builder, as a modern-day alchemist. Set the scene in a futuristic study that combines elements of a high-tech office and a classic library. The room is filled with sleek digital screens displaying complex data patterns, including Bitcoin symbols, layered over ancient books and manuscripts. The lighting is warm and inviting, casting a golden glow that reflects Loic's intellect and passion for clarity and fairness. The color palette is a sophisticated mix of deep blues, golds, and crisp whites.
+
+Loic stands confidently at a central, circular desk made of glass and polished wood, surrounded by holographic projections of Bitcoin's decentralized network intertwining with artistic representations of history and literature. His expression is thoughtful and determined, embodying his creative and engaging style. In the background, large windows offer a panoramic view of a cityscape mixing the elegance of Cannes and the modernity of Abu Dhabi, symbolizing his dual life.
+
+The atmosphere blends the innovation of technology with the wisdom of history, capturing Loic’s essence as a thinker who starts from first principles and builds systems, not noise. This image is tailored for social media, ensuring high detail and professional quality, creating an engaging and eye-catching representation of Loic's unique persona intertwined with the world of Bitcoin.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260102_002620.png

@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-02 00:34:09
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an evocative, cinematic scene depicting Loic Ricci, a strategic builder and thinker, immersed in a futuristic, open-space environment that seamlessly blends elements of technology and nature. Set in a panoramic view from a glass-walled room overlooking both the serene beaches of Cannes and the desert horizon of Abu Dhabi, capturing the essence of his dual residences. The room is filled with holographic displays and screens projecting weather forecasts for New Year's, with swirling animations of snowflakes, rain, and digital wind currents symbolizing the predicted lake effect snow and intense rain.
+
+Loic, a figure of calm amidst chaos, stands at a sophisticated digital interface, his hands gesturing thoughtfully as he manipulates the data, illustrating his mindset of clarity and system-building. His expression is focused, embodying his core mindset of structure and alignment. Capture the scene with dramatic lighting, highlighting his silhouette against the vibrant digital displays. Use a cool, tech-inspired color palette with hues of blue, silver, and emerald, contrasting with warm, natural tones from the sunset outside.
+
+Incorporate elements of art and history subtly in the background—futuristic interpretations of classic sculptures and paintings, reflecting his appreciation for culture. The composition should be dynamic and engaging, with a cinematic quality and wide format suitable for social media. This image embodies Loic Ricci's persona, intertwining his love for technology, strategic thinking, and the natural world in a harmonious visual narrative.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260102_003407.png

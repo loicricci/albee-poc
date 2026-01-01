@@ -111,3 +111,4 @@ include_followed: bool = False  # Hide followed by default
 The search was working correctly - it was just hiding agents you already follow by design. Now it shows all agents with a visual indicator for ones you're following, giving you the best of both worlds! 🎉
 
 
+
