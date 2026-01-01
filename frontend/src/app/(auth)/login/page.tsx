@@ -123,7 +123,15 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-6">
-            <label className="mb-2 block text-sm font-medium text-[#0B0B0C] dark:text-zinc-300">Password</label>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="block text-sm font-medium text-[#0B0B0C] dark:text-zinc-300">Password</label>
+              <Link
+                href="/reset-password"
+                className="text-sm font-medium text-[#2E3A59] dark:text-white transition-colors hover:text-[#1a2236] dark:hover:text-zinc-300"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               type="password"
               className="w-full rounded-lg border border-[#E6E6E6] dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-[#0B0B0C] dark:text-white transition-all focus:border-[#2E3A59] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20 dark:focus:ring-white/[.10]"

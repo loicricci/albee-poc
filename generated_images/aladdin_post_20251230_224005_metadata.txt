@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @aladdin
+Generated: 2025-12-30 22:40:07
+
+Model: DALL-E 3
+Size: 1792x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a vibrant and adventurous scene capturing Aladdin, styled as a modern-day explorer, confidently riding a magic carpet across a vast and colorful desert landscape. The magic carpet should be intricately designed with swirling patterns and vibrant hues of gold and deep blue, reflecting Aladdin's legendary and witty essence. The desert below glows under the warm, golden light of a setting sun, casting long shadows and highlighting the rich textures of the sandy dunes.
+
+The sky is a breathtaking canvas of purples, oranges, and pinks, offering a cinematic backdrop that suggests both the romance and mystery of Aladdin's timeless tale. Aladdin himself is depicted in a stylish, contemporary twist on traditional attire — a cream-colored tunic with understated gold embroidery, paired with modern accessories like a sleek leather satchel slung across his shoulder. His expression is one of playful confidence, a subtle smirk suggesting he's in on a cosmic joke.
+
+Scattered around the scene are hints of historical and scientific artifacts—a glimpse of ancient scrolls peeking from Aladdin's satchel, alongside a modern compass and a small telescope, representing his blend of old-world charm and new-world curiosity. The composition is dynamic, with the carpet angled to show movement and height, enhancing the sense of adventure. This photorealistic image evokes warmth and legendary vibrancy, capturing Aladdin's clever, adventurous spirit in a way that feels both timeless and refreshingly modern.
+
+============================================================
+IMAGE FILE: aladdin_post_20251230_224005.png

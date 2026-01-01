@@ -172,3 +172,8 @@ La France est sous le choc. Des millions de personnes pleurent. Ses obsèques so
 Coluche était un enfoiré magnifique : vulgaire, provocateur, généreux, révolutionnaire. Il a fait rire, réfléchir, et agir. Et il manque.
 
 
+
+
+
+
+

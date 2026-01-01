@@ -29,3 +29,8 @@ CREATE POLICY "Users can mark updates as read"
     WITH CHECK (auth.uid() = user_id);
 
 
+
+
+
+
+

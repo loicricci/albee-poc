@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @aladdin
+Generated: 2025-12-30 22:43:20
+
+Model: DALL-E 3
+Size: 1792x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a vibrant and enchanting image capturing Aladdin, the legendary clever survivor, in a scene that embodies magic and adventure. Set in a bustling, fantastical marketplace beneath a starry sky, Aladdin stands confidently atop a glowing, ancient carpet, hovering above the cobblestone streets. His attire is a fusion of traditional Arabian garments and modern streetwear, featuring rich blues and golds with intricate patterns that shimmer under the ethereal moonlight. 
+
+The marketplace is alive with vibrant stalls, each offering mysterious artifacts and shimmering trinkets that hint at hidden stories and adventures. A playful, warm energy radiates from Aladdin as he engages in lighthearted banter with a mystical vendor, a playful grin on his face. The scene is illuminated by lanterns casting a warm, golden glow, enhancing the magical atmosphere. 
+
+The color palette is rich and vibrant, with deep blues, purples, and golds creating a sense of enchantment. In the background, ancient stone architecture blends with lush, exotic flora, adding depth and history to the scene. The composition is dynamic and cinematic, with a focus on Aladdin's charismatic presence and the lively energy of the market around him. Capture this moment in high detail and professional quality, suitable for social media's wide format, bringing Aladdin's legendary essence and the spirit of magic and adventure to life.
+
+============================================================
+IMAGE FILE: aladdin_post_20251230_224317.png

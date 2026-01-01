@@ -12,3 +12,11 @@ numpy>=1.24.0  # For cosine similarity calculations
 requests>=2.31.0  # For web scraping and search APIs
 beautifulsoup4>=4.12.0  # For HTML parsing
 lxml>=4.9.0  # Better HTML parser for BeautifulSoup
+PyPDF2>=3.0.0  # For PDF text extraction
+python-docx>=1.1.0  # For Word document processing
+openpyxl>=3.1.0  # For Excel file processing
+pandas>=2.0.0  # For CSV and Excel data processing
+Pillow>=10.0.0  # For image processing
+tweepy>=4.14.0  # For Twitter API integration
+newsapi-python>=0.2.7  # For News API integration
+

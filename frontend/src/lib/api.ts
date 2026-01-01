@@ -5,12 +5,43 @@ import { supabase } from "@/lib/supabaseClient";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
 async function getToken(): Promise<string> {
+  // First, try to get the current session
   const { data, error } = await supabase.auth.getSession();
-  if (error) throw new Error(error.message);
+  
+  if (error) {
+    // Don't log "Invalid Refresh Token" errors as they're expected when user is not logged in
+    if (!error.message?.includes("Refresh Token")) {
+      console.error("[API] Error getting session:", error);
+    }
+    throw new Error(error.message);
+  }
 
-  const token = data.session?.access_token;
-  if (!token) throw new Error("Not logged in (no access token)");
-  return token;
+  // If no session, user is not logged in
+  if (!data.session) {
+    throw new Error("Not logged in (no session)");
+  }
+
+  // Check if token is expired or about to expire (within 60 seconds)
+  const expiresAt = data.session.expires_at;
+  const now = Math.floor(Date.now() / 1000);
+  
+  if (expiresAt && expiresAt - now < 60) {
+    console.log("[API] Token expiring soon, attempting refresh...");
+    
+    // Try to refresh the session
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+    
+    if (refreshError || !refreshData.session) {
+      console.error("[API] Token refresh failed:", refreshError);
+      // If refresh fails, the session is truly expired
+      throw new Error("Session expired (refresh failed)");
+    }
+    
+    console.log("[API] Token refreshed successfully");
+    return refreshData.session.access_token;
+  }
+
+  return data.session.access_token;
 }
 
 async function fetchWithTimeout(
@@ -53,6 +84,18 @@ export async function apiFetch(path: string, init?: RequestInit) {
     const text = await res.text().catch(() => "");
     const err: any = new Error(`HTTP ${res.status}: ${text || res.statusText}`);
     err.status = res.status;
+    
+    // If we get 401 Unauthorized, the token is invalid - sign out and redirect to login
+    if (res.status === 401) {
+      console.error("[API] 401 Unauthorized - Session expired or invalid. Signing out...");
+      // Sign out and redirect to login (but don't await to avoid blocking the error)
+      supabase.auth.signOut().then(() => {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      });
+    }
+    
     throw err;
   }
 
@@ -76,6 +119,10 @@ export async function saveMyProfile(params: {
   display_name?: string;
   bio?: string;
   avatar_url?: string;
+  location?: string;
+  latitude?: string;
+  longitude?: string;
+  timezone?: string;
 }) {
   return apiFetch("/me/profile", {
     method: "POST",
@@ -85,12 +132,24 @@ export async function saveMyProfile(params: {
       display_name: params.display_name || null,
       bio: params.bio || null,
       avatar_url: params.avatar_url || null,
+      location: params.location || null,
+      latitude: params.latitude || null,
+      longitude: params.longitude || null,
+      timezone: params.timezone || null,
     }),
   });
 }
 
+export async function deleteMyAccount() {
+  return apiFetch("/me/account", { method: "DELETE" });
+}
+
 export async function getMyAgents() {
   return apiFetch("/me/avees", { method: "GET" });
+}
+
+export async function getAgentLimitStatus() {
+  return apiFetch("/me/agent-limit-status", { method: "GET" });
 }
 
 export async function createAgent(params: { 
@@ -220,6 +279,34 @@ export async function deleteAgentPermission(params: {
   });
 }
 
+// Feed API functions
+export async function getFeed(params?: { limit?: number; offset?: number }) {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set("limit", params.limit.toString());
+  if (params?.offset) query.set("offset", params.offset.toString());
+  
+  const url = `/feed${query.toString() ? `?${query.toString()}` : ""}`;
+  return apiFetch(url, { method: "GET" });
+}
+
+export async function markUpdatesAsRead(updateIds: string[]) {
+  return apiFetch("/feed/mark-read", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ update_ids: updateIds }),
+  });
+}
+
+export async function getAgentUpdatesForFeed(agentId: string) {
+  return apiFetch(`/feed/agent/${agentId}/updates`, { method: "GET" });
+}
+
+export async function markAllAgentUpdatesAsRead(agentId: string) {
+  return apiFetch(`/feed/agent/${agentId}/mark-all-read`, {
+    method: "POST",
+  });
+}
+
 // REST-style API wrapper for easier usage
 export const api = {
   get: async <T = any>(path: string): Promise<T> => {
@@ -250,3 +337,81 @@ export const api = {
     return apiFetch(path, { method: "DELETE" });
   },
 };
+
+
+// =====================================
+// POSTS API
+// =====================================
+
+export type PostData = {
+  id: string;
+  owner_user_id: string;
+  owner_handle: string;
+  owner_display_name: string | null;
+  owner_avatar_url: string | null;
+  title: string | null;
+  description: string | null;
+  image_url: string;
+  post_type: string;
+  ai_metadata: Record<string, any>;
+  visibility: string;
+  like_count: number;
+  comment_count: number;
+  share_count: number;
+  user_has_liked: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreatePostData = {
+  title?: string;
+  description?: string;
+  image_url: string;
+  post_type?: string;
+  ai_metadata?: Record<string, any>;
+  visibility?: string;
+};
+
+export async function getPosts(userHandle?: string, limit = 20, offset = 0): Promise<{ posts: PostData[] }> {
+  const params = new URLSearchParams();
+  if (userHandle) params.set("user_handle", userHandle);
+  params.set("limit", limit.toString());
+  params.set("offset", offset.toString());
+  
+  return api.get(`/posts?${params.toString()}`);
+}
+
+export async function getPost(postId: string): Promise<PostData> {
+  return api.get(`/posts/${postId}`);
+}
+
+export async function createPost(data: CreatePostData): Promise<{ id: string; message: string }> {
+  return api.post("/posts", data);
+}
+
+export async function updatePost(
+  postId: string,
+  data: { title?: string; description?: string; visibility?: string }
+): Promise<{ message: string }> {
+  return api.put(`/posts/${postId}`, data);
+}
+
+export async function deletePost(postId: string): Promise<{ message: string }> {
+  return api.delete(`/posts/${postId}`);
+}
+
+export async function likePost(postId: string): Promise<{ message: string }> {
+  return api.post(`/posts/${postId}/like`, {});
+}
+
+export async function unlikePost(postId: string): Promise<{ message: string }> {
+  return api.delete(`/posts/${postId}/like`);
+}
+
+export async function sharePost(postId: string, shareType = "repost", comment?: string): Promise<{ id: string; message: string }> {
+  const params = new URLSearchParams();
+  params.set("share_type", shareType);
+  if (comment) params.set("comment", comment);
+  
+  return api.post(`/posts/${postId}/share?${params.toString()}`, {});
+}

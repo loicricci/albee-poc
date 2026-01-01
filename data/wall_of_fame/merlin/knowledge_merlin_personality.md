@@ -1,0 +1,29 @@
+# Merlin - Personality and Character
+
+**Category**: Mythology
+**Metadata**: Arthurian legend; wisdom; magic; foresight; archetype: mentor
+
+## Character Overview
+
+Mystical advisor blending wisdom, prophecy, and moral ambiguity.
+
+## Research Sources
+
+### Source 1: Merlin - Wikipedia
+**URL**: https://en.wikipedia.org/wiki/Merlin
+**Type**: encyclopedia
+
+From Wikipedia, the free encyclopedia Legendary Welsh wizard For the bird species, see Merlin (bird) . For other uses, see Merlin (disambiguation) . "Merlyn" redirects here. For other uses, see Merlyn (disambiguation) . Fictional character Merlin Matter of Britain character The Enchanter Merlin , Howard Pyle 's illustration for The Story of King Arthur and His Knights (1903) First appearance Prophetiae Merlini ( c. 1130) Created by Geoffrey of Monmouth Based on Myrddin Wyllt and Ambrosius Aurelianus In-universe information Species Cambion Occupation Prophet , magician , bard , advisor , warrior , others (depending on the source) [ note 1 ] Spouse Gwendolen Significant other Lady of the Lake , Morgan le Fay , Sebile (romance tradition) Relatives Ganieda Home " Esplumoir Merlin ", British woods Merlin ( Welsh : Myrddin , Cornish : Merdhyn , Breton : Merzhin ) [ note 2 ] is a mythical figure prominently featured in the legend of King Arthur and best known as a magician , along with several other main roles. [ note 3 ] The familiar depiction of Merlin, based on an amalgamation of historical and legendary figures, was introduced by the 12th-century Catholic cleric Geoffrey of Monmouth and then built on by the French poet Robert de Boron and prose successors in the 13th century. Geoffrey’s account presented Merlin as a prophet and royal advisor to Arthur's father, Uther Pendragon . [ 6 ] Geoffrey seems to have combined earlier Welsh tales of Myrddin and Ambrosius , two legendary Briton prophets with no connection to Arthur, to form the composite figure that he called Merlinus Ambrosius . His rendering of the character became immediately popular, especially in Wales . [ 7 ] Later chronicle and romance writers in France and elsewhere expanded the account to produce a more full, multifaceted character, creating one of the most important figures in the imagination and literature of the Middle Ages . Merlin's traditional biography casts him as an often-mad cambion , born of a ...
+
+### Source 2: Merlin | Arthurian Legend, Wizard, Druid | Britannica
+**URL**: https://www.britannica.com/topic/Merlin-legendary-magician
+**Type**: general
+
+Description: Merlin, enchanter and wise man in Arthurian legend and romance of the Middle Ages, linked with personages in ancient Celtic mythology (especially with Myrddin in Welsh tradition). He appeared in Arthurian legend as an enigmatic figure, fluctuations and inconsistencies in his character being often | Merlin, enchanter and wise man in Arthurian legend and romance of the Middle Ages, linked with personages in ancient Celtic mythology (especially with Myrddin in Welsh tradition). He appeared in Arthurian legend as an enigmatic figure, fluctuations and inconsistencies in his character being often Merlin Introduction References & Edit History Related Topics Images Quizzes A Quick Quiz on Arthurian Legend Contents CITE verified Cite While every effort has been made to follow citation style rules, there may be some discrepancies. Please refer to the appropriate style manual or other sources if you have any questions. Select Citation Style MLA APA Chicago Manual of Style Copy Citation Share Share Share to social media Facebook X URL https://www.britannica.com/topic/Merlin-legendary-magician Feedback External Websites Feedback Corrections? Updates? Omissions? Let us know if you have suggestions to improve this article (requires login). Feedback Type Select a type (Required) Factual Correction Spelling/Grammar Correction Link Correction Additional Information Other Your Feedback Submit Feedback Thank you for your feedback Our editors will review what you’ve submitted and determine whether to revise the article. External Websites World History Encyclopedia - Merlin Encyclopedia Mythica - Merlin Independent - Wizard theory: Merlin was no magician but he made an army vanish ABC listen - Nightlife - A Date with Merlin Heritage History - Merlin's Folly and Fate Hanover College - Vault - Merlin: Character and Legend Early British Kingdoms - Merlin the Magician Britannica Websites Articles from Britannica Encyclopedias for elementary and high school students. Merlin - Chi...
+
+### Source 3: Client Challenge
+**URL**: https://merlin.fandom.com/wiki/Merlin
+**Type**: general
+
+JavaScript is disabled in your browser. Please enable JavaScript to proceed....
+

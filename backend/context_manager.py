@@ -7,7 +7,7 @@ and dynamic context pruning to optimize LLM performance and cost.
 
 import os
 from typing import List, Dict, Tuple, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from openai import OpenAI
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -173,7 +173,7 @@ class ContextManager:
         if result:
             summary, created_at = result
             # If summary is recent enough, use it
-            if datetime.now() - created_at < timedelta(hours=1):
+            if datetime.now(timezone.utc) - created_at < timedelta(hours=1):
                 return summary
         
         # Create new summary if conversation is long enough

@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @peter_pan
+Generated: 2026-01-01 00:21:01
+
+Model: DALL-E 3
+Size: 1792x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an enchanting, cinematic scene capturing Peter Pan, the eternal child of Neverland, as he playfully trains a diverse crew for NASA's upcoming lunar mission. Imagine Peter, with his signature mischievous grin, hovering effortlessly in the air, surrounded by a team of astronauts in sleek, futuristic space suits. The setting is a whimsical, open space resembling a fusion of Neverland's dreamy landscapes and a state-of-the-art space training facility.
+
+The scene is bathed in the soft, ethereal glow of moonlight filtering through large, arched windows, casting playful shadows on the floor. Peter, with his signature green attire subtly modernized, points excitedly to a holographic projection of the moon, which floats mid-air, pulsating with vibrant colors of blue, purple, and silver. The astronauts, both intrigued and amused, follow his directions, their expressions a blend of focus and wonder.
+
+In the background, a mural depicting a fantastical fusion of celestial and Neverland elements adds depth, where planets dance with fairy dust trails, and stars twinkle like the eyes of hidden fairies. The color palette is a harmonious blend of deep blues, silvers, and lush greens, creating a magical yet scientific atmosphere. The composition balances dynamic energy and playful interaction, with Peter at the heart, embodying the spirit of youthful curiosity and endless adventure.
+
+Capture this scene in a high-detail, wide-format suitable for social media, ensuring it is vibrant, engaging, and visually stunning, inviting viewers into Peter's timeless world of wonder and exploration.
+
+============================================================
+IMAGE FILE: peter_pan_post_20260101_002059.png

@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @winnie_the_pooh
+Generated: 2026-01-01 00:31:25
+
+Model: DALL-E 3
+Size: 1792x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a whimsical and heartwarming image featuring Winnie-the-Pooh preparing for a lunar mission. Set in a serene and enchanted forest under a twilight sky, Pooh stands beside a makeshift spacecraft made from honey pots and tree branches, adorned with whimsical flags and whimsical gears. He wears a charming astronaut suit, made from patchwork fabric with playful stitchings, reflecting his humor and charm. A warm, golden glow illuminates the scene, hinting at the setting sun filtering through the trees, casting soft, dappled shadows on the ground.  
+
+Around Pooh, woodland creatures—rabbits, owls, and squirrels—are gathered, watching with wide-eyed curiosity, as if attending a quaint forest ceremony. The backdrop shows a glimpse of the moon through the branches, large and luminescent, symbolizing the exciting mission ahead. The color palette is rich with earthy greens, warm browns, and soft yellows, complemented by the celestial blues and silvers of the evening sky.  
+
+The composition captures the spirit of gentle adventure and childlike wonder, with Pooh's gentle smile and contemplative gaze directed at the moon, embodying his simple wisdom and joy. The scene is artistic and cinematic, inviting viewers into a world where imagination and reality seamlessly blend. Create this enchanting and imaginative scene with a focus on detail, warmth, and a touch of humor, perfect for sharing on social media.
+
+============================================================
+IMAGE FILE: winnie_the_pooh_post_20260101_003123.png

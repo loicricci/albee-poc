@@ -207,3 +207,8 @@ Ses sketches sont encore cités aujourd'hui. Ils ont influencé :
 Coluche a prouvé qu'on pouvait faire rire ET dénoncer. Ses sketches sont des armes politiques déguisées en blagues.
 
 
+
+
+
+
+

@@ -13,6 +13,8 @@ type Avee = {
 
 type Conversation = {
   id: string;
+  chat_type?: "profile" | "agent";
+  target_avee_id?: string;
   avee_id?: string;
   layer_used?: "public" | "friends" | "intimate";
 };
@@ -77,6 +79,47 @@ async function apiPostQuery<T>(
   return (await res.json()) as T;
 }
 
+async function createOrGetDirectConversation(
+  avee_id: string,
+  token: string
+): Promise<Conversation> {
+  // Get agent's owner to create a DirectConversation
+  const agentRes = await fetch(buildUrl(`/avees/${avee_id}`), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  
+  if (!agentRes.ok) {
+    throw new Error("Failed to fetch agent details");
+  }
+  
+  const agent = await agentRes.json();
+  
+  // Create or get DirectConversation with agent
+  const res = await fetch(buildUrl("/messaging/conversations"), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      target_user_id: agent.owner_user_id,
+      chat_type: "agent",
+      target_avee_id: avee_id,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to create conversation");
+  }
+
+  const data = await res.json();
+  return {
+    id: data.id,
+    chat_type: "agent",
+    target_avee_id: avee_id,
+  };
+}
+
 export default function ChatPage() {
   const params = useParams<{ handle: string }>();
   const handle = useMemo(() => (params?.handle ? decodeURIComponent(params.handle) : ""), [params]);
@@ -128,27 +171,22 @@ export default function ChatPage() {
         if (!alive) return;
         setAvee(a);
 
-        // 2) Create/reuse conversation with avee_id (QUERY PARAM, not JSON body)
+        // 2) Create/reuse conversation with messaging API (DirectConversation)
         setPhase("loadingConversation");
-        const conv = await apiPostQuery<Conversation>(
-          "/conversations/with-avee",
-          { avee_id: a.id },
-          token
-        );
+        const conv = await createOrGetDirectConversation(a.id, token);
         if (!alive) return;
         setConversation(conv);
 
-        // 3) Load existing messages if you want (recommended)
-        // Your backend has GET /conversations/{id}/messages
+        // 3) Load existing messages
         const history = await apiGet<
-          { role: "user" | "assistant" | "system"; content: string; created_at: string }[]
-        >(`/conversations/${conv.id}/messages`, token);
+          { role?: "user" | "assistant" | "system"; sender_type?: string; content: string; created_at: string }[]
+        >(`/messaging/conversations/${conv.id}/messages`, token);
 
         if (!alive) return;
 
         const mapped: ChatMessage[] = (history || []).map((m, idx) => ({
           id: `${idx}-${uid()}`,
-          role: m.role,
+          role: (m.role || m.sender_type || "user") as "user" | "assistant" | "system",
           content: m.content,
           ts: Date.parse(m.created_at) || Date.now(),
         }));
@@ -191,17 +229,16 @@ export default function ChatPage() {
     try {
       const token = await getAccessToken();
 
-      // Use streaming endpoint for real-time responses
-      const url = buildUrl("/chat/stream", {
-        conversation_id: conversation.id,
-        question: text,
-      });
+      // Use unified messaging streaming endpoint with Orchestrator integration
+      const url = buildUrl(`/messaging/conversations/${conversation.id}/stream`);
 
       const response = await fetch(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ content: text }),
         signal: controller.signal,
       });
 
@@ -237,7 +274,12 @@ export default function ChatPage() {
                   // Stream complete - add final message
                   pushMessage("assistant", fullResponse);
                   setStreamingMessage("");
-                  console.log("Stream complete, message_id:", data.message_id);
+                  console.log("Stream complete, message_id:", data.message_id, "decision_path:", data.decision_path);
+                } else if (data.event === "escalation_offered") {
+                  // Handle escalation offer
+                  console.log("Escalation offered:", data.escalation_data);
+                } else if (data.event === "error") {
+                  throw new Error(data.error);
                 }
               } catch (e) {
                 // Ignore JSON parse errors for incomplete chunks

@@ -1,0 +1,324 @@
+"""
+Onboarding router for new user profile and agent creation.
+Handles multi-step onboarding wizard including handle suggestions,
+AI interview, and profile/agent creation.
+"""
+
+import os
+import re
+import uuid
+import random
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from openai import OpenAI
+
+from db import SessionLocal
+from models import Profile, Avee
+from auth_supabase import get_current_user_id
+
+router = APIRouter(prefix="/onboarding", tags=["onboarding"])
+
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# DB session dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Interview system prompt
+INTERVIEW_SYSTEM_PROMPT = """You are a friendly AI interviewer helping users create their digital twin persona. 
+Ask conversational follow-up questions to learn about:
+- Their personality traits and communication style
+- Their interests, expertise, and passions
+- How they want to be represented in conversations
+- Their background and context
+
+Be natural and conversational. Ask one question at a time.
+
+After gathering sufficient information (4-6 exchanges), when you have enough to create a comprehensive persona, 
+respond with a JSON object in this format:
+{
+  "interview_complete": true,
+  "suggested_persona": "A 2-3 paragraph persona written in first person that captures their essence"
+}
+
+Until then, just continue asking thoughtful follow-up questions to learn more about them."""
+
+
+# Request/Response Models
+class SuggestHandlesRequest(BaseModel):
+    name: str
+
+
+class HandleSuggestion(BaseModel):
+    handle: str
+    available: bool
+
+
+class SuggestHandlesResponse(BaseModel):
+    suggestions: list[HandleSuggestion]
+
+
+class InterviewChatRequest(BaseModel):
+    message: str
+    conversation_history: list[dict] = []
+
+
+class InterviewChatResponse(BaseModel):
+    reply: str
+    suggested_persona: Optional[str] = None
+    interview_complete: bool = False
+
+
+class OnboardingCompleteRequest(BaseModel):
+    handle: str
+    display_name: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+    persona: Optional[str] = None
+    interview_data: Optional[dict] = None
+
+
+class OnboardingStatusResponse(BaseModel):
+    completed: bool
+    has_profile: bool
+    has_agent: bool
+
+
+# Endpoints
+
+@router.get("/status", response_model=OnboardingStatusResponse)
+def onboarding_status(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Check if user has completed onboarding"""
+    user_uuid = uuid.UUID(user_id)
+    profile = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+    agent = db.query(Avee).filter(Avee.owner_user_id == user_uuid).first()
+    
+    return OnboardingStatusResponse(
+        completed=profile is not None and agent is not None,
+        has_profile=profile is not None,
+        has_agent=agent is not None,
+    )
+
+
+@router.post("/suggest-handles", response_model=SuggestHandlesResponse)
+def suggest_handles(
+    req: SuggestHandlesRequest,
+    db: Session = Depends(get_db),
+):
+    """Generate handle suggestions from user's name and check availability"""
+    name = req.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required")
+    
+    # Parse name into parts
+    name_parts = name.lower().split()
+    if len(name_parts) == 0:
+        raise HTTPException(status_code=400, detail="Invalid name")
+    
+    # Clean name parts (remove special chars, keep only alphanumeric)
+    clean_parts = [re.sub(r'[^a-z0-9]', '', part) for part in name_parts if part]
+    if len(clean_parts) == 0:
+        raise HTTPException(status_code=400, detail="Invalid name")
+    
+    first = clean_parts[0]
+    last = clean_parts[-1] if len(clean_parts) > 1 else ""
+    
+    # Generate handle variations
+    suggestions_to_check = []
+    
+    if len(clean_parts) == 1:
+        # Single name
+        suggestions_to_check = [
+            first,
+            f"{first}{random.randint(10, 99)}",
+            f"{first}_{random.randint(10, 99)}",
+            f"{first}{random.randint(100, 999)}",
+        ]
+    else:
+        # Multiple parts (first + last name)
+        suggestions_to_check = [
+            f"{first}{last}",  # johnsmith
+            f"{first}_{last}",  # john_smith
+            f"{first[0]}{last}",  # jsmith
+            first,  # john
+            f"{last}{first}",  # smithjohn
+            f"{first}{last}{random.randint(10, 99)}",  # johnsmith23
+        ]
+    
+    # Remove duplicates and limit length
+    suggestions_to_check = list(dict.fromkeys(suggestions_to_check))
+    suggestions_to_check = [s for s in suggestions_to_check if 3 <= len(s) <= 20]
+    
+    # Check availability
+    results = []
+    for handle in suggestions_to_check[:8]:  # Check up to 8 suggestions
+        existing = db.query(Profile).filter(Profile.handle == handle).first()
+        results.append(HandleSuggestion(
+            handle=handle,
+            available=existing is None
+        ))
+    
+    # Sort: available first, then by simplicity (shorter = simpler)
+    results.sort(key=lambda x: (not x.available, len(x.handle)))
+    
+    # Return top 6
+    return SuggestHandlesResponse(suggestions=results[:6])
+
+
+@router.post("/interview-chat", response_model=InterviewChatResponse)
+async def interview_chat(
+    req: InterviewChatRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Conduct AI interview to build user persona"""
+    if not req.message or not req.message.strip():
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    # Build conversation for OpenAI
+    messages = [{"role": "system", "content": INTERVIEW_SYSTEM_PROMPT}]
+    
+    # Add conversation history
+    for msg in req.conversation_history:
+        messages.append({
+            "role": msg.get("role", "user"),
+            "content": msg.get("content", "")
+        })
+    
+    # Add current message
+    messages.append({"role": "user", "content": req.message.strip()})
+    
+    try:
+        # Call OpenAI
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=500,
+        )
+        
+        reply = response.choices[0].message.content
+        
+        # Check if interview is complete (AI returns JSON with persona)
+        interview_complete = False
+        suggested_persona = None
+        
+        if reply and "{" in reply and "interview_complete" in reply.lower():
+            try:
+                import json
+                # Extract JSON from response
+                json_start = reply.index("{")
+                json_end = reply.rindex("}") + 1
+                json_str = reply[json_start:json_end]
+                data = json.loads(json_str)
+                
+                if data.get("interview_complete"):
+                    interview_complete = True
+                    suggested_persona = data.get("suggested_persona")
+                    reply = "Great! I have enough to build your persona. Here's what I came up with:"
+            except (ValueError, json.JSONDecodeError):
+                pass
+        
+        return InterviewChatResponse(
+            reply=reply,
+            suggested_persona=suggested_persona,
+            interview_complete=interview_complete,
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI interview failed: {str(e)}")
+
+
+@router.post("/complete")
+def complete_onboarding(
+    req: OnboardingCompleteRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Complete onboarding by creating profile and primary agent"""
+    user_uuid = uuid.UUID(user_id)
+    
+    # Check if profile already exists
+    existing_profile = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+    if existing_profile:
+        raise HTTPException(status_code=400, detail="Profile already exists")
+    
+    # Validate handle
+    handle = req.handle.strip().lower()
+    if not handle or len(handle) < 3 or len(handle) > 20:
+        raise HTTPException(status_code=400, detail="Handle must be 3-20 characters")
+    
+    if not re.match(r'^[a-z0-9_]+$', handle):
+        raise HTTPException(status_code=400, detail="Handle can only contain letters, numbers, and underscores")
+    
+    # Check handle availability
+    existing_handle = db.query(Profile).filter(Profile.handle == handle).first()
+    if existing_handle:
+        raise HTTPException(status_code=400, detail="Handle already taken")
+    
+    # Create profile
+    display_name = req.display_name or handle
+    
+    try:
+        profile = Profile(
+            user_id=user_uuid,
+            handle=handle,
+            display_name=display_name,
+            bio=req.bio,
+            avatar_url=req.avatar_url,
+        )
+        db.add(profile)
+        db.flush()  # Flush to get profile created before agent
+        
+        # Create primary agent (digital twin)
+        # Use AI-generated persona if provided, otherwise create minimal one
+        persona = req.persona or f"I'm {display_name}, looking forward to connecting!"
+        
+        agent = Avee(
+            id=uuid.uuid4(),
+            owner_user_id=user_uuid,
+            handle=handle,
+            display_name=display_name,
+            bio=req.bio,
+            avatar_url=req.avatar_url,
+            persona=persona,
+            is_primary="true",  # Mark as primary agent
+        )
+        db.add(agent)
+        db.commit()
+        db.refresh(profile)
+        db.refresh(agent)
+        
+        return {
+            "ok": True,
+            "profile": {
+                "user_id": str(profile.user_id),
+                "handle": profile.handle,
+                "display_name": profile.display_name,
+                "bio": profile.bio,
+                "avatar_url": profile.avatar_url,
+            },
+            "agent": {
+                "id": str(agent.id),
+                "handle": agent.handle,
+                "display_name": agent.display_name,
+                "persona": agent.persona,
+            }
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create profile: {str(e)}")
+

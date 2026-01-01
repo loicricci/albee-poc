@@ -216,8 +216,7 @@ function LeftSidebar({
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 shrink-0 rounded-full border-2 border-blue-100 bg-[#001f98] flex items-center justify-center text-white font-semibold overflow-hidden">
                   {profile.avatar_url && profile.avatar_url.trim() !== "" ? (
-                    <img 
-                      src={profile.avatar_url} 
+                    <img src={profile.avatar_url} 
                       alt={profile.display_name || profile.handle}
                       className="h-full w-full object-cover"
                       onError={(e) => {
@@ -470,8 +469,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
             title="Profile"
           >
             {profile?.avatar_url ? (
-              <img 
-                src={profile.avatar_url} 
+              <img src={profile.avatar_url} 
                 alt={profile.display_name || profile.handle || "Profile"}
                 className="h-full w-full object-cover"
               />

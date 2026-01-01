@@ -15,6 +15,7 @@ type FollowingAgent = {
   owner_user_id: string;
   owner_handle: string;
   owner_display_name?: string | null;
+  is_followed?: boolean; // Flag from backend indicating if already following
 };
 
 async function getAccessToken(): Promise<string> {
@@ -64,7 +65,7 @@ function NetworkContent() {
 
   const [items, setItems] = useState<FollowingAgent[]>([]);
   const [handleInput, setHandleInput] = useState("");
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [followingAgentIds, setFollowingAgentIds] = useState<Set<string>>(new Set());
   
   // Search suggestions state
   const [searchResults, setSearchResults] = useState<FollowingAgent[]>([]);
@@ -101,6 +102,7 @@ function NetworkContent() {
       const url = new URL(`${apiBase()}/network/search-agents`);
       url.searchParams.set("query", "");
       url.searchParams.set("limit", "6");
+      url.searchParams.set("include_followed", "false"); // Exclude agents already followed
 
       const res = await fetch(url.toString(), {
         headers: { Authorization: `Bearer ${token}` },
@@ -108,7 +110,11 @@ function NetworkContent() {
 
       if (res.ok) {
         const data = await res.json();
-        setSuggestedAgents(Array.isArray(data) ? data : []);
+        // Double-check on client side: filter out any agents marked as followed
+        const unfollowedAgents = Array.isArray(data) 
+          ? data.filter((agent: FollowingAgent) => !agent.is_followed)
+          : [];
+        setSuggestedAgents(unfollowedAgents);
       }
     } catch (e: any) {
       console.error("Failed to load suggested agents:", e);
@@ -194,11 +200,14 @@ function NetworkContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const follow = async (handleToFollow?: string) => {
+  const follow = async (handleToFollow?: string, agentId?: string) => {
     const targetHandle = handleToFollow || normalizedHandle;
     if (!targetHandle) return;
 
-    setIsFollowing(true);
+    // Mark this specific agent as being followed
+    if (agentId) {
+      setFollowingAgentIds(prev => new Set(prev).add(agentId));
+    }
     setErrorMsg("");
 
     try {
@@ -213,12 +222,19 @@ function NetworkContent() {
     } catch (e: any) {
       setErrorMsg(e?.message || "Failed to follow agent.");
     } finally {
-      setIsFollowing(false);
+      // Remove the agent from the following state
+      if (agentId) {
+        setFollowingAgentIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(agentId);
+          return newSet;
+        });
+      }
     }
   };
 
   const selectAgent = (agent: FollowingAgent) => {
-    follow(agent.avee_handle);
+    follow(agent.avee_handle, agent.avee_id);
   };
 
   return (
@@ -300,10 +316,10 @@ function NetworkContent() {
                   {/* Follow Button - always at bottom */}
                   <button
                     onClick={() => selectAgent(agent)}
-                    disabled={isFollowing}
+                    disabled={followingAgentIds.has(agent.avee_id)}
                     className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#1a2236] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isFollowing ? (
+                    {followingAgentIds.has(agent.avee_id) ? (
                       <>
                         <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -360,7 +376,7 @@ function NetworkContent() {
                 onFocus={() => {
                   if (searchResults.length > 0) setShowDropdown(true);
                 }}
-                disabled={isFollowing}
+                disabled={followingAgentIds.size > 0}
               />
               {isSearching && (
                 <svg className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#2E3A59]" viewBox="0 0 24 24">
@@ -378,7 +394,7 @@ function NetworkContent() {
                         key={agent.avee_id}
                         onClick={() => selectAgent(agent)}
                         className="w-full border-b border-[#E6E6E6] px-4 py-3 text-left transition-colors hover:bg-[#2E3A59]/5 last:border-b-0"
-                        disabled={isFollowing}
+                        disabled={followingAgentIds.has(agent.avee_id)}
                       >
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center">
@@ -426,11 +442,11 @@ function NetworkContent() {
             </div>
             <button
               className="flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!normalizedHandle || isFollowing}
+              disabled={!normalizedHandle || followingAgentIds.size > 0}
               onClick={() => follow()}
               title="Follow"
             >
-              {isFollowing ? (
+              {followingAgentIds.size > 0 ? (
                 <>
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -569,14 +585,13 @@ function NetworkContent() {
 
                     <Link
                       className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
-                      href={`/my-agents/${encodeURIComponent(x.avee_handle)}`}
-                      title="View agent details"
+                      href={`/u/${encodeURIComponent(x.avee_handle)}`}
+                      title="View profile"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      View
+                      Profile
                     </Link>
                   </div>
 
@@ -594,12 +609,11 @@ function NetworkContent() {
 
                     <Link
                       className="flex items-center justify-center rounded-lg border border-[#E6E6E6] p-2.5 text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
-                      href={`/my-agents/${encodeURIComponent(x.avee_handle)}`}
-                      title="View agent details"
+                      href={`/u/${encodeURIComponent(x.avee_handle)}`}
+                      title="View profile"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </Link>
                   </div>

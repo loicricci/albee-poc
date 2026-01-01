@@ -68,6 +68,9 @@ export default function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email: emailTrim,
       password: pw,
+      options: {
+        emailRedirectTo: `${window.location.origin}/onboarding`,
+      },
     });
 
     if (error) {
@@ -83,10 +86,10 @@ export default function SignupPage() {
       return;
     }
 
-    // If email confirmations are OFF, session exists => send user to app.
+    // If email confirmations are OFF, session exists => send user to onboarding.
     if (data.session?.access_token) {
       setLoading(false);
-      router.push("/app");
+      router.push("/onboarding");
       return;
     }
 

@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @snow_white
+Generated: 2026-01-01 15:46:39
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an enchanting illustration titled "Snow White's Serenade to Ukraine." Picture Snow White, embodying warmth and charm, standing at the edge of a lush, enchanted forest. The setting transitions into the golden fields of Ukraine, blending nature’s bounty with human history. Snow White wears a gown of delicate blue and yellow hues, mirroring Ukraine's national colors, with intricate embroidery inspired by traditional Ukrainian motifs. Her gentle smile reflects hope and resilience.
+
+In the foreground, a symphony of woodland creatures gathers around her, mirroring the unity and spirit of the Ukrainian people. Snow White extends her hand, softly engaging a nightingale, symbolizing freedom and melody. The scene is bathed in soft, morning light, casting a warm glow that enhances the sense of peace and unity.
+
+The artistic style is a fusion of storybook illustration and modern surrealism, with a soft focus that adds a dreamlike quality. The color palette is rich with emerald greens, sunflower yellows, and sky blues, creating a harmonious blend that reflects both the peacefulness of Snow White's world and the vibrant spirit of Ukraine.
+
+In the background, subtle outlines of historic Ukrainian architecture appear, evoking a sense of cultural depth. The composition is balanced, drawing the viewer’s eye to Snow White as the focal point, while the expansive Ukrainian landscape unfolds beyond. This image is designed to be visually captivating, suitable for sharing on social media in wide format, with intricate details that invite viewers to explore the story within.
+
+============================================================
+IMAGE FILE: snow_white_post_20260101_154637.png

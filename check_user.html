@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check User Status</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2E3A59;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #2E3A59;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #1a2236;
+        }
+        button.delete {
+            background: #dc3545;
+        }
+        button.delete:hover {
+            background: #c82333;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 User Account Diagnostics</h1>
+        <p>Check if a user exists in Supabase Auth and/or database, and delete if needed.</p>
+        
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" value="loic@wemine.fi" placeholder="user@example.com">
+        </div>
+        
+        <button onclick="checkUser()">Check User Status</button>
+        
+        <div id="result" class="hidden"></div>
+        
+        <div id="deleteSection" class="hidden" style="margin-top: 20px;">
+            <h3>⚠️ Delete User</h3>
+            <p>This will delete the user from both Supabase Auth and the database.</p>
+            <button class="delete" onclick="deleteUser()">Delete User</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+        
+        async function getToken() {
+            // Get token from Supabase session
+            const keys = Object.keys(localStorage).filter(k => k.includes('supabase.auth.token'));
+            if (keys.length === 0) {
+                alert('Please log in to the backoffice first!');
+                window.location.href = '/backoffice';
+                return null;
+            }
+            
+            const tokenData = localStorage.getItem(keys[0]);
+            if (!tokenData) return null;
+            
+            try {
+                const parsed = JSON.parse(tokenData);
+                return parsed.access_token || parsed.currentSession?.access_token;
+            } catch (e) {
+                console.error('Failed to parse token:', e);
+                return null;
+            }
+        }
+        
+        async function checkUser() {
+            const email = document.getElementById('email').value;
+            const resultDiv = document.getElementById('result');
+            const deleteSection = document.getElementById('deleteSection');
+            
+            if (!email) {
+                alert('Please enter an email address');
+                return;
+            }
+            
+            const token = await getToken();
+            if (!token) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Error: Could not get authentication token. Please log in.';
+                resultDiv.classList.remove('hidden');
+                return;
+            }
+            
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Checking...';
+            resultDiv.classList.remove('hidden');
+            deleteSection.classList.add('hidden');
+            
+            try {
+                const response = await fetch(
+                    `http://localhost:8000/admin/profiles/check-supabase-user?email=${encodeURIComponent(email)}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${data.detail || 'Request failed'}`;
+                    return;
+                }
+                
+                // Format the result
+                let resultText = '📊 Diagnostic Results:\n\n';
+                resultText += `Email: ${email}\n`;
+                resultText += `Found in Supabase: ${data.found_in_supabase ? '✅ YES' : '❌ NO'}\n`;
+                resultText += `Found in Database: ${data.found_in_database ? '✅ YES' : '❌ NO'}\n\n`;
+                
+                if (data.supabase_user) {
+                    resultText += '🔐 Supabase Auth Details:\n';
+                    resultText += `  ID: ${data.supabase_user.id}\n`;
+                    resultText += `  Email: ${data.supabase_user.email}\n`;
+                    resultText += `  Created: ${data.supabase_user.created_at}\n`;
+                    resultText += `  Email Confirmed: ${data.supabase_user.email_confirmed_at ? '✅ YES' : '❌ NO'}\n`;
+                    resultText += `  Last Sign In: ${data.supabase_user.last_sign_in_at || 'Never'}\n`;
+                    resultText += `  Identities: ${data.supabase_user.identities}\n\n`;
+                    
+                    currentUserId = data.supabase_user.id;
+                }
+                
+                if (data.database_profile) {
+                    resultText += '💾 Database Profile:\n';
+                    resultText += `  Handle: ${data.database_profile.handle}\n`;
+                    resultText += `  Display Name: ${data.database_profile.display_name}\n`;
+                    resultText += `  Created: ${data.database_profile.created_at}\n\n`;
+                }
+                
+                if (data.diagnosis) {
+                    resultText += '🩺 Diagnosis:\n';
+                    resultText += `  ${data.diagnosis}\n\n`;
+                    
+                    if (data.solution) {
+                        resultText += '💡 Solution:\n';
+                        resultText += `  ${data.solution}\n`;
+                    }
+                }
+                
+                resultDiv.className = 'result ' + (data.found_in_supabase ? 'warning' : 'success');
+                resultDiv.textContent = resultText;
+                
+                // Show delete button if user exists
+                if (data.found_in_supabase || data.found_in_database) {
+                    deleteSection.classList.remove('hidden');
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function deleteUser() {
+            if (!currentUserId) {
+                alert('No user ID found. Please check the user first.');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete user ${currentUserId}?\n\nThis will remove:\n- Supabase Auth user\n- Database profile\n- All associated data\n\nThis CANNOT be undone!`)) {
+                return;
+            }
+            
+            const token = await getToken();
+            if (!token) {
+                alert('Could not get authentication token');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Deleting user...';
+            
+            try {
+                const response = await fetch(
+                    `http://localhost:8000/admin/profiles/${currentUserId}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${data.detail || 'Deletion failed'}`;
+                    return;
+                }
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Success!\n\n${data.message}\n\nThe email can now be used for signup again.`;
+                
+                document.getElementById('deleteSection').classList.add('hidden');
+                currentUserId = null;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
+
+

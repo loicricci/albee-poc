@@ -171,3 +171,8 @@ The landing page now has a **sophisticated, professional color palette** that:
 The Deep Slate Blue (`#2E3A59`) provides a strong, confident primary accent, while the Muted Amber (`#C8A24A`) adds warmth in carefully chosen moments. The neutral Grey (`#E6E6E6`) creates structure without being harsh, and the near-black (`#0B0B0C`) ensures excellent readability.
 
 
+
+
+
+
+

@@ -496,3 +496,8 @@ These features are built on OpenAI's industry-leading Whisper (STT) and TTS mode
 Check the backend logs at `/backend/main.py` and frontend console for debugging. API docs available at `http://localhost:8000/docs`
 
 
+
+
+
+
+

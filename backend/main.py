@@ -1,9 +1,11 @@
 import uuid
+import httpx
 
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func
+from pathlib import Path
 import io
 
 from pydantic import BaseModel  # ✅ added
@@ -12,12 +14,18 @@ from models import Document, DocumentChunk
 from rag_utils import chunk_text
 from openai_embed import embed_texts
 import voice_service
+from performance import log_performance, track_query, metrics
+from cache import (
+    profile_cache, agent_cache, config_cache,
+    invalidate_user_cache, invalidate_agent_cache,
+    get_all_cache_stats, cleanup_all_caches
+)
 
 from openai import OpenAI
 client = OpenAI()
 
 from db import SessionLocal
-from auth_supabase import get_current_user_id
+from auth_supabase import get_current_user_id, get_current_user
 from models import (
     Conversation,
     Message,
@@ -28,11 +36,17 @@ from models import (
     AgentFollower,
     AveePermission,
     AppConfig,
+    Post,
+    PostLike,
+    PostComment,
+    CommentLike,
+    PostShare,
 )
 
 app = FastAPI()
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 import os
 
 def _get_allowed_origins() -> list[str]:
@@ -66,6 +80,10 @@ app.add_middleware(
     expose_headers=["Content-Type"],
 )
 
+# Add GZip compression middleware for API responses
+# Compresses responses > 1KB, reduces data transfer by 60-80%
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 from dotenv import load_dotenv
 load_dotenv("backend/.env")
 
@@ -74,7 +92,7 @@ from chat_enhanced import router as chat_enhanced_router
 app.include_router(chat_enhanced_router, tags=["chat-enhanced"])
 
 # Import admin router
-from admin import router as admin_router, require_admin
+from admin import router as admin_router, require_admin, ALLOWED_ADMIN_EMAILS
 app.include_router(admin_router, tags=["admin"])
 
 # Import agent updates router
@@ -84,6 +102,34 @@ app.include_router(agent_updates_router, tags=["agent-updates"])
 # Import feed router
 from feed import router as feed_router
 app.include_router(feed_router, tags=["feed"])
+
+# Import Twitter router
+from twitter_api import router as twitter_router
+app.include_router(twitter_router, tags=["twitter"])
+
+# Import Auto Post API router
+from auto_post_api import router as auto_post_router
+app.include_router(auto_post_router, tags=["auto-post"])
+
+# Import Native Agents router
+from native_agents_api import router as native_agents_router
+app.include_router(native_agents_router, tags=["native-agents"])
+
+# Import Messaging router
+from messaging import router as messaging_router
+app.include_router(messaging_router, tags=["messaging"])
+
+# Import Orchestrator router
+from orchestrator_api import router as orchestrator_router
+app.include_router(orchestrator_router, tags=["orchestrator"])
+
+# Import Onboarding router
+from onboarding import router as onboarding_router
+app.include_router(onboarding_router, tags=["onboarding"])
+
+# Import Posts router
+from posts_api import router as posts_router
+app.include_router(posts_router, tags=["posts"])
 
 
 # -----------------------------
@@ -103,6 +149,41 @@ class ProfileUpsertIn(BaseModel):
     display_name: str | None = None
     bio: str | None = None
     avatar_url: str | None = None
+    banner_url: str | None = None
+    location: str | None = None
+    latitude: str | None = None
+    longitude: str | None = None
+    timezone: str | None = None
+    
+    # Personal Information
+    birthdate: str | None = None
+    gender: str | None = None
+    marital_status: str | None = None
+    nationality: str | None = None
+    
+    # Contact Information
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    
+    # Professional Information
+    occupation: str | None = None
+    company: str | None = None
+    industry: str | None = None
+    education: str | None = None
+    
+    # Social Media Links
+    twitter_handle: str | None = None
+    linkedin_url: str | None = None
+    github_username: str | None = None
+    instagram_handle: str | None = None
+    
+    # Additional Information
+    languages: str | None = None
+    interests: str | None = None
+    
+    # Agent persona (for non-admin users)
+    persona: str | None = None
 
 class WebResearchRequest(BaseModel):
     topic: str
@@ -127,6 +208,38 @@ def get_db():
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+@app.get("/performance/metrics")
+def get_performance_metrics(user_id: str = Depends(get_current_user_id)):
+    """
+    Get performance metrics for monitoring.
+    Returns slowest endpoints and queries.
+    """
+    return {
+        "slowest_endpoints": metrics.get_slowest_endpoints(10),
+        "slowest_queries": metrics.get_slowest_queries(10),
+        "all_endpoint_stats": metrics.get_endpoint_stats(),
+        "all_query_stats": metrics.get_query_stats(),
+    }
+
+
+@app.get("/performance/cache-stats")
+def get_cache_stats(user_id: str = Depends(get_current_user_id)):
+    """
+    Get cache statistics for monitoring.
+    Shows hit rates and cached items for each cache.
+    """
+    return get_all_cache_stats()
+
+
+@app.post("/performance/cleanup-cache")
+def cleanup_caches(user_id: str = Depends(get_current_user_id)):
+    """
+    Manually trigger cache cleanup to remove expired entries.
+    Returns number of entries cleaned per cache.
+    """
+    return cleanup_all_caches()
 
 
 @app.get("/debug/db-test")
@@ -158,6 +271,12 @@ def _resolve_allowed_layer(db: Session, avee_id: uuid.UUID, viewer_user_id: uuid
         .first()
     )
     return perm.max_layer if perm else "public"
+
+
+def _is_admin(user: dict) -> bool:
+    """Check if a user has admin privileges based on their email"""
+    user_email = user.get("email", "").lower()
+    return user_email in ALLOWED_ADMIN_EMAILS
 
 
 # -----------------------------
@@ -285,21 +404,67 @@ def list_my_conversations(
 def get_my_profile(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
+    user: dict = Depends(get_current_user),
 ):
     user_uuid = _parse_uuid(user_id, "user_id")
+    is_admin = _is_admin(user)
+    
+    # Try cache first
+    cache_key = f"profile:{user_id}"
+    cached_result = profile_cache.get(cache_key)
+    if cached_result is not None:
+        return cached_result
 
     p = db.query(Profile).filter(Profile.user_id == user_uuid).first()
     if not p:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    return {
+    result = {
         "user_id": str(p.user_id),
         "handle": p.handle,
         "display_name": p.display_name,
         "bio": p.bio,
         "avatar_url": p.avatar_url,
+        "banner_url": p.banner_url,
+        "location": p.location,
+        "latitude": p.latitude,
+        "longitude": p.longitude,
+        "timezone": p.timezone,
+        "birthdate": p.birthdate,
+        "gender": p.gender,
+        "marital_status": p.marital_status,
+        "nationality": p.nationality,
+        "phone": p.phone,
+        "email": p.email,
+        "website": p.website,
+        "occupation": p.occupation,
+        "company": p.company,
+        "industry": p.industry,
+        "education": p.education,
+        "twitter_handle": p.twitter_handle,
+        "linkedin_url": p.linkedin_url,
+        "github_username": p.github_username,
+        "instagram_handle": p.instagram_handle,
+        "languages": p.languages,
+        "interests": p.interests,
         "created_at": p.created_at.isoformat() if p.created_at else None,
+        "is_admin": is_admin,
     }
+    
+    # For non-admin users, also include agent data (persona, agent_id)
+    if not is_admin:
+        agent = db.query(Avee).filter(Avee.owner_user_id == user_uuid).first()
+        if agent:
+            result["agent_id"] = str(agent.id)
+            result["persona"] = agent.persona
+        else:
+            result["agent_id"] = None
+            result["persona"] = None
+    
+    # Cache the result for 5 minutes
+    profile_cache.set(cache_key, result, ttl=300)
+    
+    return result
 
 
 @app.post("/me/profile")
@@ -307,8 +472,10 @@ def upsert_my_profile(
     payload: ProfileUpsertIn,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
+    user: dict = Depends(get_current_user),
 ):
     user_uuid = _parse_uuid(user_id, "user_id")
+    is_admin = _is_admin(user)
 
     handle = (payload.handle or "").strip().lower()
     if not handle:
@@ -320,7 +487,63 @@ def upsert_my_profile(
         existing.display_name = payload.display_name
         existing.bio = payload.bio
         existing.avatar_url = payload.avatar_url
+        existing.banner_url = payload.banner_url
+        existing.location = payload.location
+        existing.latitude = payload.latitude
+        existing.longitude = payload.longitude
+        existing.timezone = payload.timezone
+        existing.birthdate = payload.birthdate
+        existing.gender = payload.gender
+        existing.marital_status = payload.marital_status
+        existing.nationality = payload.nationality
+        existing.phone = payload.phone
+        existing.email = payload.email
+        existing.website = payload.website
+        existing.occupation = payload.occupation
+        existing.company = payload.company
+        existing.industry = payload.industry
+        existing.education = payload.education
+        existing.twitter_handle = payload.twitter_handle
+        existing.linkedin_url = payload.linkedin_url
+        existing.github_username = payload.github_username
+        existing.instagram_handle = payload.instagram_handle
+        existing.languages = payload.languages
+        existing.interests = payload.interests
         db.commit()
+        
+        # For non-admin users, sync profile to their single agent
+        if not is_admin:
+            agent = db.query(Avee).filter(Avee.owner_user_id == user_uuid).first()
+            if agent:
+                agent.handle = handle
+                agent.display_name = payload.display_name
+                agent.bio = payload.bio
+                agent.avatar_url = payload.avatar_url
+                # Update persona if provided
+                if payload.persona is not None:
+                    agent.persona = payload.persona
+                db.commit()
+                db.refresh(existing)
+                
+                # Invalidate cache after update
+                invalidate_user_cache(user_id)
+            else:
+                # Create agent if it doesn't exist
+                agent = Avee(
+                    id=uuid.uuid4(),
+                    handle=handle,
+                    display_name=payload.display_name,
+                    bio=payload.bio,
+                    avatar_url=payload.avatar_url,
+                    persona=payload.persona,
+                    owner_user_id=user_uuid,
+                )
+                db.add(agent)
+                db.commit()
+        
+        # Invalidate cache after update
+        invalidate_user_cache(user_id)
+        
         return {"ok": True, "user_id": str(user_uuid), "handle": handle}
 
     p = Profile(
@@ -329,17 +552,101 @@ def upsert_my_profile(
         display_name=payload.display_name,
         bio=payload.bio,
         avatar_url=payload.avatar_url,
+        banner_url=payload.banner_url,
+        location=payload.location,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        timezone=payload.timezone,
+        birthdate=payload.birthdate,
+        gender=payload.gender,
+        marital_status=payload.marital_status,
+        nationality=payload.nationality,
+        phone=payload.phone,
+        email=payload.email,
+        website=payload.website,
+        occupation=payload.occupation,
+        company=payload.company,
+        industry=payload.industry,
+        education=payload.education,
+        twitter_handle=payload.twitter_handle,
+        linkedin_url=payload.linkedin_url,
+        github_username=payload.github_username,
+        instagram_handle=payload.instagram_handle,
+        languages=payload.languages,
+        interests=payload.interests,
     )
     db.add(p)
     db.commit()
+    
+    # For non-admin users, also create an agent with the same data
+    if not is_admin:
+        agent = Avee(
+            id=uuid.uuid4(),
+            handle=handle,
+            display_name=payload.display_name,
+            bio=payload.bio,
+            avatar_url=payload.avatar_url,
+            persona=payload.persona,
+            owner_user_id=user_uuid,
+        )
+        db.add(agent)
+        db.commit()
+    
+    # Invalidate cache after creation
+    invalidate_user_cache(user_id)
+    
     return {"ok": True, "user_id": str(user_uuid), "handle": handle}
+
+
+@app.delete("/me/account")
+async def delete_my_account(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Delete the current user's account.
+    This will:
+    1. Delete the user's profile (cascades to delete agents, documents, etc.)
+    2. Delete the user from Supabase Auth
+    """
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # First, delete the profile and all associated data (cascades via FK constraints)
+    profile = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+    if profile:
+        db.delete(profile)
+        db.commit()
+    
+    # Delete the user from Supabase Auth using the Admin API
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if SUPABASE_SERVICE_ROLE_KEY:
+        url = f"{os.getenv('SUPABASE_URL')}/auth/v1/admin/users/{user_id}"
+        headers = {
+            "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+        }
+        
+        async with httpx.AsyncClient(timeout=10) as client:
+            try:
+                r = await client.delete(url, headers=headers)
+                if r.status_code not in [200, 204]:
+                    # Log the error but don't fail - profile is already deleted
+                    print(f"Warning: Failed to delete Supabase auth user {user_id}: {r.text}")
+            except Exception as e:
+                print(f"Warning: Failed to delete Supabase auth user {user_id}: {str(e)}")
+    
+    return {"ok": True, "message": "Account deleted successfully"}
+
+
+# NOTE: Old endpoint removed - see line 2568 for the complete implementation
+# that handles both profiles AND agents
 
 
 # -----------------------------
 # Avees
 # -----------------------------
 @app.post("/avees")
-def create_avee(
+async def create_avee(
     handle: str,
     display_name: str | None = None,
     bio: str | None = None,
@@ -350,9 +657,14 @@ def create_avee(
     research_layer: str = "public",
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
+    user: dict = Depends(get_current_user),
 ):
     """
     Create a new agent (Avee).
+    
+    **Agent Limits:**
+    - Regular users: Limited to 1 agent
+    - Admin users: Unlimited agents
     
     New Parameters:
         auto_research: If True, automatically research the topic and add to knowledge base
@@ -370,6 +682,19 @@ def create_avee(
     prof = db.query(Profile).filter(Profile.user_id == user_uuid).first()
     if not prof:
         raise HTTPException(status_code=400, detail="Create profile first: POST /me/profile")
+    
+    # Check agent limit for non-admin users
+    is_admin = _is_admin(user)
+    if not is_admin:
+        existing_agent_count = db.query(func.count(Avee.id)).filter(
+            Avee.owner_user_id == user_uuid
+        ).scalar()
+        
+        if existing_agent_count >= 1:
+            raise HTTPException(
+                status_code=403, 
+                detail="Regular users are limited to 1 agent. Please delete your existing agent to create a new one, or contact an administrator for more agents."
+            )
 
     try:
         a = Avee(
@@ -518,25 +843,133 @@ def get_avee_by_handle(
         "display_name": a.display_name,
         "avatar_url": a.avatar_url,
         "bio": a.bio,
+        "persona": a.persona,  # Include persona field
         "owner_user_id": str(a.owner_user_id),
     }
 
 
+@app.get("/me/agent-limit-status")
+async def get_agent_limit_status(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+    user: dict = Depends(get_current_user),
+):
+    """
+    Get information about the current user's agent limit status.
+    Returns how many agents they have and how many they can create.
+    """
+    # #region agent log
+    import json
+    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
+        f.write(json.dumps({
+            'location': 'main.py:811',
+            'message': 'agent-limit-status endpoint called',
+            'data': {'user_id': user_id, 'user_email': user.get('email')},
+            'timestamp': __import__('time').time() * 1000,
+            'sessionId': 'debug-session',
+            'hypothesisId': 'A,D'
+        }) + '\n')
+    # #endregion
+    
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # #region agent log
+    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
+        f.write(json.dumps({
+            'location': 'main.py:829',
+            'message': 'Before _is_admin check',
+            'data': {'user': user, 'user_email': user.get('email', '').lower(), 'ALLOWED_ADMIN_EMAILS': list(ALLOWED_ADMIN_EMAILS)},
+            'timestamp': __import__('time').time() * 1000,
+            'sessionId': 'debug-session',
+            'hypothesisId': 'A'
+        }) + '\n')
+    # #endregion
+    
+    is_admin = _is_admin(user)
+    
+    # #region agent log
+    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
+        f.write(json.dumps({
+            'location': 'main.py:844',
+            'message': 'After _is_admin check',
+            'data': {'is_admin': is_admin},
+            'timestamp': __import__('time').time() * 1000,
+            'sessionId': 'debug-session',
+            'hypothesisId': 'A'
+        }) + '\n')
+    # #endregion
+    
+    current_count = db.query(func.count(Avee.id)).filter(
+        Avee.owner_user_id == user_uuid
+    ).scalar()
+    
+    # #region agent log
+    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
+        f.write(json.dumps({
+            'location': 'main.py:860',
+            'message': 'After DB query',
+            'data': {'current_count': current_count, 'is_admin': is_admin},
+            'timestamp': __import__('time').time() * 1000,
+            'sessionId': 'debug-session',
+            'hypothesisId': 'E'
+        }) + '\n')
+    # #endregion
+    
+    max_agents = -1 if is_admin else 1  # -1 means unlimited
+    can_create_more = is_admin or current_count < 1
+    
+    response_data = {
+        "is_admin": is_admin,
+        "current_agent_count": current_count or 0,
+        "max_agents": max_agents,
+        "can_create_more": can_create_more,
+        "remaining": -1 if is_admin else max(0, 1 - (current_count or 0))
+    }
+    
+    # #region agent log
+    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
+        f.write(json.dumps({
+            'location': 'main.py:881',
+            'message': 'Returning response',
+            'data': {'response': response_data},
+            'timestamp': __import__('time').time() * 1000,
+            'sessionId': 'debug-session',
+            'hypothesisId': 'A,B'
+        }) + '\n')
+    # #endregion
+    
+    return response_data
+
+
 @app.get("/me/avees")
 def list_my_avees(
+    limit: int = 100,  # Added pagination (default 100)
+    offset: int = 0,    # Added offset
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
     user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Try cache first (only for first page)
+    if offset == 0 and limit == 100:
+        cache_key = f"agents:{user_id}"
+        cached_result = agent_cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+    # Enforce maximum limit
+    limit = min(limit, 500)  # Most users won't have >500 agents
 
     rows = (
         db.query(Avee)
         .filter(Avee.owner_user_id == user_uuid)
         .order_by(Avee.created_at.desc())
+        .limit(limit)
+        .offset(offset)
         .all()
     )
 
-    return [{
+    result = [{
         "id": str(a.id),
         "handle": a.handle,
         "display_name": a.display_name,
@@ -544,23 +977,34 @@ def list_my_avees(
         "bio": a.bio,
         "created_at": a.created_at,
     } for a in rows]
+    
+    # Cache the first page for 2 minutes
+    if offset == 0 and limit == 100:
+        agent_cache.set(cache_key, result, ttl=120)
+    
+    return result
 
 
 @app.get("/avees")
 def list_all_avees(
-    limit: int = 10,
+    limit: int = 20,  # Increased default from 10
+    offset: int = 0,   # Added offset for pagination
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
     """Get random public agents for discovery/recommendations, excluding the current user's agents"""
     user_uuid = _parse_uuid(user_id, "user_id")
     
+    # Enforce maximum limit to prevent abuse
+    limit = min(limit, 100)
+    
     # Get agents from other users, ordered randomly
     rows = (
         db.query(Avee)
         .filter(Avee.owner_user_id != user_uuid)
         .order_by(func.random())  # Random order for recommendations
-        .limit(min(limit, 50))  # Cap at 50
+        .limit(limit)
+        .offset(offset)
         .all()
     )
 
@@ -958,6 +1402,269 @@ def delete_avee_permission(
     return {"ok": True}
 
 
+@app.get("/avees/{avee_id}/documents")
+def list_training_documents(
+    avee_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    List all training documents for an agent.
+    Only the owner can see all documents.
+    """
+    owner_uuid = _parse_uuid(user_id, "user_id")
+    avee_uuid = _parse_uuid(avee_id, "avee_id")
+
+    a = db.query(Avee).filter(Avee.id == avee_uuid).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Avee not found")
+    if a.owner_user_id != owner_uuid:
+        raise HTTPException(status_code=403, detail="Only owner can view training documents")
+
+    docs = (
+        db.query(Document)
+        .filter(Document.avee_id == avee_uuid)
+        .filter(
+            (Document.source == None) | 
+            (~Document.source.like("agent_update:%"))
+        )
+        .order_by(Document.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": str(d.id),
+            "title": d.title,
+            "content": d.content,
+            "source": d.source,
+            "layer": d.layer,
+            "created_at": d.created_at.isoformat() if d.created_at else None,
+        }
+        for d in docs
+    ]
+
+
+@app.post("/avees/{avee_id}/documents/upload-file")
+async def upload_training_file(
+    avee_id: str,
+    layer: str = Form(...),
+    file: UploadFile = File(...),
+    title: str | None = Form(None),
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Upload a file (PDF, Word, Excel, CSV, or image) and extract its content as training data.
+    """
+    from file_processor import process_file, get_supported_extensions
+    
+    owner_uuid = _parse_uuid(user_id, "user_id")
+    avee_uuid = _parse_uuid(avee_id, "avee_id")
+
+    if layer not in ("public", "friends", "intimate"):
+        raise HTTPException(status_code=400, detail="Invalid layer")
+
+    a = db.query(Avee).filter(Avee.id == avee_uuid).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Avee not found")
+    if a.owner_user_id != owner_uuid:
+        raise HTTPException(status_code=403, detail="Only owner can upload training files")
+
+    # Check file extension
+    file_ext = Path(file.filename).suffix.lower()
+    supported_extensions = get_supported_extensions()
+    
+    if file_ext not in supported_extensions:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file type. Supported: {', '.join(supported_extensions)}"
+        )
+
+    try:
+        # Read file content
+        file_content = await file.read()
+        
+        if len(file_content) > 50 * 1024 * 1024:  # 50MB limit
+            raise HTTPException(status_code=400, detail="File too large (max 50MB)")
+        
+        # Process the file
+        result = process_file(file_content, file.filename, file.content_type or "")
+        
+        # Use extracted text as content
+        content = result["text"]
+        metadata = result["metadata"]
+        
+        # Create title if not provided
+        if not title:
+            title = f"{metadata['file_type']}: {metadata['original_filename']}"
+        
+        # Create document
+        doc = Document(
+            owner_user_id=owner_uuid,
+            avee_id=avee_uuid,
+            layer=layer,
+            title=title,
+            content=content,
+            source=f"file:{file.filename}",
+        )
+        db.add(doc)
+        db.flush()
+
+        # Chunk and embed
+        chunks = chunk_text(doc.content)
+        vectors = embed_texts(chunks)
+
+        for i, (chunk, vec) in enumerate(zip(chunks, vectors)):
+            vec_str = "[" + ",".join(str(x) for x in vec) + "]"
+
+            db.execute(
+                text("""
+                    insert into document_chunks
+                      (document_id, avee_id, layer, chunk_index, content, embedding)
+                    values
+                      (:document_id, :avee_id, :layer, :chunk_index, :content, (:embedding)::vector)
+                """),
+                {
+                    "document_id": str(doc.id),
+                    "avee_id": str(avee_uuid),
+                    "layer": layer,
+                    "chunk_index": i,
+                    "content": chunk,
+                    "embedding": vec_str,
+                }
+            )
+
+        db.commit()
+
+        return {
+            "ok": True,
+            "document_id": str(doc.id),
+            "title": title,
+            "chunks": len(chunks),
+            "layer": layer,
+            "file_type": metadata["file_type"],
+            "original_filename": metadata["original_filename"],
+        }
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
+
+
+class UrlDocumentRequest(BaseModel):
+    url: str
+    layer: str
+    title: str | None = None
+
+
+@app.post("/avees/{avee_id}/documents/from-url")
+def add_training_from_url(
+    avee_id: str,
+    req: UrlDocumentRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Extract content from a URL and add as training data.
+    """
+    from file_processor import extract_content_from_url
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    owner_uuid = _parse_uuid(user_id, "user_id")
+    avee_uuid = _parse_uuid(avee_id, "avee_id")
+
+    if req.layer not in ("public", "friends", "intimate"):
+        raise HTTPException(status_code=400, detail="Invalid layer")
+    
+    if not req.url or not req.url.strip():
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    a = db.query(Avee).filter(Avee.id == avee_uuid).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Avee not found")
+    if a.owner_user_id != owner_uuid:
+        raise HTTPException(status_code=403, detail="Only owner can add training from URL")
+
+    try:
+        logger.info(f"[URL Extract] Starting extraction from: {req.url}")
+        
+        # Extract content from URL
+        result = extract_content_from_url(req.url.strip())
+        
+        logger.info(f"[URL Extract] Successfully extracted content, length: {len(result['text'])} chars")
+        
+        content = result["text"]
+        metadata = result["metadata"]
+        
+        # Create title if not provided
+        title = req.title if req.title else metadata.get("title", f"Content from {req.url}")
+        
+        # Create document
+        doc = Document(
+            owner_user_id=owner_uuid,
+            avee_id=avee_uuid,
+            layer=req.layer,
+            title=title,
+            content=content,
+            source=f"url:{req.url}",
+        )
+        db.add(doc)
+        db.flush()
+
+        # Chunk and embed
+        chunks = chunk_text(doc.content)
+        vectors = embed_texts(chunks)
+        
+        logger.info(f"[URL Extract] Created {len(chunks)} chunks")
+
+        for i, (chunk, vec) in enumerate(zip(chunks, vectors)):
+            vec_str = "[" + ",".join(str(x) for x in vec) + "]"
+
+            db.execute(
+                text("""
+                    insert into document_chunks
+                      (document_id, avee_id, layer, chunk_index, content, embedding)
+                    values
+                      (:document_id, :avee_id, :layer, :chunk_index, :content, (:embedding)::vector)
+                """),
+                {
+                    "document_id": str(doc.id),
+                    "avee_id": str(avee_uuid),
+                    "layer": req.layer,
+                    "chunk_index": i,
+                    "content": chunk,
+                    "embedding": vec_str,
+                }
+            )
+
+        db.commit()
+        
+        logger.info(f"[URL Extract] Successfully saved document {doc.id}")
+
+        return {
+            "ok": True,
+            "document_id": str(doc.id),
+            "title": title,
+            "chunks": len(chunks),
+            "layer": layer,
+            "source_url": url,
+            "content_preview": content[:200] + "..." if len(content) > 200 else content,
+        }
+    
+    except ValueError as e:
+        logger.error(f"[URL Extract] ValueError: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"[URL Extract] Unexpected error: {str(e)}", exc_info=True)
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to extract content from URL: {str(e)}")
+
+
 @app.post("/avees/{avee_id}/documents")
 def add_training_document(
     avee_id: str,
@@ -1024,6 +1731,124 @@ def add_training_document(
         "chunks": len(chunks),
         "layer": layer,
     }
+
+
+@app.put("/avees/{avee_id}/documents/{document_id}")
+def update_training_document(
+    avee_id: str,
+    document_id: str,
+    layer: str,
+    title: str | None = None,
+    content: str | None = None,
+    source: str | None = None,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Update a training document and re-embed it.
+    """
+    owner_uuid = _parse_uuid(user_id, "user_id")
+    avee_uuid = _parse_uuid(avee_id, "avee_id")
+    doc_uuid = _parse_uuid(document_id, "document_id")
+
+    if layer not in ("public", "friends", "intimate"):
+        raise HTTPException(status_code=400, detail="Invalid layer")
+    if not content or not content.strip():
+        raise HTTPException(status_code=400, detail="Empty content")
+
+    a = db.query(Avee).filter(Avee.id == avee_uuid).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Avee not found")
+    if a.owner_user_id != owner_uuid:
+        raise HTTPException(status_code=403, detail="Only owner can update training documents")
+
+    doc = db.query(Document).filter(
+        Document.id == doc_uuid,
+        Document.avee_id == avee_uuid
+    ).first()
+    
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # Update document
+    doc.title = title
+    doc.content = content.strip()
+    doc.source = source
+    doc.layer = layer
+
+    # Delete old chunks
+    db.execute(
+        text("DELETE FROM document_chunks WHERE document_id = :document_id"),
+        {"document_id": str(doc_uuid)}
+    )
+
+    # Re-chunk and re-embed
+    chunks = chunk_text(doc.content)
+    vectors = embed_texts(chunks)
+
+    for i, (chunk, vec) in enumerate(zip(chunks, vectors)):
+        vec_str = "[" + ",".join(str(x) for x in vec) + "]"
+
+        db.execute(
+            text("""
+                insert into document_chunks
+                  (document_id, avee_id, layer, chunk_index, content, embedding)
+                values
+                  (:document_id, :avee_id, :layer, :chunk_index, :content, (:embedding)::vector)
+            """),
+            {
+                "document_id": str(doc.id),
+                "avee_id": str(avee_uuid),
+                "layer": layer,
+                "chunk_index": i,
+                "content": chunk,
+                "embedding": vec_str,
+            }
+        )
+
+    db.commit()
+
+    return {
+        "ok": True,
+        "document_id": str(doc.id),
+        "chunks": len(chunks),
+        "layer": layer,
+    }
+
+
+@app.delete("/avees/{avee_id}/documents/{document_id}")
+def delete_training_document(
+    avee_id: str,
+    document_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Delete a training document and all its chunks.
+    """
+    owner_uuid = _parse_uuid(user_id, "user_id")
+    avee_uuid = _parse_uuid(avee_id, "avee_id")
+    doc_uuid = _parse_uuid(document_id, "document_id")
+
+    a = db.query(Avee).filter(Avee.id == avee_uuid).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Avee not found")
+    if a.owner_user_id != owner_uuid:
+        raise HTTPException(status_code=403, detail="Only owner can delete training documents")
+
+    doc = db.query(Document).filter(
+        Document.id == doc_uuid,
+        Document.avee_id == avee_uuid
+    ).first()
+    
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # Delete document (chunks will be cascade deleted)
+    db.delete(doc)
+    db.commit()
+
+    return {"ok": True, "document_id": str(doc_uuid)}
 
 
 @app.post("/avees/{avee_id}/web-research")
@@ -1635,10 +2460,11 @@ def follow_by_handle(
 def search_agents(
     query: str = "",
     limit: int = 10,
+    include_followed: bool = True,  # NEW: Allow showing followed agents
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    """Search for agents by handle or display name. Excludes agents already followed."""
+    """Search for agents by handle or display name. Can include or exclude agents already followed."""
     me = _parse_uuid(user_id, "user_id")
     
     search_term = f"%{query.strip().lower()}%"
@@ -1651,7 +2477,7 @@ def search_agents(
     )
     followed_ids = [fid[0] for fid in followed_ids]
     
-    # Search for agents matching the query, excluding followed ones
+    # Search for agents matching the query
     query_obj = (
         db.query(Avee, Profile)
         .join(Profile, Profile.user_id == Avee.owner_user_id)
@@ -1660,7 +2486,8 @@ def search_agents(
         )
     )
     
-    if followed_ids:
+    # Optionally exclude followed agents
+    if not include_followed and followed_ids:
         query_obj = query_obj.filter(~Avee.id.in_(followed_ids))
     
     rows = query_obj.order_by(Avee.handle).limit(limit).all()
@@ -1675,6 +2502,7 @@ def search_agents(
             "owner_user_id": str(a.owner_user_id),
             "owner_handle": p.handle,
             "owner_display_name": p.display_name,
+            "is_followed": a.id in followed_ids,  # NEW: Indicate if already following
         }
         for (a, p) in rows
     ]
@@ -1710,6 +2538,206 @@ def list_following_agents(
         }
         for (a, p) in rows
     ]
+
+
+@app.get("/profiles/{handle}")
+def get_profile_by_handle(
+    handle: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Get a profile by handle. Returns profile info, agent info, and relationship status."""
+    me = _parse_uuid(user_id, "user_id")
+    
+    # Normalize handle
+    handle = handle.strip().lower()
+    
+    # First check if it's a profile handle
+    profile = db.query(Profile).filter(func.lower(Profile.handle) == handle).first()
+    
+    if profile:
+        # This is a user profile - get their primary agent if they have one
+        agent = db.query(Avee).filter(Avee.owner_user_id == profile.user_id).first()
+        
+        # Check if current user is following this agent
+        is_following = False
+        if agent:
+            is_following = db.query(AgentFollower).filter(
+                AgentFollower.follower_user_id == me,
+                AgentFollower.avee_id == agent.id
+            ).first() is not None
+        
+        # Count followers for the agent
+        follower_count = 0
+        if agent:
+            follower_count = db.query(AgentFollower).filter(
+                AgentFollower.avee_id == agent.id
+            ).count()
+        
+        result = {
+            "type": "profile",
+            "profile": {
+                "user_id": str(profile.user_id),
+                "handle": profile.handle,
+                "display_name": profile.display_name,
+                "bio": profile.bio,
+                "avatar_url": profile.avatar_url,
+                "banner_url": profile.banner_url,
+                "location": profile.location,
+                "twitter_handle": profile.twitter_handle,
+                "linkedin_url": profile.linkedin_url,
+                "github_username": profile.github_username,
+                "instagram_handle": profile.instagram_handle,
+                "website": getattr(profile, "website", None),
+                "occupation": getattr(profile, "occupation", None),
+                "interests": getattr(profile, "interests", None),
+                "created_at": profile.created_at.isoformat() if profile.created_at else None,
+            },
+            "agent": {
+                "id": str(agent.id) if agent else None,
+                "handle": agent.handle if agent else None,
+                "display_name": agent.display_name if agent else None,
+                "bio": agent.bio if agent else None,
+                "avatar_url": agent.avatar_url if agent else None,
+                "follower_count": follower_count,
+            } if agent else None,
+            "is_following": is_following,
+            "is_own_profile": str(profile.user_id) == str(me),
+        }
+        
+        return result
+    
+    # Check if it's an agent handle
+    agent = db.query(Avee).filter(func.lower(Avee.handle) == handle).first()
+    
+    if not agent:
+        raise HTTPException(status_code=404, detail="Profile or agent not found")
+    
+    # Get owner profile
+    owner = db.query(Profile).filter(Profile.user_id == agent.owner_user_id).first()
+    
+    # Check if current user is following this agent
+    is_following = db.query(AgentFollower).filter(
+        AgentFollower.follower_user_id == me,
+        AgentFollower.avee_id == agent.id
+    ).first() is not None
+    
+    # Count followers
+    follower_count = db.query(AgentFollower).filter(
+        AgentFollower.avee_id == agent.id
+    ).count()
+    
+    return {
+        "type": "agent",
+        "agent": {
+            "id": str(agent.id),
+            "handle": agent.handle,
+            "display_name": agent.display_name,
+            "bio": agent.bio,
+            "avatar_url": agent.avatar_url,
+            "follower_count": follower_count,
+            "created_at": agent.created_at.isoformat() if agent.created_at else None,
+        },
+        "profile": {
+            "user_id": str(owner.user_id) if owner else None,
+            "handle": owner.handle if owner else None,
+            "display_name": owner.display_name if owner else None,
+            "avatar_url": owner.avatar_url if owner else None,
+        } if owner else None,
+        "is_following": is_following,
+        "is_own_profile": str(agent.owner_user_id) == str(me) if agent else False,
+    }
+
+
+@app.get("/profiles/{handle}/updates")
+def get_profile_updates(
+    handle: str,
+    limit: int = 20,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Get public updates for a profile/agent by handle."""
+    from models import AgentUpdate
+    
+    me = _parse_uuid(user_id, "user_id")
+    handle = handle.strip().lower()
+    
+    # First try to find profile
+    profile = db.query(Profile).filter(func.lower(Profile.handle) == handle).first()
+    
+    if profile:
+        # Get their agent
+        agent = db.query(Avee).filter(Avee.owner_user_id == profile.user_id).first()
+        if not agent:
+            return {"total": 0, "updates": []}
+        agent_id = agent.id
+    else:
+        # Try to find agent directly
+        agent = db.query(Avee).filter(func.lower(Avee.handle) == handle).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Profile or agent not found")
+        agent_id = agent.id
+    
+    # Determine accessible layer based on follow status
+    is_owner = str(agent.owner_user_id) == str(me)
+    
+    if is_owner:
+        # Owner sees all updates
+        query = db.query(AgentUpdate).filter(AgentUpdate.avee_id == agent_id)
+    else:
+        # Check if following
+        is_following = db.query(AgentFollower).filter(
+            AgentFollower.follower_user_id == me,
+            AgentFollower.avee_id == agent_id
+        ).first() is not None
+        
+        # Get permission level
+        permission = db.query(AveePermission).filter(
+            AveePermission.avee_id == agent_id,
+            AveePermission.viewer_user_id == me
+        ).first()
+        
+        max_layer = permission.max_layer if permission else "public"
+        
+        # Build layer filter
+        if max_layer == "intimate":
+            allowed_layers = ["public", "friends", "intimate"]
+        elif max_layer == "friends":
+            allowed_layers = ["public", "friends"]
+        else:
+            allowed_layers = ["public"]
+        
+        query = db.query(AgentUpdate).filter(
+            AgentUpdate.avee_id == agent_id,
+            AgentUpdate.layer.in_(allowed_layers)
+        )
+    
+    # Get total count
+    total = query.count()
+    
+    # Get paginated updates (pinned first, then by date)
+    updates = query.order_by(
+        AgentUpdate.is_pinned.desc(),
+        AgentUpdate.created_at.desc()
+    ).limit(limit).offset(offset).all()
+    
+    return {
+        "total": total,
+        "updates": [
+            {
+                "id": str(u.id),
+                "title": u.title,
+                "content": u.content,
+                "topic": u.topic,
+                "layer": u.layer,
+                "is_pinned": u.is_pinned == "true",
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+                "updated_at": u.updated_at.isoformat() if u.updated_at else None,
+            }
+            for u in updates
+        ]
+    }
 
 
 @app.get("/agents/{avee_id}/followers")

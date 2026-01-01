@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   addTrainingDocument,
   chatAsk,
@@ -12,10 +13,16 @@ import {
 } from "@/lib/api";
 import { uploadImageToBucket } from "@/lib/upload";
 import { ChatButton } from "@/components/ChatButton";
-import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AgentUpdates } from "@/components/AgentUpdates";
+import { TrainingDocuments } from "@/components/TrainingDocuments";
 import { generateProfileFromVoice, updateAveeProfileFromVoice } from "@/lib/upload";
 import { supabase } from "@/lib/supabaseClient";
+
+// PERFORMANCE: Lazy load VoiceRecorder (only loads when needed)
+const VoiceRecorder = dynamic(() => import("@/components/VoiceRecorder").then(mod => ({ default: mod.VoiceRecorder })), {
+  ssr: false,
+  loading: () => <div className="text-sm text-gray-600">Loading recorder...</div>,
+});
 
 type Agent = {
   id: string;
@@ -49,6 +56,8 @@ export default function AgentEditorPage() {
   const [persona, setPersona] = useState("");
   const [personaSaving, setPersonaSaving] = useState(false);
   const [personaMsg, setPersonaMsg] = useState<string | null>(null);
+  const [uploadingPersona, setUploadingPersona] = useState(false);
+  const personaFileInputRef = useRef<HTMLInputElement>(null);
 
   // Training
   const [trainLayer, setTrainLayer] = useState<"public" | "friends" | "intimate">("public");
@@ -56,6 +65,16 @@ export default function AgentEditorPage() {
   const [trainSource, setTrainSource] = useState("");
   const [trainContent, setTrainContent] = useState("");
   const [training, setTraining] = useState(false);
+  const [trainingMode, setTrainingMode] = useState<"text" | "file" | "url">("text");
+  
+  // File upload
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // URL extraction
+  const [extractUrl, setExtractUrl] = useState("");
+  const [extractingUrl, setExtractingUrl] = useState(false);
+  const [showLinkedInWarning, setShowLinkedInWarning] = useState(false);
 
   // Permissions
   const [viewerHandle, setViewerHandle] = useState("");
@@ -203,6 +222,47 @@ export default function AgentEditorPage() {
     handleAvatarFile(file);
   }
 
+  async function handlePersonaFile(file: File) {
+    if (!agent?.id) return;
+
+    setError(null);
+    setPersonaMsg(null);
+    setUploadingPersona(true);
+
+    try {
+      // Check file type
+      if (!file.name.endsWith('.txt') && !file.name.endsWith('.md')) {
+        throw new Error("Please upload a .txt or .md file");
+      }
+
+      // Check file size (max 40KB for 40,000 chars)
+      if (file.size > 40000) {
+        throw new Error("Persona file too large (max 40,000 characters)");
+      }
+
+      // Read file content
+      const text = await file.text();
+      
+      if (text.length > 40000) {
+        throw new Error("Persona content too long (max 40,000 characters)");
+      }
+
+      // Update persona state
+      setPersona(text);
+      setPersonaMsg(`Persona file "${file.name}" loaded. Click 'Save Persona' to apply.`);
+    } catch (e: any) {
+      setPersonaMsg(e.message || "Failed to load persona file");
+    } finally {
+      setUploadingPersona(false);
+    }
+  }
+
+  function onPersonaFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handlePersonaFile(file);
+  }
+
   async function onSavePersona() {
     if (!agent?.id) return;
 
@@ -258,6 +318,159 @@ export default function AgentEditorPage() {
       setError(e.message || "Failed to add training document");
     } finally {
       setTraining(false);
+    }
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !agent?.id) return;
+
+    setUploadingFile(true);
+    setError(null);
+    setOkMsg(null);
+
+    try {
+      const { data, error: authError } = await supabase.auth.getSession();
+      if (authError || !data.session?.access_token) {
+        throw new Error("Not authenticated");
+      }
+      const token = data.session.access_token;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("layer", trainLayer);
+      if (trainTitle.trim()) {
+        formData.append("title", trainTitle.trim());
+      }
+
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+      const res = await fetch(`${apiBase}/avees/${agent.id}/documents/upload-file`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        
+        // Handle different error response formats
+        let errorMessage: string;
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          // FastAPI validation errors come as array
+          errorMessage = errorData.detail.map((err: any) => 
+            err.msg || err.message || JSON.stringify(err)
+          ).join(', ');
+        } else if (errorData.detail) {
+          errorMessage = JSON.stringify(errorData.detail);
+        } else {
+          errorMessage = `Failed to upload file: ${res.status}`;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await res.json();
+
+      setTrainTitle("");
+      setOkMsg(
+        `File "${result.original_filename}" processed successfully! ${result.chunks} chunks created.`
+      );
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (e: any) {
+      setError(e.message || "Failed to upload file");
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
+  async function handleExtractFromUrl() {
+    if (!agent?.id || !extractUrl.trim()) return;
+
+    setExtractingUrl(true);
+    setError(null);
+    setOkMsg(null);
+    setShowLinkedInWarning(false); // Hide previous warnings
+
+    try {
+      const { data, error: authError } = await supabase.auth.getSession();
+      if (authError || !data.session?.access_token) {
+        throw new Error("Not authenticated");
+      }
+      const token = data.session.access_token;
+
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+      
+      console.log('[URL Extract] Starting extraction from:', extractUrl.trim());
+      console.log('[URL Extract] API Base:', apiBase);
+      
+      const res = await fetch(`${apiBase}/avees/${agent.id}/documents/from-url`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: extractUrl.trim(),
+          layer: trainLayer,
+          title: trainTitle.trim() || undefined,
+        }),
+      });
+
+      console.log('[URL Extract] Response status:', res.status);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.log('[URL Extract] Error data:', errorData);
+        
+        // Handle different error response formats
+        let errorMessage: string;
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          // FastAPI validation errors come as array
+          errorMessage = errorData.detail.map((err: any) => 
+            err.msg || err.message || JSON.stringify(err)
+          ).join(', ');
+        } else if (errorData.detail) {
+          errorMessage = JSON.stringify(errorData.detail);
+        } else {
+          errorMessage = `Failed to extract content: ${res.status}`;
+        }
+        
+        console.error('[URL Extract] Error:', errorMessage);
+        
+        // Check if it's a LinkedIn-related error
+        if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('linkedin')) {
+          setShowLinkedInWarning(true);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await res.json();
+      
+      console.log('[URL Extract] Success! Chunks created:', result.chunks);
+
+      setExtractUrl("");
+      setTrainTitle("");
+      setOkMsg(
+        `Content extracted from URL! ${result.chunks} chunks created. Title: "${result.title}"`
+      );
+    } catch (e: any) {
+      console.error('[URL Extract] Exception caught:', e);
+      const errorMessage = e.message || "Failed to extract content from URL";
+      console.error('[URL Extract] Setting error message:', errorMessage);
+      setError(errorMessage);
+    } finally {
+      setExtractingUrl(false);
     }
   }
 
@@ -389,7 +602,7 @@ export default function AgentEditorPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3 text-gray-600">
+        <div className="flex items-center gap-3 text-[#2E3A59]">
           <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -407,11 +620,11 @@ export default function AgentEditorPage() {
           <svg className="mx-auto h-12 w-12 text-red-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Agent not found</h3>
-          <p className="text-sm text-gray-600 mb-6">The requested Agent could not be loaded.</p>
+          <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">Agent not found</h3>
+          <p className="text-sm text-[#2E3A59]/70 mb-6">The requested Agent could not be loaded.</p>
           <Link
             href="/my-agents"
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
           >
             Back to My Agents
           </Link>
@@ -425,8 +638,8 @@ export default function AgentEditorPage() {
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="mb-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Agent Editor</h1>
-          <p className="mt-2 text-sm sm:text-base text-gray-600">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#0B0B0C]">Agent Editor</h1>
+          <p className="mt-2 text-sm sm:text-base text-[#2E3A59]/70">
             Configure <span className="font-semibold">@{handle}</span>
           </p>
         </div>
@@ -434,7 +647,7 @@ export default function AgentEditorPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/my-agents"
-            className="flex items-center gap-2 rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -445,7 +658,7 @@ export default function AgentEditorPage() {
           <ChatButton
             handle={handle}
             displayName={agent?.display_name || handle}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -455,7 +668,7 @@ export default function AgentEditorPage() {
           </ChatButton>
           <button
             onClick={load}
-            className="flex items-center gap-2 rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -500,18 +713,18 @@ export default function AgentEditorPage() {
 
       <div className="space-y-6">
         {/* Voice Profile Generation Card */}
-        <div className="overflow-hidden rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 shadow-sm">
-          <div className="flex items-start sm:items-center justify-between border-b border-purple-100 bg-white/50 px-4 sm:px-6 py-4">
+        <div className="overflow-hidden rounded-2xl border border-[#C8A24A]/30 bg-gradient-to-br from-[#C8A24A]/5 to-white shadow-sm">
+          <div className="flex items-start sm:items-center justify-between border-b border-[#C8A24A]/20 bg-white/50 px-4 sm:px-6 py-4">
             <div className="flex items-start sm:items-center gap-3">
-              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600 shrink-0">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#C8A24A] shrink-0">
                 <svg className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                   <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm sm:text-base font-semibold text-gray-900">🎙️ AI Profile Generation from Voice</h2>
-                <p className="mt-1 text-xs sm:text-sm text-gray-600">
+                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">🎙️ AI Profile Generation from Voice</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
                   Record a 30-second intro and let AI create your persona
                 </p>
               </div>
@@ -521,7 +734,7 @@ export default function AgentEditorPage() {
               className="rounded-lg p-2 transition-colors hover:bg-white/50 shrink-0 ml-2"
             >
               <svg
-                className={`h-5 w-5 text-gray-600 transition-transform ${
+                className={`h-5 w-5 text-[#2E3A59] transition-transform ${
                   showVoiceSection ? "rotate-180" : ""
                 }`}
                 fill="none"
@@ -535,14 +748,14 @@ export default function AgentEditorPage() {
 
           {showVoiceSection && (
             <div className="p-4 sm:p-6">
-              <div className="mb-4 rounded-lg border border-purple-200 bg-white p-3 sm:p-4 text-xs sm:text-sm">
+              <div className="mb-4 rounded-lg border border-[#C8A24A]/30 bg-white p-3 sm:p-4 text-xs sm:text-sm">
                 <div className="flex items-start gap-3">
-                  <svg className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-purple-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-[#C8A24A] mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z" />
                   </svg>
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-gray-900 mb-1">How it works:</div>
-                    <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                    <div className="font-semibold text-[#0B0B0C] mb-1">How it works:</div>
+                    <ol className="list-decimal list-inside space-y-1 text-[#2E3A59]/80">
                       <li>Record a 30-second voice introduction talking about yourself</li>
                       <li>AI (GPT-4o) transcribes your speech using Whisper</li>
                       <li>AI generates a persona, bio, and display name based on your intro</li>
@@ -561,14 +774,14 @@ export default function AgentEditorPage() {
               )}
 
               {generatingFromVoice && (
-                <div className="flex items-start sm:items-center gap-3 rounded-lg border border-purple-200 bg-white p-4 sm:p-6">
-                  <svg className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-purple-600 shrink-0" viewBox="0 0 24 24">
+                <div className="flex items-start sm:items-center gap-3 rounded-lg border border-[#C8A24A]/30 bg-white p-4 sm:p-6">
+                  <svg className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-[#C8A24A] shrink-0" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm sm:text-base font-semibold text-gray-900">Generating your profile...</div>
-                    <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                    <div className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Generating your profile...</div>
+                    <div className="text-xs sm:text-sm text-[#2E3A59]/70 mt-1">
                       Transcribing audio and analyzing your personality with GPT-4o
                     </div>
                   </div>
@@ -576,31 +789,31 @@ export default function AgentEditorPage() {
               )}
 
               {voiceGenerationResult && (
-                <div className="space-y-3 sm:space-y-4 rounded-lg border border-purple-200 bg-white p-4 sm:p-6">
+                <div className="space-y-3 sm:space-y-4 rounded-lg border border-[#C8A24A]/30 bg-white p-4 sm:p-6">
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">📝 Transcript:</div>
-                    <div className="rounded-lg bg-gray-50 p-2 sm:p-3 text-xs sm:text-sm text-gray-700 italic break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">📝 Transcript:</div>
+                    <div className="rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs sm:text-sm text-[#2E3A59]/80 italic break-words">
                       "{voiceGenerationResult.transcript}"
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">🎭 Generated Persona:</div>
-                    <div className="max-h-32 sm:max-h-40 overflow-y-auto rounded-lg bg-gray-50 p-2 sm:p-3 text-xs font-mono text-gray-700 break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">🎭 Generated Persona:</div>
+                    <div className="max-h-32 sm:max-h-40 overflow-y-auto rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs font-mono text-[#2E3A59]/80 break-words">
                       {voiceGenerationResult.persona}
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">📋 Generated Bio:</div>
-                    <div className="rounded-lg bg-gray-50 p-2 sm:p-3 text-xs sm:text-sm text-gray-700 break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">📋 Generated Bio:</div>
+                    <div className="rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs sm:text-sm text-[#2E3A59]/80 break-words">
                       {voiceGenerationResult.bio}
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">✨ Display Name:</div>
-                    <div className="rounded-lg bg-gray-50 p-2 sm:p-3 text-xs sm:text-sm text-gray-700 break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">✨ Display Name:</div>
+                    <div className="rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs sm:text-sm text-[#2E3A59]/80 break-words">
                       {voiceGenerationResult.display_name}
                     </div>
                   </div>
@@ -608,7 +821,7 @@ export default function AgentEditorPage() {
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-2">
                     <button
                       onClick={applyVoiceProfile}
-                      className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#C8A24A] to-[#a8862a] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -620,7 +833,7 @@ export default function AgentEditorPage() {
                         setVoiceGenerationResult(null);
                         setShowVoiceSection(false);
                       }}
-                      className="rounded-lg border border-gray-300 px-4 sm:px-6 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                      className="rounded-lg border border-[#E6E6E6] px-4 sm:px-6 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
                     >
                       Discard
                     </button>
@@ -632,10 +845,10 @@ export default function AgentEditorPage() {
         </div>
 
         {/* Agent Details Card */}
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Agent Details</h2>
-            <p className="mt-1 text-xs sm:text-sm text-gray-600">Basic information and appearance</p>
+        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Agent Details</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Basic information and appearance</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
@@ -650,15 +863,14 @@ export default function AgentEditorPage() {
                   className={[
                     "group relative aspect-square cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-all",
                     dragging
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50",
+                      ? "border-[#2E3A59] bg-[#2E3A59]/5"
+                      : "border-[#E6E6E6] bg-[#E6E6E6]/50 hover:border-[#2E3A59] hover:bg-[#2E3A59]/5",
                     uploadingAvatar ? "pointer-events-none opacity-60" : "",
                   ].join(" ")}
                 >
                   {avatarUrl ? (
                     <>
-                      <img
-                        src={avatarUrl}
+                      <img src={avatarUrl}
                         alt="Agent avatar"
                         className="h-full w-full object-cover"
                       />
@@ -675,19 +887,19 @@ export default function AgentEditorPage() {
                     <div className="flex h-full flex-col items-center justify-center p-4 text-center">
                       {uploadingAvatar ? (
                         <>
-                          <svg className="h-8 w-8 animate-spin text-[#001f98] mb-2" viewBox="0 0 24 24">
+                          <svg className="h-8 w-8 animate-spin text-[#2E3A59] mb-2" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
-                          <p className="text-sm text-gray-600">Uploading...</p>
+                          <p className="text-sm text-[#2E3A59]/70">Uploading...</p>
                         </>
                       ) : (
                         <>
-                          <svg className="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-12 w-12 text-[#2E3A59]/50 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <p className="text-sm font-semibold text-gray-700 mb-1">Drop image here</p>
-                          <p className="text-xs text-gray-500">or click to browse</p>
+                          <p className="text-sm font-semibold text-[#0B0B0C] mb-1">Drop image here</p>
+                          <p className="text-xs text-[#2E3A59]/70">or click to browse</p>
                         </>
                       )}
                     </div>
@@ -705,21 +917,21 @@ export default function AgentEditorPage() {
               {/* Form Fields */}
               <div className="lg:col-span-2 space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-900">Handle</label>
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 font-mono break-all">
+                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Handle</label>
+                  <div className="rounded-lg border border-[#E6E6E6] bg-[#E6E6E6]/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#2E3A59]/70 font-mono break-all">
                     @{agent.handle}
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">Handle cannot be changed</p>
+                  <p className="mt-1 text-xs text-[#2E3A59]/70">Handle cannot be changed</p>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-900">
+                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
                     Display Name
-                    <span className="ml-2 text-xs font-normal text-gray-500">(max 100 chars)</span>
+                    <span className="ml-2 text-xs font-normal text-[#2E3A59]/70">(max 100 chars)</span>
                   </label>
                   <input
                     type="text"
-                    className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 sm:py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
                     value={displayName}
                     onChange={(e) => {
                       setDisplayName(e.target.value);
@@ -731,12 +943,12 @@ export default function AgentEditorPage() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-900">
+                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
                     Bio
-                    <span className="ml-2 text-xs font-normal text-gray-500">(max 500 chars)</span>
+                    <span className="ml-2 text-xs font-normal text-[#2E3A59]/70">(max 500 chars)</span>
                   </label>
                   <textarea
-                    className="h-24 w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 sm:py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="h-24 w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
                     value={bio}
                     onChange={(e) => {
                       setBio(e.target.value);
@@ -745,7 +957,7 @@ export default function AgentEditorPage() {
                     placeholder="A brief description of this Agent..."
                     maxLength={500}
                   />
-                  <p className="mt-1 text-xs text-gray-500">{bio.length}/500 characters</p>
+                  <p className="mt-1 text-xs text-[#2E3A59]/70">{bio.length}/500 characters</p>
                 </div>
               </div>
             </div>
@@ -754,7 +966,7 @@ export default function AgentEditorPage() {
               <div className={`mt-4 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${
                 detailsMsg.includes("success") || detailsMsg.includes("saved")
                   ? "bg-green-50 text-green-800 border border-green-200"
-                  : "bg-blue-50 text-blue-800 border border-blue-200"
+                  : "bg-[#2E3A59]/5 text-[#2E3A59] border border-[#2E3A59]/20"
               }`}>
                 {detailsMsg}
               </div>
@@ -764,7 +976,7 @@ export default function AgentEditorPage() {
               <button
                 onClick={onSaveDetails}
                 disabled={detailsSaving || uploadingAvatar}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {detailsSaving ? (
                   <>
@@ -801,6 +1013,45 @@ export default function AgentEditorPage() {
             </div>
           </div>
           <div className="p-4 sm:p-6">
+            {/* File Upload Section */}
+            <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <button
+                onClick={() => personaFileInputRef.current?.click()}
+                disabled={uploadingPersona}
+                className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-purple-300 bg-purple-50 px-4 py-3 text-sm font-medium text-purple-700 transition-all hover:border-purple-400 hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {uploadingPersona ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Loading file...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload Persona File (.txt or .md)
+                  </>
+                )}
+              </button>
+              <input
+                ref={personaFileInputRef}
+                type="file"
+                accept=".txt,.md"
+                className="hidden"
+                onChange={onPersonaFileSelect}
+              />
+              <div className="text-xs text-gray-500 flex items-center">
+                <svg className="h-4 w-4 mr-1 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z" />
+                </svg>
+                Upload a persona file to quickly load content
+              </div>
+            </div>
+
             <textarea
               className="h-48 sm:h-64 w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 sm:py-3 font-mono text-xs sm:text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               value={persona}
@@ -813,9 +1064,9 @@ export default function AgentEditorPage() {
             
             {personaMsg && (
               <div className={`mt-3 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm ${
-                personaMsg.includes("success") || personaMsg.includes("saved")
-                  ? "bg-green-50 text-green-800"
-                  : "bg-red-50 text-red-800"
+                personaMsg.includes("success") || personaMsg.includes("saved") || personaMsg.includes("loaded")
+                  ? "bg-green-50 text-green-800 border border-green-200"
+                  : "bg-red-50 text-red-800 border border-red-200"
               }`}>
                 {personaMsg}
               </div>
@@ -856,18 +1107,58 @@ export default function AgentEditorPage() {
           <AgentUpdates agentId={agent.id} agentHandle={agent.handle} />
         )}
 
+        {/* Training Documents List Card */}
+        {agent?.id && (
+          <TrainingDocuments agentId={agent.id} agentHandle={agent.handle} />
+        )}
+
         {/* Training Data Card */}
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50 px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Training Data</h2>
-            <p className="mt-1 text-xs sm:text-sm text-gray-600">Add knowledge and context for this Agent</p>
+        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Training Data</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Add knowledge and context for this Agent</p>
           </div>
           <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {/* Tab Selection */}
+            <div className="mb-6 flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+              <button
+                onClick={() => setTrainingMode("text")}
+                className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                  trainingMode === "text"
+                    ? "bg-[#2E3A59] text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                📝 Text
+              </button>
+              <button
+                onClick={() => setTrainingMode("file")}
+                className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                  trainingMode === "file"
+                    ? "bg-[#2E3A59] text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                📁 Upload File
+              </button>
+              <button
+                onClick={() => setTrainingMode("url")}
+                className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                  trainingMode === "url"
+                    ? "bg-[#2E3A59] text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                🔗 From URL
+              </button>
+            </div>
+
+            {/* Common: Layer and Title */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-4">
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Layer</label>
                 <select
-                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
                   value={trainLayer}
                   onChange={(e) => setTrainLayer(e.target.value as any)}
                 >
@@ -878,75 +1169,202 @@ export default function AgentEditorPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">Title (optional)</label>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Title (optional)</label>
                 <input
-                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
                   value={trainTitle}
                   onChange={(e) => setTrainTitle(e.target.value)}
                   placeholder="e.g., Bio, FAQ, Memories"
                 />
               </div>
-
-              <div className="sm:col-span-3">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">Source (optional)</label>
-                <input
-                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={trainSource}
-                  onChange={(e) => setTrainSource(e.target.value)}
-                  placeholder="e.g., LinkedIn, website, notes"
-                />
-              </div>
-
-              <div className="sm:col-span-3">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">Content</label>
-                <textarea
-                  className="h-32 sm:h-40 w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 sm:py-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={trainContent}
-                  onChange={(e) => setTrainContent(e.target.value)}
-                  placeholder="Paste training content here..."
-                />
-              </div>
             </div>
 
-            <div className="mt-4">
-              <button
-                onClick={onAddDoc}
-                disabled={training}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {training ? (
-                  <>
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            {/* Text Mode */}
+            {trainingMode === "text" && (
+              <>
+                <div className="sm:col-span-3 mb-4">
+                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Source (optional)</label>
+                  <input
+                    className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    value={trainSource}
+                    onChange={(e) => setTrainSource(e.target.value)}
+                    placeholder="e.g., LinkedIn, website, notes"
+                  />
+                </div>
+
+                <div className="sm:col-span-3 mb-4">
+                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Content</label>
+                  <textarea
+                    className="h-32 sm:h-40 w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    value={trainContent}
+                    onChange={(e) => setTrainContent(e.target.value)}
+                    placeholder="Paste training content here..."
+                  />
+                </div>
+
+                <button
+                  onClick={onAddDoc}
+                  disabled={training}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {training ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Training Document
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+
+            {/* File Upload Mode */}
+            {trainingMode === "file" && (
+              <>
+                <div className="mb-4">
+                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                    Upload File
+                  </label>
+                  <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileUpload}
+                      accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.md,.markdown,.jpg,.jpeg,.png,.gif,.bmp,.webp"
+                      className="hidden"
+                      disabled={uploadingFile}
+                    />
+                    <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Training Document
-                  </>
-                )}
-              </button>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {uploadingFile ? (
+                        <>
+                          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          Choose File
+                        </>
+                      )}
+                    </button>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Supported: PDF, Word, Excel, CSV, Markdown, Images (JPG, PNG, etc.)
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">Max file size: 50MB</p>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800">
+                  <strong>💡 How it works:</strong> Files are automatically processed to extract text content. Images are analyzed with GPT-4 Vision to extract text and descriptions.
+                </div>
+              </>
+            )}
+
+            {/* URL Mode */}
+            {trainingMode === "url" && (
+              <>
+                <div className="mb-4">
+                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">URL</label>
+                  <input
+                    type="url"
+                    className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    value={extractUrl}
+                    onChange={(e) => setExtractUrl(e.target.value)}
+                    placeholder="https://example.com/article"
+                  />
+                </div>
+
+                <button
+                  onClick={handleExtractFromUrl}
+                  disabled={extractingUrl || !extractUrl.trim()}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {extractingUrl ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Extracting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                      Extract from URL
+                    </>
+                  )}
+                </button>
+
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-xs text-green-800">
+                    <strong>💡 How it works:</strong> Content is extracted from web pages, articles, and blog posts. The system automatically cleans and formats the text for training.
+                  </div>
+                  
+                  {showLinkedInWarning && (
+                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <strong>⚠️ LinkedIn Note:</strong> LinkedIn profiles cannot be scraped directly due to authentication requirements. To add your LinkedIn profile:
+                          <ol className="mt-2 ml-4 list-decimal space-y-1">
+                            <li>Go to your LinkedIn profile</li>
+                            <li>Copy the text content manually</li>
+                            <li>Use the <strong>📝 Text</strong> tab to paste it</li>
+                          </ol>
+                          <p className="mt-2">Or export your LinkedIn data: Settings → Data Privacy → Get a copy of your data</p>
+                        </div>
+                        <button
+                          onClick={() => setShowLinkedInWarning(false)}
+                          className="shrink-0 text-amber-600 hover:text-amber-800"
+                          title="Dismiss"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* Permissions Card */}
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50 px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Permissions</h2>
-            <p className="mt-1 text-xs sm:text-sm text-gray-600">Control who can access different layers</p>
+        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#C8A24A]/10 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Permissions</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Control who can access different layers</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">Viewer Handle</label>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Viewer Handle</label>
                 <input
-                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
                   value={viewerHandle}
                   onChange={(e) => setViewerHandle(e.target.value)}
                   placeholder="e.g., john-doe"
@@ -954,9 +1372,9 @@ export default function AgentEditorPage() {
               </div>
 
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">Max Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Max Layer</label>
                 <select
-                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
                   value={maxLayer}
                   onChange={(e) => setMaxLayer(e.target.value as any)}
                 >
@@ -971,7 +1389,7 @@ export default function AgentEditorPage() {
               <button
                 onClick={onSetPermission}
                 disabled={savingPerm}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#C8A24A] to-[#a8862a] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {savingPerm ? (
                   <>
@@ -995,17 +1413,17 @@ export default function AgentEditorPage() {
         </div>
 
         {/* Test Card */}
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Test Agent</h2>
-            <p className="mt-1 text-xs sm:text-sm text-gray-600">Ask questions to test responses</p>
+        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Test Agent</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Ask questions to test responses</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Layer</label>
                 <select
-                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
                   value={testLayer}
                   onChange={(e) => setTestLayer(e.target.value as any)}
                 >
@@ -1016,9 +1434,9 @@ export default function AgentEditorPage() {
               </div>
 
               <div className="sm:col-span-3">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">Question</label>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Question</label>
                 <input
-                  className="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Ask something..."
@@ -1030,7 +1448,7 @@ export default function AgentEditorPage() {
               <button
                 onClick={onAsk}
                 disabled={asking}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {asking ? (
                   <>
@@ -1054,7 +1472,7 @@ export default function AgentEditorPage() {
                 <button
                   type="button"
                   onClick={() => setAnswer(null)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
                 >
                   Clear
                 </button>
@@ -1062,7 +1480,7 @@ export default function AgentEditorPage() {
             </div>
 
             {answer && (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4 text-xs sm:text-sm whitespace-pre-wrap break-words">
+              <div className="mt-4 rounded-lg border border-[#E6E6E6] bg-[#E6E6E6]/50 p-3 sm:p-4 text-xs sm:text-sm text-[#0B0B0C] whitespace-pre-wrap break-words">
                 {answer}
               </div>
             )}

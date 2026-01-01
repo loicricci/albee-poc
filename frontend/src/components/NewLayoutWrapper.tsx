@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { getAppConfig, type AppConfig } from "@/lib/config";
 
 export function NewLayoutWrapper({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-[#FAFAFA] to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <TopNavigation />
       <div className="mx-auto max-w-7xl px-6 py-8">
         {children}
@@ -23,6 +23,18 @@ type Profile = {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  is_admin?: boolean;
+};
+
+type SearchResult = {
+  avee_id: string;
+  avee_handle: string;
+  avee_display_name: string | null;
+  avee_avatar_url: string | null;
+  avee_bio: string | null;
+  owner_user_id: string;
+  owner_handle: string;
+  owner_display_name: string | null;
 };
 
 function TopNavigation() {
@@ -31,6 +43,14 @@ function TopNavigation() {
   // Start with null to avoid hydration mismatch
   const [profile, setProfile] = useState<Profile | null>(null);
   const [appConfig, setAppConfig] = useState<AppConfig>({});
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     // Load app config from cache immediately, then fetch fresh
@@ -98,18 +118,16 @@ function TopNavigation() {
       // Only fetch profile if not already cached and session exists
       if (data.session?.access_token && !profileFetched) {
         try {
-          const apiBase = process.env.NEXT_PUBLIC_API_BASE;
-          if (apiBase) {
-            const res = await fetch(`${apiBase}/me/profile`, {
-              headers: { Authorization: `Bearer ${data.session.access_token}` },
-            });
-            if (res.ok) {
-              const profileData = await res.json();
-              if (alive) {
-                setProfile(profileData);
-                localStorage.setItem('user_profile', JSON.stringify(profileData));
-                localStorage.setItem('app_profile', JSON.stringify(profileData));
-              }
+          const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+          const res = await fetch(`${apiBase}/me/profile`, {
+            headers: { Authorization: `Bearer ${data.session.access_token}` },
+          });
+          if (res.ok) {
+            const profileData = await res.json();
+            if (alive) {
+              setProfile(profileData);
+              localStorage.setItem('user_profile', JSON.stringify(profileData));
+              localStorage.setItem('app_profile', JSON.stringify(profileData));
             }
           }
         } catch (error) {
@@ -128,18 +146,16 @@ function TopNavigation() {
       if (session?.access_token) {
         (async () => {
           try {
-            const apiBase = process.env.NEXT_PUBLIC_API_BASE;
-            if (apiBase) {
-              const res = await fetch(`${apiBase}/me/profile`, {
-                headers: { Authorization: `Bearer ${session.access_token}` },
-              });
-              if (res.ok) {
-                const profileData = await res.json();
-                if (alive) {
-                  setProfile(profileData);
-                  localStorage.setItem('user_profile', JSON.stringify(profileData));
-                  localStorage.setItem('app_profile', JSON.stringify(profileData));
-                }
+            const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+            const res = await fetch(`${apiBase}/me/profile`, {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            if (res.ok) {
+              const profileData = await res.json();
+              if (alive) {
+                setProfile(profileData);
+                localStorage.setItem('user_profile', JSON.stringify(profileData));
+                localStorage.setItem('app_profile', JSON.stringify(profileData));
               }
             }
           } catch (error) {
@@ -164,13 +180,93 @@ function TopNavigation() {
     };
   }, []);
 
+  // Perform search function
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.access_token) {
+        return;
+      }
+
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+      const url = new URL(`${apiBase}/network/search-agents`);
+      url.searchParams.set("query", query);
+      url.searchParams.set("limit", "8");
+
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+
+      if (res.ok) {
+        const results = await res.json();
+        setSearchResults(Array.isArray(results) ? results : []);
+        setShowSearchDropdown(true);
+      }
+    } catch (e) {
+      console.error("Search error:", e);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+
+    if (showSearchDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showSearchDropdown]);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 300);
+    } else {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, performSearch]);
+
+  const handleSearchResultClick = (agentHandle: string) => {
+    setShowSearchDropdown(false);
+    setSearchQuery("");
+    router.push(`/u/${agentHandle}`);
+  };
+
   async function logout() {
     await supabase.auth.signOut();
     router.push("/login");
   }
 
   return (
-    <div className="sticky top-0 z-50 border-b border-[#E6E6E6]/50 bg-white/80 backdrop-blur-xl shadow-sm">
+    <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-xl shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         {/* Left side - Logo and Search */}
         <div className="flex items-center gap-4">
@@ -215,7 +311,7 @@ function TopNavigation() {
           </Link>
 
           <div className="hidden w-96 md:block">
-            <div className="relative">
+            <div className="relative" ref={searchDropdownRef}>
               <svg
                 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
                 fill="none"
@@ -232,8 +328,69 @@ function TopNavigation() {
               <input
                 type="text"
                 placeholder="Search Agents..."
-                className="w-full rounded-lg border border-[#E6E6E6] bg-white py-2 pl-10 pr-4 text-sm text-[#0B0B0C] transition-all focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20 focus:border-[#2E3A59]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
+              
+              {/* Search Results Dropdown */}
+              {showSearchDropdown && (
+                <div className="absolute top-full mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-xl z-50 max-h-96 overflow-y-auto">
+                  {isSearching ? (
+                    <div className="px-4 py-8 text-center text-sm text-gray-500">
+                      <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"></div>
+                      <div className="mt-2">Searching...</div>
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-gray-500">
+                      No agents found for "{searchQuery}"
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {searchResults.map((result) => (
+                        <button
+                          key={result.avee_id}
+                          onClick={() => handleSearchResultClick(result.avee_handle)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                        >
+                          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full" style={{background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'}}>
+                            {result.avee_avatar_url ? (
+                              <img src={result.avee_avatar_url}
+                                alt={result.avee_display_name || result.avee_handle}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-white">
+                                {result.avee_handle[0]?.toUpperCase() || "A"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium text-gray-900">
+                                {result.avee_display_name || result.avee_handle}
+                              </div>
+                              {result.is_followed && (
+                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                  Following
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              @{result.avee_handle}
+                            </div>
+                            {result.avee_bio && (
+                              <div className="mt-1 truncate text-xs text-gray-400">
+                                {result.avee_bio}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -243,7 +400,7 @@ function TopNavigation() {
           {/* Home Icon */}
           <Link
             href="/app"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#2E3A59] hover:bg-[#2E3A59]/10"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
             title="Home Feed"
           >
             <svg
@@ -262,32 +419,58 @@ function TopNavigation() {
             </svg>
           </Link>
 
-          {/* My Agents Icon */}
-          <Link
-            href="/my-agents"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#2E3A59] hover:bg-[#2E3A59]/10"
-            title="My Agents"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className="h-5 w-5"
+          {/* My Agent Icon - Only for non-admin users */}
+          {!profile?.is_admin && (
+            <Link
+              href="/agent"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-purple-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+              title="My Agent"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"
-              />
-            </svg>
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </Link>
+          )}
+
+          {/* My Agents Icon - Only for admin users */}
+          {profile?.is_admin && (
+            <Link
+              href="/my-agents"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-purple-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+              title="My Agents"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"
+                />
+              </svg>
+            </Link>
+          )}
 
           {/* Network Icon */}
           <Link
             href="/network"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#2E3A59] hover:bg-[#2E3A59]/10"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
             title="Network"
           >
             <svg
@@ -306,10 +489,32 @@ function TopNavigation() {
             </svg>
           </Link>
 
+          {/* Messages Icon */}
+          <Link
+            href="/messages"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+            title="Messages"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="h-5 w-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+          </Link>
+
           {/* Notifications Icon */}
           <Link
             href="/notifications"
-            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#2E3A59]/10 hover:text-[#2E3A59]"
+            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600"
             title="Notifications"
           >
             <svg
@@ -390,17 +595,52 @@ function TopNavigation() {
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                Your Profile
+                Account
               </Link>
+              {profile?.handle && (
+                <Link
+                  href={`/u/${profile.handle}`}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Profile
+                </Link>
+              )}
               <Link
-                href="/my-agents"
+                href="/messages"
                 className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                My Agents
+                Messages
               </Link>
+              {/* Only show My Agent for non-admin users */}
+              {!profile?.is_admin && (
+                <Link
+                  href="/agent"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  My Agent
+                </Link>
+              )}
+              {/* Only show My Agents for admin users */}
+              {profile?.is_admin && (
+                <Link
+                  href="/my-agents"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  My Agents
+                </Link>
+              )}
               {/* Only show Backoffice for admin users */}
               {userEmail === "loic.ricci@gmail.com" && (
                 <Link

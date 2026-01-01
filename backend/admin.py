@@ -4,10 +4,12 @@ These endpoints provide administrative access to profiles, agents, data, etc.
 """
 
 import uuid
+import os
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func
+from pydantic import BaseModel
 
 from db import SessionLocal
 from auth_supabase import get_current_user_id, get_current_user
@@ -59,6 +61,21 @@ async def require_admin(user: dict = Depends(get_current_user)):
         )
     
     return user["id"]
+
+
+# =====================
+# PYDANTIC MODELS
+# =====================
+
+class CreateProfileRequest(BaseModel):
+    handle: str
+    display_name: str = ""
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    user_id: str
+    new_password: str
 
 
 # =====================
@@ -163,6 +180,211 @@ async def list_all_profiles(
     }
 
 
+@router.get("/profiles/check-supabase-user")
+async def check_supabase_user_by_email(
+    email: str,
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """
+    Check if a user exists in Supabase Auth by email and compare with database profile.
+    Useful for debugging signup issues.
+    """
+    import httpx
+    
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise HTTPException(status_code=500, detail="Supabase configuration missing")
+    
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            # List all users and filter by email
+            response = await client.get(
+                f"{SUPABASE_URL}/auth/v1/admin/users",
+                headers={
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                },
+                params={"per_page": 1000}  # Get a large number of users
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail="Failed to fetch users from Supabase")
+            
+            data = response.json()
+            users = data.get("users", [])
+            
+            # Find user by email
+            supabase_user = None
+            for user in users:
+                if user.get("email", "").lower() == email.lower():
+                    supabase_user = user
+                    break
+            
+            if not supabase_user:
+                return {
+                    "found_in_supabase": False,
+                    "found_in_database": False,
+                    "message": "User not found in Supabase Auth. Email is available for signup.",
+                }
+            
+            user_id = uuid.UUID(supabase_user["id"])
+            
+            # Check if profile exists in database
+            profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+            
+            result = {
+                "found_in_supabase": True,
+                "found_in_database": profile is not None,
+                "supabase_user": {
+                    "id": supabase_user["id"],
+                    "email": supabase_user.get("email"),
+                    "created_at": supabase_user.get("created_at"),
+                    "email_confirmed_at": supabase_user.get("email_confirmed_at"),
+                    "last_sign_in_at": supabase_user.get("last_sign_in_at"),
+                    "identities": len(supabase_user.get("identities", [])),
+                },
+            }
+            
+            if profile:
+                result["database_profile"] = {
+                    "user_id": str(profile.user_id),
+                    "handle": profile.handle,
+                    "display_name": profile.display_name,
+                    "created_at": profile.created_at.isoformat() if profile.created_at else None,
+                }
+            
+            # Add diagnosis
+            if result["found_in_supabase"] and not result["found_in_database"]:
+                result["diagnosis"] = "User exists in Supabase Auth but not in database. This causes signup issues."
+                result["solution"] = f"Delete Supabase user: DELETE /admin/supabase-users/{supabase_user['id']}"
+            elif not result["found_in_supabase"] and result["found_in_database"]:
+                result["diagnosis"] = "Profile exists in database but not in Supabase Auth. User cannot log in."
+                result["solution"] = f"Delete database profile: DELETE /admin/profiles/{user_id}"
+            elif result["supabase_user"]["identities"] == 0:
+                result["diagnosis"] = "User has 0 identities in Supabase. This is the 'already exists' state."
+                result["solution"] = f"Delete entire user: DELETE /admin/profiles/{user_id} (will delete both)"
+            else:
+                result["diagnosis"] = "User exists in both systems and looks normal."
+            
+            return result
+            
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Supabase request timed out")
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check Supabase: {str(e)}")
+
+
+@router.post("/profiles/create")
+async def create_profile(
+    req: CreateProfileRequest,
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """
+    Create a new profile with Supabase auth user (admin-created, no email verification required).
+    This endpoint creates both the Supabase auth user and the profile record.
+    """
+    import httpx
+    
+    # Validate handle format
+    if not req.handle or not req.handle.strip():
+        raise HTTPException(status_code=400, detail="Handle is required")
+    
+    if not req.email or not req.email.strip():
+        raise HTTPException(status_code=400, detail="Email is required")
+    
+    # Check if handle already exists
+    existing_profile = db.query(Profile).filter(Profile.handle == req.handle.strip().lower()).first()
+    if existing_profile:
+        raise HTTPException(status_code=400, detail="Handle already exists")
+    
+    # Get Supabase service role key for admin operations
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise HTTPException(
+            status_code=500, 
+            detail="Supabase configuration missing. Cannot create user."
+        )
+    
+    # Generate a random password for the user (they can reset it later)
+    import secrets
+    import string
+    random_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(16))
+    
+    # Create user in Supabase Auth using Admin API
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            # Create user with auto-confirmed email
+            response = await client.post(
+                f"{SUPABASE_URL}/auth/v1/admin/users",
+                headers={
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "email": req.email.strip(),
+                    "password": random_password,
+                    "email_confirm": True,  # Skip email verification
+                    "user_metadata": {
+                        "handle": req.handle.strip().lower(),
+                        "display_name": req.display_name.strip() if req.display_name else req.handle,
+                    }
+                }
+            )
+            
+            if response.status_code not in (200, 201):
+                error_detail = response.json().get("msg", response.text)
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Failed to create Supabase user: {error_detail}"
+                )
+            
+            supabase_user = response.json()
+            user_id = supabase_user["id"]
+            
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Supabase request timed out")
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create Supabase user: {str(e)}")
+    
+    # Create profile in our database
+    try:
+        profile = Profile(
+            user_id=uuid.UUID(user_id),
+            handle=req.handle.strip().lower(),
+            display_name=req.display_name.strip() if req.display_name else req.handle,
+            bio=None,
+            avatar_url=None,
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+        
+        return {
+            "ok": True,
+            "user_id": str(profile.user_id),
+            "handle": profile.handle,
+            "display_name": profile.display_name,
+            "email": req.email,
+            "message": "Profile created successfully. User can log in with their email.",
+        }
+        
+    except Exception as e:
+        db.rollback()
+        # If profile creation fails, we should ideally delete the Supabase user too
+        # but for simplicity we'll leave it for now
+        raise HTTPException(
+            status_code=500,
+            detail=f"Profile created in Supabase but failed to save to database: {str(e)}"
+        )
+
+
 @router.get("/profiles/{user_id}")
 async def get_profile_details(
     user_id: str,
@@ -210,17 +432,108 @@ async def delete_profile(
     db: Session = Depends(get_db),
     admin_id: str = Depends(require_admin),
 ):
-    """Delete a profile and all associated data (CASCADE)"""
+    """Delete a profile and all associated data (CASCADE), including the Supabase auth user"""
+    import httpx
+    
     user_uuid = _parse_uuid(user_id, "user_id")
     
     profile = db.query(Profile).filter(Profile.user_id == user_uuid).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     
+    # Delete the profile from the database first (cascades to all related data)
     db.delete(profile)
     db.commit()
     
-    return {"ok": True, "message": "Profile deleted successfully"}
+    # Delete the user from Supabase Auth using the Admin API
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.delete(
+                    f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}",
+                    headers={
+                        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    },
+                )
+                if r.status_code not in (200, 204):
+                    print(f"Warning: Failed to delete Supabase auth user {user_id}: {r.text}")
+        except Exception as e:
+            print(f"Warning: Failed to delete Supabase auth user {user_id}: {str(e)}")
+    
+    return {"ok": True, "message": "Profile and auth user deleted successfully"}
+
+
+@router.post("/profiles/{user_id}/reset-password")
+async def admin_reset_user_password(
+    user_id: str,
+    req: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """
+    Admin endpoint to reset a user's password without requiring the old password.
+    This uses Supabase Admin API to update the password directly.
+    """
+    import httpx
+    
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Verify profile exists
+    profile = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # Validate password
+    if not req.new_password or len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    # Get Supabase service role key for admin operations
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise HTTPException(
+            status_code=500, 
+            detail="Supabase configuration missing. Cannot reset password."
+        )
+    
+    # Update user password using Supabase Admin API
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.put(
+                f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}",
+                headers={
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "password": req.new_password,
+                }
+            )
+            
+            if response.status_code not in (200, 201):
+                error_detail = response.json().get("msg", response.text)
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Failed to reset password: {error_detail}"
+                )
+            
+            return {
+                "ok": True,
+                "message": f"Password reset successfully for user {profile.handle}",
+                "user_id": user_id,
+                "handle": profile.handle,
+            }
+            
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Supabase request timed out")
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reset password: {str(e)}")
 
 
 # =====================

@@ -28,8 +28,11 @@ async def get_current_user_id(
         "Authorization": f"Bearer {token}",
     }
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(url, headers=headers)
+    async with httpx.AsyncClient(timeout=5) as client:
+        try:
+            r = await client.get(url, headers=headers)
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=401, detail="Authentication timeout")
 
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid Supabase token")
@@ -50,8 +53,11 @@ async def get_current_user(
         "Authorization": f"Bearer {token}",
     }
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(url, headers=headers)
+    async with httpx.AsyncClient(timeout=5) as client:
+        try:
+            r = await client.get(url, headers=headers)
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=401, detail="Authentication timeout")
 
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid Supabase token")

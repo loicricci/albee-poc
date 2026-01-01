@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { ChatButton } from "@/components/ChatButton";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
@@ -53,6 +54,54 @@ type FeedResponse = {
   items: FeedItem[];
   total_items: number;
   total_unread: number;
+};
+
+// Unified Feed Types (Posts + Updates)
+type FeedPostItem = {
+  id: string;
+  type: "post";
+  agent_id?: string;
+  agent_handle: string;
+  agent_display_name: string | null;
+  agent_avatar_url: string | null;
+  owner_user_id: string;
+  owner_handle: string;
+  owner_display_name: string | null;
+  title: string | null;
+  description: string | null;
+  image_url: string;
+  post_type: string;
+  like_count: number;
+  comment_count: number;
+  user_has_liked: boolean;
+  created_at: string;
+};
+
+type FeedUpdateItem = {
+  id: string;
+  type: "update";
+  agent_id: string;
+  agent_handle: string;
+  agent_display_name: string | null;
+  agent_avatar_url: string | null;
+  owner_user_id: string;
+  owner_handle: string;
+  owner_display_name: string | null;
+  title: string;
+  content: string;
+  topic: string | null;
+  layer: string;
+  is_pinned: boolean;
+  is_read: boolean;
+  created_at: string;
+};
+
+type UnifiedFeedItem = FeedPostItem | FeedUpdateItem;
+
+type UnifiedFeedResponse = {
+  items: UnifiedFeedItem[];
+  total_items: number;
+  has_more: boolean;
 };
 
 // Recommendation type
@@ -227,6 +276,226 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
   );
 }
 
+function FeedPostCard({ item, onLike }: { item: FeedPostItem; onLike: (postId: string) => void }) {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  };
+
+  const handleLike = async () => {
+    try {
+      await onLike(item.id);
+    } catch (error) {
+      console.error("Failed to like post:", error);
+    }
+  };
+
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm transition-all hover:shadow-lg hover:border-[#2E3A59]/20">
+      {/* Header with agent/user info */}
+      <div className="p-4 border-b border-[#E6E6E6]">
+        <div className="flex items-center gap-3">
+          {/* Avatar */}
+          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-[#E6E6E6] bg-gradient-to-br from-[#FAFAFA] to-[#E6E6E6] flex items-center justify-center shadow-sm">
+            {item.agent_avatar_url ? (
+              <img 
+                src={item.agent_avatar_url} 
+                alt={item.agent_display_name || item.agent_handle} 
+                className="h-full w-full object-cover"
+                loading="lazy"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            ) : (
+              <svg className="h-6 w-6 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            )}
+          </div>
+
+          {/* Agent/User info */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-[#0B0B0C] truncate">
+              {item.agent_display_name || item.agent_handle}
+            </h3>
+            <p className="text-xs text-[#2E3A59]/70 truncate">
+              @{item.agent_handle}
+              {item.owner_display_name && item.agent_id && (
+                <span> · by {item.owner_display_name}</span>
+              )}
+            </p>
+          </div>
+
+          {/* Post type badge */}
+          <div className="shrink-0 rounded-lg bg-[#2E3A59]/10 px-2 py-1 text-xs font-semibold text-[#2E3A59]">
+            {item.post_type === "ai_generated" ? "AI" : "Post"}
+          </div>
+        </div>
+
+        {/* Title if exists */}
+        {item.title && (
+          <h4 className="mt-3 text-base font-semibold text-[#0B0B0C]">
+            {item.title}
+          </h4>
+        )}
+      </div>
+
+      {/* Image */}
+      <div className="relative w-full bg-[#FAFAFA]" style={{ paddingBottom: '75%' }}>
+        <img 
+          src={item.image_url} 
+          alt={item.title || "Post image"} 
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23E6E6E6" width="400" height="300"/%3E%3Ctext fill="%232E3A59" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EImage not available%3C/text%3E%3C/svg%3E';
+          }}
+        />
+      </div>
+
+      {/* Description if exists */}
+      {item.description && (
+        <div className="p-4 border-b border-[#E6E6E6]">
+          <p className="text-sm text-[#0B0B0C] line-clamp-3">{item.description}</p>
+        </div>
+      )}
+
+      {/* Interaction buttons */}
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {/* Like button */}
+          <button
+            onClick={handleLike}
+            className="flex items-center gap-1.5 text-sm transition-colors hover:text-[#C8A24A]"
+            style={{ color: item.user_has_liked ? '#C8A24A' : '#2E3A59' }}
+          >
+            <svg className="h-5 w-5" fill={item.user_has_liked ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <span className="font-medium">{item.like_count}</span>
+          </button>
+
+          {/* Comment button */}
+          <button
+            className="flex items-center gap-1.5 text-sm text-[#2E3A59] transition-colors hover:text-[#C8A24A]"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span className="font-medium">{item.comment_count}</span>
+          </button>
+        </div>
+
+        {/* Date */}
+        <span className="text-xs text-[#2E3A59]/50">
+          {formatDate(item.created_at)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function FeedUpdateCard({ item, onMarkRead }: { item: FeedUpdateItem; onMarkRead: (agentId: string) => void }) {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  };
+
+  const handleMarkRead = async () => {
+    try {
+      await onMarkRead(item.agent_id);
+    } catch (error) {
+      console.error("Failed to mark as read:", error);
+    }
+  };
+
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:border-[#2E3A59]/20">
+      {/* Header with agent info */}
+      <div className="mb-4 flex items-start gap-4">
+        {/* Avatar */}
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#FAFAFA] to-[#E6E6E6] flex items-center justify-center shadow-sm">
+          {item.agent_avatar_url ? (
+            <img 
+              src={item.agent_avatar_url} 
+              alt={item.agent_display_name || item.agent_handle} 
+              className="h-full w-full object-cover"
+              loading="lazy"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          ) : (
+            <svg className="h-8 w-8 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          )}
+        </div>
+
+        {/* Agent info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-[#0B0B0C] truncate">
+              {item.agent_display_name || item.agent_handle}
+            </h3>
+          </div>
+          <p className="text-sm text-[#2E3A59]/70">
+            @{item.agent_handle}
+            {item.owner_display_name && (
+              <span> · by {item.owner_display_name}</span>
+            )}
+          </p>
+          <p className="mt-1 text-xs text-[#2E3A59]/50">
+            {formatDate(item.created_at)}
+          </p>
+        </div>
+
+        {/* Unread indicator */}
+        {!item.is_read && (
+          <div className="shrink-0 flex flex-col items-center">
+            <span className="inline-block h-3 w-3 rounded-full bg-[#C8A24A]" title="Unread" />
+          </div>
+        )}
+      </div>
+
+      {/* Update content box */}
+      <div className="mb-4 rounded-lg border border-[#2E3A59]/20 bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 py-3">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <p className="text-base font-bold text-[#2E3A59]">{item.title}</p>
+        </div>
+        <p className="text-sm text-[#0B0B0C] line-clamp-4">{item.content}</p>
+        {item.topic && (
+          <span className="mt-3 inline-block rounded-full bg-[#2E3A59]/10 px-3 py-1 text-xs font-medium text-[#2E3A59]">
+            {item.topic}
+          </span>
+        )}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <ChatButton
+          handle={item.agent_handle}
+          displayName={item.agent_display_name || item.agent_handle}
+          className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg hover:scale-[1.02]"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          Chat about this
+        </ChatButton>
+        {!item.is_read && (
+          <button
+            onClick={handleMarkRead}
+            className="shrink-0 rounded-lg border border-[#2E3A59] px-4 py-3 text-sm font-medium text-[#2E3A59] transition-colors hover:bg-[#2E3A59] hover:text-white"
+            title="Mark as read"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Helper function to validate if a URL is a valid image URL
 function isValidImageUrl(url: string | null | undefined): boolean {
   if (!url || url.trim() === "") return false;
@@ -308,102 +577,30 @@ function LeftSidebar({
               {profile.bio && (
                 <p className="text-sm text-[#2E3A59]/70 line-clamp-2">{profile.bio}</p>
               )}
-              <Link
-                href="/profile"
-                className="flex items-center justify-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
-              >
-                View profile
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  href={`/u/${profile.handle}`}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                >
+                  View profile
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+                <ChatButton
+                  handle={profile.handle}
+                  displayName={profile.display_name || profile.handle}
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1a2236]"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  Chat
+                </ChatButton>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-[#2E3A59]/70">No profile found.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Agents Snapshot */}
-      <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-        <div className="border-b border-[#E6E6E6] bg-[#FAFAFA] p-4">
-          <h2 className="font-semibold text-[#0B0B0C]">Your Agents</h2>
-          <p className="mt-1 text-xs text-[#2E3A59]/70">
-            {avees.length} active Agent{avees.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="p-4">
-          {avees.length > 0 ? (
-            <div className="space-y-3">
-              {avees.slice(0, 5).map((avee) => {
-                const hasValidAveeAvatar = isValidImageUrl(avee.avatar_url);
-                return (
-                <div
-                  key={avee.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-[#E6E6E6] p-2 transition-colors hover:bg-[#2E3A59]/5"
-                >
-                  {/* Avatar */}
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center">
-                    {hasValidAveeAvatar ? (
-                      <img 
-                        src={avee.avatar_url!} 
-                        alt="" 
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <span className="text-sm font-bold text-white">
-                        {(avee.display_name || avee.handle)[0].toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate text-[#0B0B0C]">
-                      {avee.display_name || avee.handle}
-                    </div>
-                    <div className="text-xs text-[#2E3A59]/70 truncate">
-                      @{avee.handle}
-                    </div>
-                  </div>
-                  <ChatButton
-                    handle={avee.handle}
-                    displayName={avee.display_name || avee.handle}
-                    className="shrink-0 rounded-lg bg-[#2E3A59] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#1a2236]"
-                  >
-                    Chat
-                  </ChatButton>
-                </div>
-              );
-              })}
-              {avees.length > 5 && (
-                <div className="text-xs text-[#2E3A59]/70 text-center pt-2">
-                  +{avees.length - 5} more
-                </div>
-              )}
-              <Link
-                href="/my-agents"
-                className="mt-3 flex items-center justify-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
-              >
-                View all Agents
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-sm text-[#2E3A59]/70 mb-3">No Agents yet.</p>
-              <Link
-                href="/my-agents"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a2236]"
-              >
-                Create your first Agent
-              </Link>
-            </div>
           )}
         </div>
       </div>
@@ -480,23 +677,47 @@ export default function AppHomePage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [feedData, setFeedData] = useState<FeedResponse | null>(null);
+  const [unifiedFeedData, setUnifiedFeedData] = useState<UnifiedFeedResponse | null>(null);
   const [feedLoading, setFeedLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     let alive = true;
 
     (async () => {
+      // First, check onboarding status
+      try {
+        const token = await getAccessToken();
+        const statusRes = await fetch(`${apiBase()}/onboarding/status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (statusRes.ok) {
+          const statusData = await statusRes.json();
+          if (!statusData.completed) {
+            // Redirect to onboarding if not completed
+            router.push("/onboarding");
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to check onboarding status:", e);
+        // Continue to load app - might be an API issue
+      }
+
       // Load from cache immediately for instant UI
       try {
         const cachedProfile = localStorage.getItem('app_profile');
         const cachedAvees = localStorage.getItem('app_avees');
         const cachedRecs = localStorage.getItem('app_recommendations');
         const cachedFeed = localStorage.getItem('app_feed');
+        const cachedUnifiedFeed = localStorage.getItem('app_unified_feed');
         
         if (cachedProfile) setProfile(JSON.parse(cachedProfile));
         if (cachedAvees) setAvees(JSON.parse(cachedAvees));
         if (cachedRecs) setRecommendations(JSON.parse(cachedRecs));
         if (cachedFeed) setFeedData(JSON.parse(cachedFeed));
+        if (cachedUnifiedFeed) setUnifiedFeedData(JSON.parse(cachedUnifiedFeed));
       } catch (e) {
         console.warn("Failed to load from cache:", e);
       }
@@ -523,10 +744,14 @@ export default function AppHomePage() {
         }
 
         // Fetch non-critical data in background (recommendations + feed)
-        const [r, f] = await Promise.all([
+        const [r, f, uf] = await Promise.all([
           apiGet<Recommendation[]>("/avees?limit=5", token).catch(() => []),
           apiGet<FeedResponse>("/feed?limit=10", token).catch((e) => {
             console.error("[Feed] Failed to fetch feed:", e);
+            return null;
+          }),
+          apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token).catch((e) => {
+            console.error("[UnifiedFeed] Failed to fetch unified feed:", e);
             return null;
           }),
         ]);
@@ -540,6 +765,10 @@ export default function AppHomePage() {
         if (f) {
           setFeedData(f);
           localStorage.setItem('app_feed', JSON.stringify(f));
+        }
+        if (uf) {
+          setUnifiedFeedData(uf);
+          localStorage.setItem('app_unified_feed', JSON.stringify(uf));
         }
       } catch (e: any) {
         if (!alive) return;
@@ -564,11 +793,16 @@ export default function AppHomePage() {
       setRecommendations(prev => prev.filter(r => r.id !== aveeId));
       setFollowingIds(prev => new Set(prev).add(aveeId));
       
-      // Refresh feed to include newly followed agent (with limit)
+      // Refresh feeds to include newly followed agent
       const token = await getAccessToken();
-      const f = await apiGet<FeedResponse>("/feed?limit=10", token);
+      const [f, uf] = await Promise.all([
+        apiGet<FeedResponse>("/feed?limit=10", token),
+        apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token),
+      ]);
       setFeedData(f);
+      setUnifiedFeedData(uf);
       localStorage.setItem('app_feed', JSON.stringify(f));
+      localStorage.setItem('app_unified_feed', JSON.stringify(uf));
     } catch (e: any) {
       console.error("Failed to follow agent:", e);
       alert("Failed to follow agent. Please try again.");
@@ -585,7 +819,7 @@ export default function AppHomePage() {
       
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       
-      // Optimistically update UI
+      // Optimistically update UI for old feed
       setFeedData(prev => {
         if (!prev) return prev;
         return {
@@ -598,14 +832,72 @@ export default function AppHomePage() {
           )
         };
       });
+
+      // Optimistically update unified feed
+      setUnifiedFeedData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map(item => {
+            if (item.type === "update" && item.agent_id === agentId) {
+              return { ...item, is_read: true } as FeedUpdateItem;
+            }
+            return item;
+          })
+        };
+      });
       
-      // Refresh feed in background to ensure accuracy
-      const f = await apiGet<FeedResponse>("/feed?limit=10", token);
-      setFeedData(f);
-      localStorage.setItem('app_feed', JSON.stringify(f));
+      // Refresh feeds in background
+      const uf = await apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token);
+      setUnifiedFeedData(uf);
+      localStorage.setItem('app_unified_feed', JSON.stringify(uf));
     } catch (e: any) {
       console.error("Failed to mark as read:", e);
       alert("Failed to mark updates as read. Please try again.");
+    }
+  };
+
+  const handleLikePost = async (postId: string) => {
+    try {
+      const token = await getAccessToken();
+      
+      // Check current like status
+      const currentPost = unifiedFeedData?.items.find(
+        item => item.type === "post" && item.id === postId
+      ) as FeedPostItem | undefined;
+      
+      if (!currentPost) return;
+      
+      const wasLiked = currentPost.user_has_liked;
+      const method = wasLiked ? "DELETE" : "POST";
+      
+      const res = await fetch(`${apiBase()}/posts/${postId}/like`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      // Optimistically update UI
+      setUnifiedFeedData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map(item => {
+            if (item.type === "post" && item.id === postId) {
+              return {
+                ...item,
+                user_has_liked: !wasLiked,
+                like_count: wasLiked ? item.like_count - 1 : item.like_count + 1
+              } as FeedPostItem;
+            }
+            return item;
+          })
+        };
+      });
+    } catch (e: any) {
+      console.error("Failed to like/unlike post:", e);
+      // Silently fail - like actions shouldn't be intrusive
     }
   };
 
@@ -651,14 +943,19 @@ export default function AppHomePage() {
           {/* Quick Update Composer */}
           <div className="mb-6">
             <QuickUpdateComposer agents={avees} onUpdatePosted={async () => {
-              // Refresh feed after posting update
+              // Refresh feeds after posting update
               try {
                 const token = await getAccessToken();
-                const f = await apiGet<FeedResponse>("/feed?limit=10", token);
+                const [f, uf] = await Promise.all([
+                  apiGet<FeedResponse>("/feed?limit=10", token),
+                  apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token),
+                ]);
                 setFeedData(f);
+                setUnifiedFeedData(uf);
                 localStorage.setItem('app_feed', JSON.stringify(f));
+                localStorage.setItem('app_unified_feed', JSON.stringify(uf));
               } catch (e) {
-                console.error("Failed to refresh feed:", e);
+                console.error("Failed to refresh feeds:", e);
               }
             }} />
           </div>
@@ -674,11 +971,15 @@ export default function AppHomePage() {
                 Loading feed...
               </div>
             </div>
-          ) : feedData && feedData.items.length > 0 ? (
+          ) : unifiedFeedData && unifiedFeedData.items.length > 0 ? (
             <div className="space-y-6">
-              {feedData.items.map((item) => (
-                <AveeFeedCard key={item.agent_id} item={item} onMarkRead={handleMarkAgentRead} />
-              ))}
+              {unifiedFeedData.items.map((item) => {
+                if (item.type === "post") {
+                  return <FeedPostCard key={item.id} item={item as FeedPostItem} onLike={handleLikePost} />;
+                } else {
+                  return <FeedUpdateCard key={item.id} item={item as FeedUpdateItem} onMarkRead={handleMarkAgentRead} />;
+                }
+              })}
             </div>
           ) : (
             <div className="rounded-2xl border border-[#E6E6E6] bg-white p-12 text-center">
@@ -689,7 +990,7 @@ export default function AppHomePage() {
               </div>
               <h3 className="mb-2 text-lg font-semibold text-[#0B0B0C]">No updates yet</h3>
               <p className="mb-6 text-sm text-[#2E3A59]/70">
-                Follow some agents or create your own to see updates here.
+                Follow some agents or create your own to see updates and posts here.
               </p>
               <div className="flex justify-center gap-3">
                 <Link

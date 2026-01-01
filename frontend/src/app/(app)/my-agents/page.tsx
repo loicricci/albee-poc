@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createAgent, getMyAgents } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { createAgent, getMyAgents, getAgentLimitStatus } from "@/lib/api";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { ChatButton } from "@/components/ChatButton";
 import { supabase } from "@/lib/supabaseClient";
@@ -14,6 +15,14 @@ type Agent = {
   avatar_url?: string;
   owner_user_id?: string;
   created_at?: string;
+};
+
+type AgentLimitStatus = {
+  is_admin: boolean;
+  current_agent_count: number;
+  max_agents: number;  // -1 means unlimited
+  can_create_more: boolean;
+  remaining: number;   // -1 means unlimited
 };
 
 async function deleteAgent(agentId: string): Promise<void> {
@@ -37,10 +46,12 @@ async function deleteAgent(agentId: string): Promise<void> {
 }
 
 function MyAgentsContent() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [limitStatus, setLimitStatus] = useState<AgentLimitStatus | null>(null);
 
   const [newHandle, setNewHandle] = useState("");
   const [newName, setNewName] = useState("");
@@ -62,11 +73,39 @@ function MyAgentsContent() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getMyAgents();
+      // PERFORMANCE: Check cache first
+      const cachedAgents = localStorage.getItem('my_agents_list');
+      const cachedLimit = localStorage.getItem('my_agents_limit');
+      
+      if (cachedAgents && cachedLimit) {
+        try {
+          setAgents(JSON.parse(cachedAgents));
+          setLimitStatus(JSON.parse(cachedLimit));
+          setLoading(false); // UI ready with cache!
+        } catch (e) {
+          console.warn('Failed to parse cached agents data');
+        }
+      }
+      
+      // Fetch fresh data in background
+      const [agentsData, limitData] = await Promise.all([
+        getMyAgents(),
+        getAgentLimitStatus()
+      ]);
 
       // backend might return {items:[...]} or just [...]
-      const list = Array.isArray(data) ? data : data.items;
+      const list = Array.isArray(agentsData) ? agentsData : agentsData.items;
       setAgents(list || []);
+      setLimitStatus(limitData);
+      
+      // PERFORMANCE: Update cache
+      localStorage.setItem('my_agents_list', JSON.stringify(list || []));
+      localStorage.setItem('my_agents_limit', JSON.stringify(limitData));
+      
+      // 🔥 For non-admin users, redirect directly to their agent editor
+      if (limitData && !limitData.is_admin && list && list.length > 0) {
+        router.push(`/my-agents/${list[0].handle}`);
+      }
     } catch (e: any) {
       setError(e.message || "Failed to load agents");
     } finally {
@@ -156,11 +195,25 @@ function MyAgentsContent() {
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#0B0B0C]">My Agents</h1>
-          <p className="mt-2 text-[#2E3A59]/70">Create and manage your AI personalities</p>
+          <p className="mt-2 text-[#2E3A59]/70">
+            Create and manage your AI personalities
+            {limitStatus && !limitStatus.is_admin && (
+              <span className="ml-2 text-sm">
+                ({limitStatus.current_agent_count}/{limitStatus.max_agents} agent{limitStatus.max_agents !== 1 ? 's' : ''} created)
+              </span>
+            )}
+            {limitStatus && limitStatus.is_admin && (
+              <span className="ml-2 rounded-full bg-[#C8A24A] px-3 py-1 text-xs font-semibold text-white">
+                ADMIN - UNLIMITED
+              </span>
+            )}
+          </p>
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
+          disabled={limitStatus && !limitStatus.can_create_more}
+          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          title={limitStatus && !limitStatus.can_create_more ? "You've reached the maximum number of agents" : ""}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -168,6 +221,22 @@ function MyAgentsContent() {
           Create New Agent
         </button>
       </div>
+
+      {/* Agent Limit Warning */}
+      {limitStatus && !limitStatus.can_create_more && !limitStatus.is_admin && (
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 animate-slide-up">
+          <svg className="h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="flex-1">
+            <div className="text-sm font-medium text-amber-800">Agent Limit Reached</div>
+            <div className="mt-1 text-xs text-amber-700">
+              Regular users are limited to {limitStatus.max_agents} agent{limitStatus.max_agents !== 1 ? 's' : ''}. 
+              Delete your existing agent to create a new one, or contact an administrator for additional agents.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -428,8 +497,7 @@ function MyAgentsContent() {
                   <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {a.avatar_url ? (
-                      <img
-                        src={a.avatar_url}
+                      <img src={a.avatar_url}
                         alt={a.display_name || a.handle}
                         className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl border-2 border-[#E6E6E6] object-cover shadow-sm"
                       />

@@ -27,8 +27,7 @@ export default function Home() {
           <Link href="/" className="flex items-center gap-3 transition-all duration-300 hover:opacity-70">
             {appConfig.app_logo_url && appConfig.app_logo_url.trim() !== "" ? (
               <>
-                <img 
-                  src={appConfig.app_logo_url} 
+                <img src={appConfig.app_logo_url} 
                   alt={appConfig.app_name || "Logo"}
                   className="h-10 w-auto object-contain"
                   onError={(e) => {
@@ -90,8 +89,9 @@ export default function Home() {
               <source src="/hero-video.mp4" type="video/mp4" />
               <source src="/hero-video.webm" type="video/webm" />
               {/* Fallback image if video fails to load */}
-              <img 
-                src="/hero-fallback.jpg" 
+              <img src="/hero-fallback.jpg"
+                    loading="lazy"
+                    decoding="async" 
                 alt="Hero background"
                 className="w-full h-full object-cover"
               />
@@ -836,8 +836,7 @@ export default function Home() {
                 <Link href="/" className="flex items-center gap-3 transition-all duration-300 hover:opacity-70 mb-6">
                   {appConfig.app_logo_url && appConfig.app_logo_url.trim() !== "" ? (
                     <>
-                      <img 
-                        src={appConfig.app_logo_url} 
+                      <img src={appConfig.app_logo_url} 
                         alt={appConfig.app_name || "Logo"}
                         className="h-9 w-auto object-contain"
                       />

@@ -48,8 +48,10 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
   const [topic, setTopic] = useState("work");
   const [layer, setLayer] = useState<"public" | "friends" | "intimate">("public");
   const [submitting, setSubmitting] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [generateSuccess, setGenerateSuccess] = useState(false);
 
   const selectedAgentData = agents.find((a) => a.id === selectedAgent);
 
@@ -108,6 +110,59 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
     }
   }
 
+  async function handleGeneratePost() {
+    if (!selectedAgent) {
+      setError("Please select an agent first");
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+    setGenerateSuccess(false);
+
+    try {
+      const token = await getAccessToken();
+
+      const res = await fetch(`${apiBase()}/auto-post/generate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          avee_ids: [selectedAgent],
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to generate post: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Check if generation was successful
+      if (data.results && data.results[0] && !data.results[0].success) {
+        throw new Error(data.results[0].error || "Failed to generate post");
+      }
+
+      // Success!
+      setGenerateSuccess(true);
+      setExpanded(false);
+
+      // Trigger feed refresh callback if provided
+      if (onUpdatePosted) {
+        onUpdatePosted();
+      }
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setGenerateSuccess(false), 3000);
+    } catch (e: any) {
+      setError(e.message || "Failed to generate post");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   if (agents.length === 0) {
     return (
       <div className="rounded-2xl border-2 border-dashed border-[#E6E6E6] bg-[#FAFAFA] p-6 md:p-8 text-center">
@@ -130,7 +185,7 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
 
   return (
     <>
-      {/* Success message */}
+      {/* Success message for manual post */}
       {success && (
         <div className="mb-4 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 animate-slide-up">
           <svg className="h-5 w-5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,6 +193,18 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
           </svg>
           <div className="flex-1">
             <div className="text-sm font-medium text-green-800">Update posted successfully!</div>
+          </div>
+        </div>
+      )}
+
+      {/* Success message for auto-generated post */}
+      {generateSuccess && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 animate-slide-up">
+          <svg className="h-5 w-5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <div className="text-sm font-medium text-green-800">Post generated successfully!</div>
           </div>
         </div>
       )}
@@ -158,16 +225,42 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
               </div>
             </div>
             {!expanded && (
-              <button
-                onClick={() => setExpanded(true)}
-                className="flex items-center gap-1.5 md:gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 shrink-0"
-              >
-                <svg className="h-3.5 w-3.5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="hidden sm:inline">Post Update</span>
-                <span className="sm:hidden">Post</span>
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleGeneratePost}
+                  disabled={generating || !agents.length}
+                  className="flex items-center gap-1.5 md:gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                >
+                  {generating ? (
+                    <>
+                      <svg className="h-3.5 w-3.5 md:h-4 md:w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span className="hidden sm:inline">Generating...</span>
+                      <span className="sm:hidden">Gen...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-3.5 w-3.5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span className="hidden sm:inline">Generate Post</span>
+                      <span className="sm:hidden">Generate</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setExpanded(true)}
+                  className="flex items-center gap-1.5 md:gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 shrink-0"
+                >
+                  <svg className="h-3.5 w-3.5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="hidden sm:inline">Post Update</span>
+                  <span className="sm:hidden">Post</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -320,10 +413,32 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
 
         {/* Collapsed state with quick info */}
         {!expanded && (
-          <div className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm text-[#2E3A59]/70">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-              <span className="text-xs md:text-sm">Post updates that become part of your agent's knowledge base</span>
-              <span className="text-xs text-[#2E3A59]/50 shrink-0">{agents.length} agent{agents.length !== 1 ? "s" : ""} available</span>
+          <div className="px-4 md:px-6 py-3 md:py-4">
+            <div className="flex flex-col gap-3">
+              {/* Agent selector for quick generate */}
+              <div className="flex items-center gap-3">
+                <label className="text-xs md:text-sm text-[#0B0B0C] font-medium shrink-0">
+                  Select agent:
+                </label>
+                <select
+                  value={selectedAgent}
+                  onChange={(e) => setSelectedAgent(e.target.value)}
+                  className="flex-1 rounded-lg border border-[#E6E6E6] px-3 py-1.5 text-xs md:text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                >
+                  <option value="">Choose an agent...</option>
+                  {agents.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.display_name || agent.handle} (@{agent.handle})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Info text */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                <span className="text-xs md:text-sm text-[#2E3A59]/70">Generate AI-powered posts or write your own updates</span>
+                <span className="text-xs text-[#2E3A59]/50 shrink-0">{agents.length} agent{agents.length !== 1 ? "s" : ""} available</span>
+              </div>
             </div>
           </div>
         )}

@@ -6,7 +6,10 @@ __pycache__/
 .env
 .env.local
 .env*.local
+.env.backup
 backend/.env
+backend/.env.backup
 frontend/.env.local
 venv/
 .DS_Store
+.cursor/

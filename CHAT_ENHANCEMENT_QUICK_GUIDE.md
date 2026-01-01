@@ -142,3 +142,8 @@ The chat popup now provides:
 Test it out and enjoy the improvements!
 
 
+
+
+
+
+

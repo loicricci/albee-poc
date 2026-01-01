@@ -19,3 +19,8 @@ COMMENT ON COLUMN avees.research_completed_at IS 'Timestamp when automatic web r
 COMMENT ON COLUMN avees.auto_research_enabled IS 'Whether automatic web research was enabled for this agent';
 
 
+
+
+
+
+

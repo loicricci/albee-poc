@@ -1,10 +1,20 @@
 """
 Enhanced chat endpoints with streaming, GPT-4o, and advanced context management.
 
+⚠️  DEPRECATED: This module is being phased out in favor of the unified messaging system.
+    All agent interactions now route through the Orchestrator via /messaging/* endpoints.
+    
+    Migration Path:
+    - Use /messaging/conversations/{id}/stream instead of /chat/stream
+    - Use /messaging/conversations/{id}/messages instead of /chat/ask
+    - See database_migrations/unify_conversations.sql for data migration
+    
+    Timeline: This module will be removed in Q1 2026
+
 New endpoints:
-- /chat/stream - Server-Sent Events streaming
-- /chat/ask-v2 - Enhanced version with context management
-- /chat/intelligence - Get conversation analytics
+- /chat/stream - Server-Sent Events streaming (DEPRECATED - use /messaging/conversations/{id}/stream)
+- /chat/ask-v2 - Enhanced version with context management (DEPRECATED - use /messaging/conversations/{id}/messages)
+- /chat/intelligence - Get conversation analytics (DEPRECATED)
 """
 
 import uuid
@@ -52,6 +62,10 @@ async def chat_ask_v2(
     user_id: str = Depends(get_current_user_id),
 ):
     """
+    ⚠️  DEPRECATED: Use /messaging/conversations/{id}/messages instead
+    
+    This endpoint bypasses the Orchestrator and will be removed in Q1 2026.
+    
     Enhanced chat endpoint with:
     - Advanced context management (semantic filtering, pruning)
     - GPT-4o support
@@ -59,6 +73,16 @@ async def chat_ask_v2(
     - Conversation quality tracking
     - Follow-up question suggestions
     """
+    import warnings
+    warnings.warn(
+        "chat_ask_v2 is deprecated. Use /messaging/conversations/{id}/messages instead",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
+    # Log deprecation to console
+    print(f"⚠️  DEPRECATED ENDPOINT USED: /chat/ask-v2 by user {user_id}")
+    print(f"   → Migrate to: /messaging/conversations/{conversation_id}/messages")
     convo_uuid = _parse_uuid(conversation_id, "conversation_id")
     viewer_uuid = _parse_uuid(user_id, "user_id")
 
@@ -292,10 +316,29 @@ async def chat_stream(
     user_id: str = Depends(get_current_user_id),
 ):
     """
-    Stream AI responses using Server-Sent Events (SSE).
+    ⚠️  DEPRECATED: Use /messaging/conversations/{id}/stream instead
     
-    Returns a stream of tokens as they're generated.
+    This endpoint bypasses the Orchestrator and will be removed in Q1 2026.
+    The new unified messaging system provides:
+    - Intelligent routing through Orchestrator (Paths A-F)
+    - Escalation support for complex questions
+    - Canonical answer reuse
+    - Better creator control
+    
+    Stream AI responses using Server-Sent Events (SSE).
     """
+    import warnings
+    warnings.warn(
+        "chat_stream is deprecated. Use /messaging/conversations/{id}/stream instead",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
+    # Log deprecation to console
+    print(f"⚠️  DEPRECATED ENDPOINT USED: /chat/stream by user {user_id}")
+    print(f"   → Migrate to: /messaging/conversations/{conversation_id}/stream")
+    
+    # Returns a stream of tokens as they're generated.
     convo_uuid = _parse_uuid(conversation_id, "conversation_id")
     viewer_uuid = _parse_uuid(user_id, "user_id")
 

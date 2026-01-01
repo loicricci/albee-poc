@@ -259,3 +259,8 @@ Supabase Dashboard: https://supabase.com/dashboard
 
 Good luck! 🎊
 
+
+
+
+
+

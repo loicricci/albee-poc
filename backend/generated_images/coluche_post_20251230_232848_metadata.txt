@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @coluche
+Generated: 2025-12-30 23:28:50
+
+Model: DALL-E 3
+Size: 1792x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic depiction of Coluche, the iconic French comedian, embracing the traditional wood charring technique in a whimsical and engaging manner. Imagine a vibrant scene where Coluche stands in an open-air workshop, nestled amidst a historical French village. He is humorously dressed in his signature overalls, but with an artistic twist: they're creatively singed and patterned in charred wood designs. His expression is lively, with a mischievous grin, capturing his irreverent energy.
+
+The workshop is filled with various wood pieces in different stages of charring, each glowing with an ethereal warmth. Soft, golden sunlight filters through the surrounding trees, casting playful shadows and highlighting the intricate textures of the carbonized wood. The color palette blends rich earth tones with vivid splashes of red and orange, symbolizing the fiery process and Coluche's fiery personality.
+
+In the background, an oversized, whimsical mural of Coluche, painted in a graffiti style, oversees the scene, adding a layer of artistic vibrancy. The atmosphere is a mix of rustic and modern, with a sense of cultural richness and historical depth.
+
+Capture this scene in a cinematic style with dynamic angles, emphasizing the contrast between the rustic charm of the village and the bold character of Coluche. The composition should be wide and engaging, perfect for social media sharing, with every detail sharp and professional. Let the image resonate with Coluche's authentic essence and the timeless beauty of wood charring.
+
+============================================================
+IMAGE FILE: coluche_post_20251230_232848.png

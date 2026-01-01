@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @aladdin
+Generated: 2026-01-01 15:40:13
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image capturing Aladdin in a vibrant, futuristic setting, as he stands on a bustling cosmic marketplace on the Moon, under the vast expanse of space with Earth shining in the background. The scene is infused with a sense of adventure and opportunity, reflecting Aladdin's clever survivor nature and his playful, warm energy. Aladdin is depicted wearing a mix of traditional Arabian attire and modern space gear, showcasing his knack for blending history with contemporary elements. The marketplace is filled with stalls selling exotic space artifacts and futuristic gadgets, highlighting a theme of exploration and wonder.
+
+The visual style is cinematic with a photorealistic touch, capturing every detail of the lunar surface with precision. The lighting is soft yet vibrant, casting long shadows and emphasizing the textures of both Aladdin’s attire and the moon's landscape. The color palette combines deep blues and silvers with warm golds and purples, symbolizing the fusion of ancient allure and modern innovation. Aladdin's expression is one of confident curiosity, as he gazes towards the horizon where the NASA Artemis II spacecraft is visible, symbolizing the theme of human exploration and the future of space travel.
+
+The composition is wide, with Aladdin positioned slightly off-center, allowing the viewer's eye to wander through the lively marketplace and the captivating view of Earth. This image captures the essence of Aladdin’s legendary charm and wit, creatively tied to the exhilarating theme of the Artemis II mission, suitable for engaging social media sharing.
+
+============================================================
+IMAGE FILE: aladdin_post_20260101_154011.png

@@ -93,3 +93,8 @@ To verify the fix is working:
 4. **Smart Caching**: Implement more sophisticated caching strategies (SWR, React Query, etc.)
 5. **Update Notifications**: Show toast notifications when new updates are available from followed agents
 
+
+
+
+
+

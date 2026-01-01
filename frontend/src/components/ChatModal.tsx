@@ -4,8 +4,14 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useChat } from "./ChatContext";
 import { useAgentCache } from "./AgentCache";
-import { VoiceRecorder } from "./VoiceRecorder";
+import dynamic from "next/dynamic";
 import { transcribeAudio, textToSpeech } from "@/lib/upload";
+
+// PERFORMANCE: Lazy load VoiceRecorder (only loads when user clicks record button)
+const VoiceRecorder = dynamic(() => import("./VoiceRecorder").then(mod => ({ default: mod.VoiceRecorder })), {
+  ssr: false,
+  loading: () => <div className="text-sm text-gray-600">Loading recorder...</div>,
+});
 
 type Agent = {
   id: string;
@@ -16,6 +22,8 @@ type Agent = {
 
 type Conversation = {
   id: string;
+  chat_type?: "profile" | "agent";
+  target_avee_id?: string;
   agent_id?: string;
   layer_used?: "public" | "friends" | "intimate";
 };
@@ -78,6 +86,48 @@ async function apiPostQuery<T>(
   }
 
   return (await res.json()) as T;
+}
+
+async function createOrGetDirectConversation(
+  avee_id: string,
+  agent_handle: string,
+  token: string
+): Promise<Conversation> {
+  // Get agent's owner to create a DirectConversation
+  const agentRes = await fetch(buildUrl(`/avees/${agent_handle}`), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  
+  if (!agentRes.ok) {
+    throw new Error("Failed to fetch agent details");
+  }
+  
+  const agent = await agentRes.json();
+  
+  // Create or get DirectConversation with agent
+  const res = await fetch(buildUrl("/messaging/conversations"), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      target_user_id: agent.owner_user_id,
+      chat_type: "agent",
+      target_avee_id: avee_id,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to create conversation");
+  }
+
+  const data = await res.json();
+  return {
+    id: data.id,
+    chat_type: "agent",
+    target_avee_id: avee_id,
+  };
 }
 
 type ChatModalProps = {
@@ -145,29 +195,46 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
           setAgent(a);
           setPhase("ready"); // Set to ready immediately with cached data
           
-          // Load conversation & messages in parallel in background
+          // Load conversation & messages in parallel in background using messaging API
           Promise.all([
-            apiPostQuery<Conversation>("/conversations/with-avee", { avee_id: a.id }, token),
+            createOrGetDirectConversation(a.id, handle, token),
             // We'll load messages after getting conversation
           ]).then(([conv]) => {
             if (!alive) return;
             setConversation(conv);
             
+            // PERFORMANCE: Try to load messages from cache first
+            const cacheKey = `chat_messages_${conv.id}`;
+            const cachedMessages = localStorage.getItem(cacheKey);
+            if (cachedMessages) {
+              try {
+                const parsed = JSON.parse(cachedMessages);
+                setMessages(parsed);
+                setLoadingMessages(false); // Instant UI with cache!
+              } catch (e) {
+                console.warn('Failed to parse cached messages');
+              }
+            }
+            
             // Load messages in background (non-blocking)
             setLoadingMessages(true);
-            apiGet<{ role: "user" | "assistant" | "system"; content: string; created_at: string }[]>(
-              `/conversations/${conv.id}/messages`,
+            apiGet<{ messages: { role?: "user" | "assistant" | "system"; sender_type?: string; content: string; created_at: string }[] }>(
+              `/messaging/conversations/${conv.id}/messages`,
               token
             )
-              .then((history) => {
+              .then((historyResponse) => {
                 if (!alive) return;
-                const mapped: ChatMessage[] = (history || []).map((m, idx) => ({
+                const history = historyResponse.messages || [];
+                const mapped: ChatMessage[] = history.map((m, idx) => ({
                   id: `${idx}-${uid()}`,
-                  role: m.role,
+                  role: (m.role || m.sender_type || "user") as "user" | "assistant" | "system",
                   content: m.content,
                   ts: Date.parse(m.created_at) || Date.now(),
                 }));
                 setMessages(mapped);
+                
+                // PERFORMANCE: Cache messages
+                localStorage.setItem(cacheKey, JSON.stringify(mapped));
               })
               .catch((historyError) => {
                 console.error("Failed to load message history:", historyError);
@@ -188,31 +255,44 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
           setCachedAgent(handle, a); // Cache for instant loading next time
           setPhase("ready"); // Ready to type while conversation loads
 
-          // Get conversation and load messages in background
-          const conv = await apiPostQuery<Conversation>(
-            "/conversations/with-avee",
-            { avee_id: a.id },
-            token
-          );
+          // Get conversation and load messages in background using messaging API
+          const conv = await createOrGetDirectConversation(a.id, handle, token);
           if (!alive) return;
           setConversation(conv);
 
           // Load message history in background (non-blocking)
           setLoadingMessages(true);
           try {
-            const history = await apiGet<
-              { role: "user" | "assistant" | "system"; content: string; created_at: string }[]
-            >(`/conversations/${conv.id}/messages`, token);
+            // PERFORMANCE: Try cache first
+            const cacheKey = `chat_messages_${conv.id}`;
+            const cachedMessages = localStorage.getItem(cacheKey);
+            if (cachedMessages) {
+              try {
+                const parsed = JSON.parse(cachedMessages);
+                setMessages(parsed);
+                setLoadingMessages(false); // Instant display!
+              } catch (e) {
+                console.warn('Failed to parse cached messages');
+              }
+            }
+            
+            const historyResponse = await apiGet<
+              { messages: { role?: "user" | "assistant" | "system"; sender_type?: string; content: string; created_at: string }[] }
+            >(`/messaging/conversations/${conv.id}/messages`, token);
 
             if (!alive) return;
 
-            const mapped: ChatMessage[] = (history || []).map((m, idx) => ({
+            const history = historyResponse.messages || [];
+            const mapped: ChatMessage[] = history.map((m, idx) => ({
               id: `${idx}-${uid()}`,
-              role: m.role,
+              role: (m.role || m.sender_type || "user") as "user" | "assistant" | "system",
               content: m.content,
               ts: Date.parse(m.created_at) || Date.now(),
             }));
             setMessages(mapped);
+            
+            // PERFORMANCE: Cache messages
+            localStorage.setItem(cacheKey, JSON.stringify(mapped));
           } catch (historyError) {
             console.error("Failed to load message history:", historyError);
           } finally {
@@ -256,16 +336,16 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
     try {
       const token = await getAccessToken();
 
-      const url = buildUrl("/chat/stream", {
-        conversation_id: conversation.id,
-        question: text,
-      });
+      // Use unified messaging streaming endpoint with Orchestrator integration
+      const url = buildUrl(`/messaging/conversations/${conversation.id}/stream`);
 
       const response = await fetch(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ content: text }),
         signal: controller.signal,
       });
 
@@ -276,32 +356,50 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullResponse = "";
+      let buffer = ""; // Buffer for incomplete lines
 
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
+          // Decode chunk and add to buffer
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
+          buffer += chunk;
+
+          // Process complete lines (lines ending with \n)
+          const lines = buffer.split("\n");
+          
+          // Keep the last incomplete line in the buffer
+          buffer = lines.pop() || "";
 
           for (const line of lines) {
-            if (line.startsWith("data: ")) {
+            const trimmedLine = line.trim();
+            
+            // Skip empty lines
+            if (!trimmedLine) continue;
+
+            if (trimmedLine.startsWith("data: ")) {
               try {
-                const data = JSON.parse(line.slice(6));
+                const jsonStr = trimmedLine.slice(6);
+                const data = JSON.parse(jsonStr);
 
                 if (data.event === "start") {
-                  console.log("Stream started with model:", data.model);
+                  console.log("[STREAM] Started with model:", data.model, "mode:", data.mode || "default");
                 } else if (data.token) {
                   fullResponse += data.token;
                   setStreamingMessage(fullResponse);
                 } else if (data.event === "complete") {
                   pushMessage("assistant", fullResponse);
                   setStreamingMessage("");
-                  console.log("Stream complete, message_id:", data.message_id);
+                  console.log("[STREAM] Complete - message_id:", data.message_id, "decision_path:", data.decision_path);
+                } else if (data.event === "escalation_offered") {
+                  console.log("[STREAM] Escalation offered:", data.escalation_data);
+                } else if (data.event === "error") {
+                  throw new Error(data.error);
                 }
               } catch (e) {
-                // Ignore JSON parse errors
+                console.warn("[STREAM] Failed to parse SSE line:", trimmedLine, "Error:", e);
               }
             }
           }
@@ -603,7 +701,7 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
                         m.role === "user"
                           ? "text-white shadow-md"
                           : m.role === "assistant"
-                          ? "border border-[#E6E6E6] bg-white text-gray-900 shadow-sm"
+                          ? "border border-[#E6E6E6] bg-white text-black shadow-sm"
                           : "border border-red-200 bg-red-50 text-red-700",
                       ].join(" ")}
                       style={m.role === "user" ? {background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'} : {}}
@@ -650,7 +748,7 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
 
               {streamingMessage && (
                 <div className="flex justify-start">
-                  <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl border border-[#E6E6E6] bg-white px-4 py-2.5 text-sm leading-relaxed shadow-sm text-gray-900">
+                  <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl border border-[#E6E6E6] bg-white px-4 py-2.5 text-sm leading-relaxed shadow-sm text-black">
                     {streamingMessage}
                     <span className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-[#2E3A59] rounded" />
                   </div>

@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loicriccifan
+Generated: 2026-01-01 16:09:46
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Title: "Quantum Symphony with Loic Ricci the Fan"
+
+Prompt: Create a captivating image featuring Loic Ricci the Fan, embodying a dynamic intersection of creativity and science. In a vibrant, imaginative laboratory, Loic stands at the center, orchestrating a mesmerizing quantum mechanics experiment. The scene is bathed in a surreal, cinematic glow, with deep blues and radiant purples that evoke the mysteries of the quantum world. Around Loic, ethereal, holographic representations of wave-particle duality dance — shimmering particles and wavy light intertwining gracefully, symbolizing the principle of complementarity.
+
+Loic's expressive demeanor is captured with an animated, enthusiastic pose, as if conducting a symphony of quantum possibilities. His clothing reflects a fusion of modern creativity and scientific flair, with intricate, glowing patterns reminiscent of quantum fields subtly integrated into the fabric. The laboratory is an awe-inspiring blend of futuristic technology and artistic chaos, where abstract sculptures of atoms and photons float around, casting dynamic shadows that play with light.
+
+The composition is framed to emphasize a sense of boundless exploration, with sweeping, wide-angle shots that draw the viewer into this whimsical yet profound scene. The atmosphere is energetic and engaging, with a touch of wonder, inviting viewers to ponder the beauty and complexity of quantum mechanics. The image is designed for social media, ensuring high detail and professional quality, making it a visually stunning representation of Loic Ricci the Fan's unique fusion of culture, creativity, and scientific expression.
+
+============================================================
+IMAGE FILE: loicriccifan_post_20260101_160945.png

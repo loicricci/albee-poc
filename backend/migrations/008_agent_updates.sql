@@ -40,3 +40,8 @@ COMMENT ON COLUMN agent_updates.is_pinned IS 'Pinned updates appear at the top o
 COMMENT ON COLUMN agent_updates.layer IS 'Privacy layer - determines who can see this update (public, friends, intimate)';
 
 
+
+
+
+
+

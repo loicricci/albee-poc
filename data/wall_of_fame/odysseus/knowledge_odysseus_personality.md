@@ -1,0 +1,23 @@
+# Odysseus - Personality and Character
+
+**Category**: Mythology
+**Metadata**: Greek mythology; strategy; leadership; travel; resilience; archetype: explorer
+
+## Character Overview
+
+Strategic and eloquent hero known for intelligence, leadership, and long journeys home.
+
+## Research Sources
+
+### Source 1: Odysseus Character Analysis in The Odyssey | LitCharts
+**URL**: https://www.litcharts.com/lit/the-odyssey/characters/odysseus
+**Type**: general
+
+Description: Get everything you need to know about Odysseus in The Odyssey. Analysis, related quotes, timeline. | Get everything you need to know about Odysseus in The Odyssey. Analysis, related quotes, timeline. King of Ithaca, husband of Penelope , and father of Telemachus , former commander in the Trojan War, Odysseus is the flawed, beloved hero of this tale of homecoming and revenge. His character is deeply contradictory: he is both a cunning champion and a plaything of the gods, a wise commander and a vainglorious braggart. After the Trojan War, which left him swollen with pride and fame, Odysseus seeks adventure on his way home; but the journey brings much defeat and humiliation, and the Odysseus that lands on the shores of Ithaca is a humbler, wiser man, more pious and reserved. As longing for adventure wanes, homesickness grows; the strictures of honor replace the demands of glory. Only when Odysseus learns to yield some control of his fate to the gods can he take charge of his life and bring peace to his household. Odysseus Quotes in The Odyssey The The Odyssey quotes below are all either spoken by Odysseus or refer to Odysseus. For each quote, you can also see the other characters and themes related to it (each theme is indicated by its own dot and icon, like this one: ). Book 5 Quotes Outrageous! Look how the gods have changed their minds about Odysseus – while I was off with my Ethiopians. Just look at him there, nearing Phaeacia's shores where he's fated to escape his noose of pain that's held him until now. Still my hopes ride high – I'll give that man his swamping fill of trouble! Related Characters: Poseidon (speaker), Odysseus Related Themes: Page Number and Citation : 5.315-320 Cite this Quote Explanation and Analysis: Three, four times blessed, my friends-in-arms who died on the plains of Troy those years ago, serving the sons of Atreus to the end. Would to god I'd died there too and met my fate that day …. A hero's funeral then, my glory spread b...
+
+### Source 2: Odysseus Character Analysis in The Odyssey | LitCharts
+**URL**: https://www.litcharts.com/lit/the-odyssey/characters/odysseus
+**Type**: general
+
+Description: Get everything you need to know about Odysseus in The Odyssey. Analysis, related quotes, timeline. | Get everything you need to know about Odysseus in The Odyssey. Analysis, related quotes, timeline. King of Ithaca, husband of Penelope , and father of Telemachus , former commander in the Trojan War, Odysseus is the flawed, beloved hero of this tale of homecoming and revenge. His character is deeply contradictory: he is both a cunning champion and a plaything of the gods, a wise commander and a vainglorious braggart. After the Trojan War, which left him swollen with pride and fame, Odysseus seeks adventure on his way home; but the journey brings much defeat and humiliation, and the Odysseus that lands on the shores of Ithaca is a humbler, wiser man, more pious and reserved. As longing for adventure wanes, homesickness grows; the strictures of honor replace the demands of glory. Only when Odysseus learns to yield some control of his fate to the gods can he take charge of his life and bring peace to his household. Odysseus Quotes in The Odyssey The The Odyssey quotes below are all either spoken by Odysseus or refer to Odysseus. For each quote, you can also see the other characters and themes related to it (each theme is indicated by its own dot and icon, like this one: ). Book 5 Quotes Outrageous! Look how the gods have changed their minds about Odysseus – while I was off with my Ethiopians. Just look at him there, nearing Phaeacia's shores where he's fated to escape his noose of pain that's held him until now. Still my hopes ride high – I'll give that man his swamping fill of trouble! Related Characters: Poseidon (speaker), Odysseus Related Themes: Page Number and Citation : 5.315-320 Cite this Quote Explanation and Analysis: Three, four times blessed, my friends-in-arms who died on the plains of Troy those years ago, serving the sons of Atreus to the end. Would to god I'd died there too and met my fate that day …. A hero's funeral then, my glory spread b...
+

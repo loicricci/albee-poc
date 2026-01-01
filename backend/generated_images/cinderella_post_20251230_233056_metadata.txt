@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @cinderella
+Generated: 2025-12-30 23:31:00
+
+Model: DALL-E 3
+Size: 1792x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image of Cinderella standing gracefully amidst a majestic winter storm, embodying resilience and warmth. The scene captures a snow-covered landscape with swirling blizzard conditions—snowflakes dance in the wind, creating a mesmerizing curtain around her. Cinderella, dressed in an elegant, shimmering blue gown reminiscent of ice crystals, exudes an aura of tranquility and hope. Her gentle smile and kind eyes are highlighted by the soft glow emanating from a nearby vintage lamppost, casting a halo of warm light against the cold backdrop. 
+
+The artistic style is a blend of photorealistic and cinematic, capturing the drama of the storm with vibrant clarity. The lighting is ethereal, with a juxtaposition of cool blues and whites from the snow, contrasted by the warm golden hues of the lamppost. The composition places Cinderella centrally, her elegance and grace anchoring the chaos of the scene. Her gown billows in the wind, echoing the storm's tempestuous energy.
+
+The color palette features icy blues, brilliant whites, and touches of soft gold, creating a harmonious balance between cold and warmth. In the foreground, delicate snowflakes catch the light, adding a touch of whimsy and magic, while in the background, silhouettes of barren trees stand resilient against the storm.
+
+This image captures Cinderella’s timeless essence, combining themes of resilience and kindness with the powerful beauty of a winter storm, creating a visually stunning and emotionally engaging scene.
+
+============================================================
+IMAGE FILE: cinderella_post_20251230_233056.png

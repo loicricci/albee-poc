@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Text, String, ForeignKey, DateTime, func
+from sqlalchemy import Column, Text, String, ForeignKey, DateTime, func, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from db import Base
 from sqlalchemy import Enum
@@ -16,8 +16,43 @@ class Profile(Base):
     handle = Column(String, nullable=False, unique=True)
     display_name = Column(String)
     avatar_url = Column(Text)
+    banner_url = Column(Text)  # Profile banner/cover image
     bio = Column(Text)
     preferred_tts_voice = Column(String, default="alloy")  # User's preferred TTS voice
+    
+    # Location for contextual native agents
+    location = Column(String)  # City name or formatted address
+    latitude = Column(String)  # Stored as string for simplicity
+    longitude = Column(String)  # Stored as string for simplicity
+    timezone = Column(String)  # IANA timezone (e.g., "America/New_York")
+    
+    # Personal Information
+    birthdate = Column(String)  # Date of birth in YYYY-MM-DD format
+    gender = Column(String)  # Gender
+    marital_status = Column(String)  # Marital status
+    nationality = Column(String)  # Nationality or citizenship
+    
+    # Contact Information
+    phone = Column(String)  # Phone number
+    email = Column(String)  # Email address
+    website = Column(String)  # Personal website URL
+    
+    # Professional Information
+    occupation = Column(String)  # Job title or occupation
+    company = Column(String)  # Company or organization
+    industry = Column(String)  # Industry sector
+    education = Column(String)  # Highest education level
+    
+    # Social Media Links
+    twitter_handle = Column(String)  # Twitter/X username
+    linkedin_url = Column(String)  # LinkedIn profile URL
+    github_username = Column(String)  # GitHub username
+    instagram_handle = Column(String)  # Instagram username
+    
+    # Additional Information
+    languages = Column(String)  # Languages spoken
+    interests = Column(Text)  # Personal interests and hobbies
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -45,6 +80,9 @@ class Avee(Base):
     research_topic = Column(Text)  # Topic/person that was researched for initial data
     research_completed_at = Column(DateTime(timezone=True))  # When web research was completed
     auto_research_enabled = Column(String, default="false")  # Whether auto research was used
+
+    # NEW (Phase 6): Unified messaging - primary agent for user
+    is_primary = Column(String, default="false")  # Whether this is the primary agent for the user
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -266,3 +304,296 @@ class AppConfig(Base):
     updated_by = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class TwitterConfig(Base):
+    """Stores Twitter auto-fetch configuration per agent."""
+    __tablename__ = "twitter_configs"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="CASCADE"), nullable=False, unique=True)
+    
+    # Twitter API settings
+    is_enabled = Column(String, default="false")  # Whether auto-fetch is enabled
+    search_topics = Column(Text)  # JSON array of search topics/keywords
+    twitter_accounts = Column(Text)  # JSON array of Twitter handles to monitor
+    
+    # Fetch settings
+    max_tweets_per_fetch = Column(Integer, default=10)  # Max tweets to fetch per sync
+    fetch_frequency_hours = Column(Integer, default=24)  # How often to fetch (in hours)
+    last_fetch_at = Column(DateTime(timezone=True))  # Last successful fetch
+    
+    # Storage settings
+    layer = Column(PG_ENUM("public", "friends", "intimate", name="avee_layer", create_type=False), nullable=False, default="public")
+    auto_create_updates = Column(String, default="true")  # Auto-create agent updates from tweets
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class TwitterFetchLog(Base):
+    """Logs Twitter fetch operations for debugging and analytics."""
+    __tablename__ = "twitter_fetch_logs"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="CASCADE"), nullable=False)
+    
+    fetch_status = Column(String, nullable=False)  # success, error, partial
+    tweets_fetched = Column(Integer, default=0)
+    updates_created = Column(Integer, default=0)
+    error_message = Column(Text)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class DirectConversation(Base):
+    """Stores direct conversations between profiles (profile-to-profile or profile-to-agent)."""
+    __tablename__ = "direct_conversations"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # Participants
+    participant1_user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    participant2_user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    
+    # Chat type: 'profile' (direct to profile inbox) or 'agent' (to profile's agent)
+    chat_type = Column(String, nullable=False, default="profile")  # 'profile' or 'agent'
+    
+    # If chat_type is 'agent', this stores which agent is being chatted with
+    target_avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="SET NULL"), nullable=True)
+    
+    # Last message info for sorting
+    last_message_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_message_preview = Column(Text)
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class DirectMessage(Base):
+    """Stores individual messages in direct conversations."""
+    __tablename__ = "direct_messages"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(UUID(as_uuid=True), ForeignKey("direct_conversations.id", ondelete="CASCADE"), nullable=False)
+    
+    # Sender (either user or system/agent)
+    sender_user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=True)
+    sender_type = Column(String, nullable=False)  # 'user', 'agent', 'system'
+    
+    # If sender is agent, store which agent
+    sender_avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="SET NULL"), nullable=True)
+    
+    # Message content
+    content = Column(Text, nullable=False)
+    
+    # Validation tracking
+    human_validated = Column(String, default="false")  # 'true' if agent message was reviewed/approved by profile owner
+    
+    # Read status tracking
+    read_by_participant1 = Column(String, default="false")
+    read_by_participant2 = Column(String, default="false")
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# --- Orchestrator System Models ---
+
+class OrchestratorConfig(Base):
+    """Stores creator-defined rules and settings per agent."""
+    __tablename__ = "orchestrator_configs"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="CASCADE"), nullable=False, unique=True)
+    
+    # Escalation limits
+    max_escalations_per_day = Column(Integer, nullable=False, default=10)
+    max_escalations_per_week = Column(Integer, nullable=False, default=50)
+    escalation_enabled = Column(String, nullable=False, default="true")  # Store as string for consistency
+    
+    # Auto-answer settings
+    auto_answer_confidence_threshold = Column(Integer, nullable=False, default=75)  # Store as int 0-100
+    clarification_enabled = Column(String, nullable=False, default="true")
+    
+    # Access control (JSON stored as Text)
+    blocked_topics = Column(Text, default="[]")  # JSON array as string
+    allowed_user_tiers = Column(Text, default='["free", "follower"]')  # JSON array as string
+    
+    # Availability (for future use)
+    availability_windows = Column(Text, default="{}")  # JSON object as string
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class EscalationQueue(Base):
+    """Tracks all escalation requests from users to creators."""
+    __tablename__ = "escalation_queue"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # References
+    conversation_id = Column(UUID(as_uuid=True), ForeignKey("direct_conversations.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="CASCADE"), nullable=False)
+    
+    # Message content
+    original_message = Column(Text, nullable=False)
+    context_summary = Column(Text)  # AI-generated context
+    
+    # Escalation metadata
+    escalation_reason = Column(String, nullable=False)  # 'novel', 'strategic', 'complex'
+    status = Column(String, nullable=False, default="pending")  # 'pending', 'accepted', 'answered', 'declined', 'expired'
+    
+    # Timeline
+    offered_at = Column(DateTime(timezone=True), server_default=func.now())
+    accepted_at = Column(DateTime(timezone=True))
+    answered_at = Column(DateTime(timezone=True))
+    
+    # Creator response
+    creator_answer = Column(Text)
+    answer_layer = Column(String)  # 'public', 'friends', 'intimate'
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class OrchestratorDecision(Base):
+    """Logs every routing decision for analytics and debugging."""
+    __tablename__ = "orchestrator_decisions"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # References
+    conversation_id = Column(UUID(as_uuid=True), ForeignKey("direct_conversations.id", ondelete="SET NULL"))
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="CASCADE"), nullable=False)
+    
+    # Message and decision
+    message_content = Column(Text, nullable=False)
+    decision_path = Column(String, nullable=False)  # 'A', 'B', 'C', 'D', 'E', 'F'
+    
+    # Computed signals (stored as decimal 0.0000-1.0000)
+    confidence_score = Column(Numeric(5,4))  # 0.0000-1.0000
+    novelty_score = Column(Numeric(5,4))  # 0.0000-1.0000
+    complexity_score = Column(Numeric(5,4))  # 0.0000-1.0000
+    
+    # Similar answer reference (if path C)
+    similar_answer_id = Column(UUID(as_uuid=True), ForeignKey("escalation_queue.id", ondelete="SET NULL"))
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class CanonicalAnswer(Base):
+    """Stores creator answers that can be reused for similar questions."""
+    __tablename__ = "canonical_answers"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # References
+    avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="CASCADE"), nullable=False)
+    escalation_id = Column(UUID(as_uuid=True), ForeignKey("escalation_queue.id", ondelete="SET NULL"))
+    
+    # Content
+    question_pattern = Column(Text, nullable=False)  # Normalized/generalized question
+    answer_content = Column(Text, nullable=False)
+    
+    # Access control
+    layer = Column(String, nullable=False)  # 'public', 'friends', 'intimate'
+    
+    # Usage tracking
+    times_reused = Column(Integer, nullable=False, default=0)
+    
+    # Vector embedding for similarity search (stored as Text for raw SQL usage)
+    embedding = Column(Text)  # pgvector column, we'll use raw SQL for vector ops
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+# --- Social Media Posts System ---
+
+class Post(Base):
+    """Stores user posts (images, AI-generated content, etc.)"""
+    __tablename__ = "posts"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="SET NULL"), nullable=True)  # Which agent created this post (NULL for user posts)
+    
+    # Content
+    title = Column(Text)
+    description = Column(Text)
+    image_url = Column(Text, nullable=False)
+    
+    # Post type
+    post_type = Column(String, default="image")  # 'image', 'ai_generated', 'update'
+    
+    # AI metadata (for AI-generated images)
+    ai_metadata = Column(Text, default="{}")  # JSON as text: model, prompt, style, etc.
+    
+    # Privacy/visibility
+    visibility = Column(String, default="public")  # 'public', 'followers', 'private'
+    
+    # Counters (denormalized for performance)
+    like_count = Column(Integer, default=0)
+    comment_count = Column(Integer, default=0)
+    share_count = Column(Integer, default=0)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class PostLike(Base):
+    """Tracks likes on posts"""
+    __tablename__ = "post_likes"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class PostComment(Base):
+    """Stores comments on posts"""
+    __tablename__ = "post_comments"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    
+    # Comment content
+    content = Column(Text, nullable=False)
+    
+    # Reply system
+    parent_comment_id = Column(UUID(as_uuid=True), ForeignKey("post_comments.id", ondelete="CASCADE"), nullable=True)
+    
+    # Counters
+    like_count = Column(Integer, default=0)
+    reply_count = Column(Integer, default=0)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class CommentLike(Base):
+    """Tracks likes on comments"""
+    __tablename__ = "comment_likes"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    comment_id = Column(UUID(as_uuid=True), ForeignKey("post_comments.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class PostShare(Base):
+    """Tracks shares/reposts"""
+    __tablename__ = "post_shares"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    
+    # Share type
+    share_type = Column(String, default="repost")  # 'repost', 'quote', 'external'
+    
+    # Optional comment when sharing
+    comment = Column(Text)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

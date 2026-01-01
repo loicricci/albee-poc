@@ -15,7 +15,7 @@ function getExt(file: File) {
 }
 
 export async function uploadImageToBucket(params: {
-  bucket: "avatars" | "avee-avatars" | "app-images";
+  bucket: "avatars" | "avee-avatars" | "app-images" | "banners";
   folder: string; // userId or agentId or app config key
   file: File;
 }) {

@@ -192,3 +192,8 @@ The landing page now features:
 The hourglass shape is now woven into the entire page design, creating a sophisticated visual identity that reinforces the brand without overwhelming the content.
 
 
+
+
+
+
+
