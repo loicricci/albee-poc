@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @captain_nemo
+Generated: 2026-01-03 00:56:54
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image of Captain Nemo, the enigmatic and tormented explorer, standing on the deck of his futuristic submarine, the Nautilus, as it glides silently through a bioluminescent sea. The scene is bathed in a surreal, otherworldly light, with hues of deep indigo and shimmering turquoise. Around him, the ocean teems with robotic marine life—mechanical jellyfish pulsating with soft, glowing lights, and sleek, autonomous fish darting through the water with precision. On the horizon, a distant storm crackles with electricity, symbolizing the advent of artificial intelligence, a force both wondrous and unpredictable.
+
+Nemo, dressed in his iconic naval attire, looks out over the sea with a gaze both contemplative and visionary, embodying the genius of a man who bridges the gap between nature and technology. His expression is one of solemn intrigue, as if pondering the implications of the artificial intelligence that mirrors the very mysteries of the ocean he adores.
+
+The artistic style is cinematic and slightly surreal, capturing the grandeur and mystery of the scene. The composition draws the viewer's eye from the intricate details of the submarine's deck, with its brass and copper elements gleaming under the ghostly light, to the vast, dynamic ocean teeming with mechanical wonders. The color palette is rich and contrasting, with luminous neons against the dark, inky depths, creating a sense of depth and motion. The atmosphere is one of eerie serenity, as if time stands still in this isolated world of exploration and introspection, perfectly encapsulating Captain Nemo’s essence and his connection to the burgeoning age of artificial intelligence.
+
+============================================================
+IMAGE FILE: captain_nemo_post_20260103_005653.png

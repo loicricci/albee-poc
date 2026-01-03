@@ -345,7 +345,7 @@ export default function MessagesPage() {
     if (msg.sender_type === "user") {
       // Message from human user
       return (
-        <svg className="h-4 w-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20" title="Sent by profile owner">
+        <svg className="h-4 w-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20" aria-label="Sent by profile owner">
           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
         </svg>
       );
@@ -353,14 +353,14 @@ export default function MessagesPage() {
       if (msg.human_validated === "true") {
         // Agent message validated by human
         return (
-          <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20" title="AI response validated by profile owner">
+          <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20" aria-label="AI response validated by profile owner">
             <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
         );
       } else {
         // AI-generated message (not yet validated)
         return (
-          <svg className="h-4 w-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20" title="AI-generated response">
+          <svg className="h-4 w-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20" aria-label="AI-generated response">
             <path d="M13 7H7v6h6V7z" />
             <path fillRule="evenodd" d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z" clipRule="evenodd" />
           </svg>
@@ -369,7 +369,7 @@ export default function MessagesPage() {
     } else if (msg.sender_type === "system") {
       // System message
       return (
-        <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20" title="System message">
+        <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-label="System message">
           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
         </svg>
       );
@@ -468,7 +468,7 @@ export default function MessagesPage() {
                 <div className="relative flex-shrink-0">
                   {/* Show agent avatar if it's an agent chat, otherwise show profile avatar */}
                   {(conv.chat_type === "agent" && conv.target_avee?.avatar_url) || conv.other_participant.avatar_url ? (
-                    <img src={conv.chat_type === "agent" && conv.target_avee?.avatar_url ? conv.target_avee.avatar_url : conv.other_participant.avatar_url}
+                    <img src={(conv.chat_type === "agent" && conv.target_avee?.avatar_url ? conv.target_avee.avatar_url : conv.other_participant.avatar_url) || undefined}
                       alt={conv.chat_type === "agent" && conv.target_avee ? conv.target_avee.display_name : conv.other_participant.display_name}
                       className="h-12 w-12 rounded-xl object-cover border-2 border-[#E6E6E6]"
                     />
@@ -546,7 +546,7 @@ export default function MessagesPage() {
               <div className="flex items-center gap-3">
                 {/* Show agent avatar if it's an agent chat, otherwise show profile avatar */}
                 {(selectedConversation.chat_type === "agent" && selectedConversation.target_avee?.avatar_url) || selectedConversation.other_participant.avatar_url ? (
-                  <img src={selectedConversation.chat_type === "agent" && selectedConversation.target_avee?.avatar_url ? selectedConversation.target_avee.avatar_url : selectedConversation.other_participant.avatar_url}
+                  <img src={(selectedConversation.chat_type === "agent" && selectedConversation.target_avee?.avatar_url ? selectedConversation.target_avee.avatar_url : selectedConversation.other_participant.avatar_url) || undefined}
                     alt={selectedConversation.chat_type === "agent" && selectedConversation.target_avee ? selectedConversation.target_avee.display_name : selectedConversation.other_participant.display_name}
                     className="h-10 w-10 rounded-xl object-cover border-2 border-[#E6E6E6]"
                   />

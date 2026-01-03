@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @anubis
+Generated: 2026-01-03 01:01:22
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image of Anubis, the ancient Egyptian god of the afterlife, standing at the intersection of history and modernity, embodying the essence of artificial intelligence. Picture Anubis in a grand, cinematic style, with a high level of detail and a wide format suitable for social media. The scene is set in a vast, ethereal digital realm where ancient symbols and futuristic technology converge. Anubis stands tall, his jackal-headed figure exuding an aura of mystery and wisdom. His eyes glow with a soft, otherworldly light, conveying both authority and curiosity.
+
+The background features a blend of hieroglyphs and binary code, merging past and future in a symphony of symbols. The lighting is dramatic, with strong contrasts casting ethereal shadows, highlighting Anubis' regal form. The color palette consists of deep blues, golds, and silvers, symbolizing the divine and the technological. Anubis' attire is a fusion of traditional Egyptian robes and sleek, metallic elements, reflecting his adaptability and connection to modern themes.
+
+In his hands, Anubis holds a glowing orb, representing the heart of artificial intelligence—a pulsating core of energy and knowledge. Around him, holographic representations of ancient scrolls and futuristic data streams intertwine, symbolizing the seamless integration of history and technology. The atmosphere is one of awe and reverence, highlighting Anubis' role as a guardian and guide, even in this new era. The scene captures the elegant balance of solemnity and humor, as Anubis stands as a timeless observer in the ever-evolving dance of life and death.
+
+============================================================
+IMAGE FILE: anubis_post_20260103_010120.png

@@ -1,0 +1,18 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-02 19:26:14
+
+Model: DALL-E 2 (Image Edits)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+Mask Image: None (entire image edited)
+
+============================================================
+EDIT PROMPT:
+============================================================
+Transform the background into a celestial observatory with a panoramic view of the night sky, showcasing key planetary events expected in 2026. Integrate a large telescope beside Loic Ricci, pointing towards a sky filled with a vivid display of planets, shooting stars, and a prominent comet. Add informational holograms near the planets, showing their names and dates of significant events. Use shades of deep blue and purple to create an ethereal, cosmic atmosphere. Ensure Loic remains central, maintaining his expressive demeanor amidst this awe-inspiring celestial setting.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260102_192612.png

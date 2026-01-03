@@ -5,7 +5,7 @@ import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import text, desc, and_
+from sqlalchemy import text, desc, and_, or_
 from pydantic import BaseModel
 import json
 
@@ -18,9 +18,11 @@ from models import (
     CommentLike,
     PostShare,
     Profile,
-    Avee
+    Avee,
+    Notification
 )
 from twitter_posting_service import get_twitter_posting_service
+from notifications_api import create_notification
 
 router = APIRouter()
 
@@ -41,7 +43,7 @@ class PostCreate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     image_url: str
-    post_type: str = "image"
+    post_type: str = "image"  # Valid values: 'image', 'ai_generated', 'text' (NOT 'update')
     ai_metadata: Optional[dict] = None
     visibility: str = "public"
     agent_id: Optional[str] = None  # Optional agent_id for agent posts
@@ -136,14 +138,19 @@ def get_posts(
     """Get posts feed"""
     current_uuid = uuid.UUID(current_user_id)
     
-    # Base query
+    # Base query - we need to get both profile and agent info (left join for agent)
     query = db.query(
         Post,
         Profile.handle,
         Profile.display_name,
-        Profile.avatar_url
+        Profile.avatar_url,
+        Avee.handle,
+        Avee.display_name,
+        Avee.avatar_url
     ).join(
         Profile, Post.owner_user_id == Profile.user_id
+    ).outerjoin(
+        Avee, Post.agent_id == Avee.id
     )
     
     # Filter by user if handle provided
@@ -179,9 +186,34 @@ def get_posts(
     # Pagination
     posts = query.limit(limit).offset(offset).all()
     
+    # Fetch reposts by this user if user_handle is specified
+    reposts = []
+    if user_handle:
+        # Get the profile for this handle (could be from earlier check, but let's be explicit)
+        profile = db.query(Profile).filter(Profile.handle == user_handle).first()
+        if profile:
+            reposts_query = (
+                db.query(PostShare, Post, Profile, Avee)
+                .join(Post, PostShare.post_id == Post.id)
+                .join(Profile, Post.owner_user_id == Profile.user_id)
+                .outerjoin(Avee, Post.agent_id == Avee.id)
+                .filter(
+                    PostShare.user_id == profile.user_id,
+                    or_(
+                        Post.visibility == "public",
+                        Post.owner_user_id == current_uuid
+                    )
+                )
+                .order_by(desc(PostShare.created_at))
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
+            reposts = reposts_query
+    
     # Format response with user interaction data
     results = []
-    for post, handle, display_name, avatar_url in posts:
+    for post, profile_handle, profile_display_name, profile_avatar_url, agent_handle, agent_display_name, agent_avatar_url in posts:
         # Check if current user has liked
         has_liked = db.query(PostLike).filter(
             and_(
@@ -196,12 +228,22 @@ def get_posts(
         except:
             ai_metadata = {}
         
+        # If post has an agent_id, use agent info, otherwise use profile info
+        if post.agent_id and agent_handle:
+            display_handle = agent_handle
+            display_name = agent_display_name
+            display_avatar = agent_avatar_url
+        else:
+            display_handle = profile_handle
+            display_name = profile_display_name
+            display_avatar = profile_avatar_url
+        
         results.append({
             "id": str(post.id),
             "owner_user_id": str(post.owner_user_id),
-            "owner_handle": handle,
+            "owner_handle": display_handle,
             "owner_display_name": display_name,
-            "owner_avatar_url": avatar_url,
+            "owner_avatar_url": display_avatar,
             "title": post.title,
             "description": post.description,
             "image_url": post.image_url,
@@ -215,6 +257,63 @@ def get_posts(
             "created_at": post.created_at.isoformat() if post.created_at else None,
             "updated_at": post.updated_at.isoformat() if post.updated_at else None,
         })
+    
+    # Process reposts and add to results
+    for share, post, post_owner, post_agent in reposts:
+        # Get reposter profile
+        reposter = db.query(Profile).filter(Profile.user_id == share.user_id).first()
+        
+        if not reposter:
+            continue
+        
+        has_liked = db.query(PostLike).filter(
+            and_(
+                PostLike.post_id == post.id,
+                PostLike.user_id == current_uuid
+            )
+        ).first() is not None
+        
+        # Parse AI metadata
+        try:
+            ai_metadata = json.loads(post.ai_metadata) if post.ai_metadata else {}
+        except:
+            ai_metadata = {}
+        
+        results.append({
+            "id": f"repost-{str(share.id)}",
+            "type": "repost",
+            "repost_id": str(share.id),
+            "repost_comment": share.comment,
+            "reposted_by_user_id": str(reposter.user_id),
+            "reposted_by_handle": reposter.handle,
+            "reposted_by_display_name": reposter.display_name,
+            "reposted_by_avatar_url": reposter.avatar_url,
+            "reposted_at": share.created_at.isoformat(),
+            # Original post data
+            "post_id": str(post.id),
+            "owner_user_id": str(post_owner.user_id),
+            "owner_handle": post_owner.handle,
+            "owner_display_name": post_owner.display_name,
+            "owner_avatar_url": post_owner.avatar_url,
+            "agent_handle": post_agent.handle if post_agent else post_owner.handle,
+            "agent_display_name": post_agent.display_name if post_agent else post_owner.display_name,
+            "agent_avatar_url": post_agent.avatar_url if post_agent else post_owner.avatar_url,
+            "title": post.title,
+            "description": post.description,
+            "image_url": post.image_url,
+            "post_type": post.post_type,
+            "ai_metadata": ai_metadata,
+            "visibility": post.visibility,
+            "like_count": post.like_count,
+            "comment_count": post.comment_count,
+            "share_count": post.share_count,
+            "user_has_liked": has_liked,
+            "created_at": share.created_at.isoformat(),
+            "updated_at": post.updated_at.isoformat() if post.updated_at else None,
+        })
+    
+    # Sort combined results by created_at (newest first)
+    results.sort(key=lambda x: x["created_at"], reverse=True)
     
     return {
         "posts": results,
@@ -234,20 +333,25 @@ def get_post(
     current_uuid = uuid.UUID(current_user_id)
     post_uuid = uuid.UUID(post_id)
     
-    # Get post with owner info
+    # Get post with owner info (profile and agent)
     result = db.query(
         Post,
         Profile.handle,
         Profile.display_name,
-        Profile.avatar_url
+        Profile.avatar_url,
+        Avee.handle,
+        Avee.display_name,
+        Avee.avatar_url
     ).join(
         Profile, Post.owner_user_id == Profile.user_id
+    ).outerjoin(
+        Avee, Post.agent_id == Avee.id
     ).filter(Post.id == post_uuid).first()
     
     if not result:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    post, handle, display_name, avatar_url = result
+    post, profile_handle, profile_display_name, profile_avatar_url, agent_handle, agent_display_name, agent_avatar_url = result
     
     # Check visibility
     if post.visibility != "public" and post.owner_user_id != current_uuid:
@@ -267,12 +371,22 @@ def get_post(
     except:
         ai_metadata = {}
     
+    # If post has an agent_id, use agent info, otherwise use profile info
+    if post.agent_id and agent_handle:
+        display_handle = agent_handle
+        display_name = agent_display_name
+        display_avatar = agent_avatar_url
+    else:
+        display_handle = profile_handle
+        display_name = profile_display_name
+        display_avatar = profile_avatar_url
+    
     return {
         "id": str(post.id),
         "owner_user_id": str(post.owner_user_id),
-        "owner_handle": handle,
+        "owner_handle": display_handle,
         "owner_display_name": display_name,
-        "owner_avatar_url": avatar_url,
+        "owner_avatar_url": display_avatar,
         "title": post.title,
         "description": post.description,
         "image_url": post.image_url,
@@ -370,6 +484,32 @@ def like_post(
     # Create like
     like = PostLike(post_id=post_uuid, user_id=user_uuid)
     db.add(like)
+    
+    # Create notification for post owner (if not liking own post)
+    if post.owner_user_id != user_uuid:
+        try:
+            # Get liker info
+            liker = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+            liker_name = liker.display_name or liker.handle if liker else "Someone"
+            
+            # Create notification without committing (will commit with the like)
+            notification = Notification(
+                id=uuid.uuid4(),
+                user_id=post.owner_user_id,
+                notification_type="post_like",
+                title="New like on your post",
+                message=f"{liker_name} liked your post",
+                link=f"/posts/{str(post.id)}",
+                related_user_id=user_uuid,
+                related_post_id=post.id,
+                is_read="false"
+            )
+            db.add(notification)
+        except Exception as e:
+            print(f"Error creating like notification: {e}")
+            # Continue anyway - like is more important than notification
+    
+    # Single commit for both like and notification
     db.commit()
     
     return {"message": "Post liked"}
@@ -488,7 +628,35 @@ def create_comment(
     db.commit()
     db.refresh(comment)
     
-    return {"id": str(comment.id), "message": "Comment created"}
+    # Store comment ID before attempting notification
+    comment_id = str(comment.id)
+    
+    # Create notification for post owner (if not commenting on own post)
+    if post.owner_user_id != user_uuid:
+        try:
+            # Get commenter info
+            commenter = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+            commenter_name = commenter.display_name or commenter.handle if commenter else "Someone"
+            
+            # Truncate comment for notification
+            comment_preview = comment_data.content[:50] + "..." if len(comment_data.content) > 50 else comment_data.content
+            
+            create_notification(
+                db=db,
+                user_id=post.owner_user_id,
+                notification_type="post_comment",
+                title="New comment on your post",
+                message=f"{commenter_name} commented: {comment_preview}",
+                link=f"/posts/{str(post.id)}",
+                related_user_id=user_uuid,
+                related_post_id=post.id
+            )
+        except Exception as e:
+            print(f"Error creating comment notification: {e}")
+            # Rollback the failed notification transaction
+            db.rollback()
+    
+    return {"id": comment_id, "message": "Comment created"}
 
 
 @router.delete("/comments/{comment_id}")
@@ -601,7 +769,32 @@ def share_post(
     db.commit()
     db.refresh(share)
     
-    return {"id": str(share.id), "message": "Post shared"}
+    # Store share ID before attempting notification
+    share_id = str(share.id)
+    
+    # Create notification for post owner (if not sharing own post)
+    if post.owner_user_id != user_uuid:
+        try:
+            # Get sharer info
+            sharer = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+            sharer_name = sharer.display_name or sharer.handle if sharer else "Someone"
+            
+            create_notification(
+                db=db,
+                user_id=post.owner_user_id,
+                notification_type="post_repost",
+                title="Your post was shared",
+                message=f"{sharer_name} shared your post",
+                link=f"/posts/{str(post.id)}",
+                related_user_id=user_uuid,
+                related_post_id=post.id
+            )
+        except Exception as e:
+            print(f"Error creating share notification: {e}")
+            # Rollback the failed notification transaction
+            db.rollback()
+    
+    return {"id": share_id, "message": "Post shared"}
 
 
 @router.delete("/shares/{share_id}")

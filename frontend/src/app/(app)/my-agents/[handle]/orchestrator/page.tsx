@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 
 interface OrchestratorConfig {
   avee_id: string;
@@ -466,6 +466,9 @@ export default function OrchestratorConfigPage() {
     </div>
   );
 }
+
+
+
 
 
 

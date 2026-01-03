@@ -32,6 +32,7 @@ from backend.news_topic_fetcher import get_safe_daily_topic
 from backend.profile_context_loader import load_agent_context
 from backend.ai_prompt_generator import (
     generate_image_prompt_and_title_parallel,
+    generate_edit_prompt_and_title_parallel,
     generate_description
 )
 from backend.image_generator import generate_post_image
@@ -59,7 +60,9 @@ class DailyPostGenerator:
         self,
         agent_handle: str,
         topic_override: Optional[str] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
+        image_engine: str = "dall-e-3",  # NEW: Image generation engine selection
+        reference_image_url_override: Optional[str] = None  # NEW: User-selected reference image URL
     ) -> dict:
         """
         Generate and post a daily AI-generated post (async version with parallelization).
@@ -68,6 +71,8 @@ class DailyPostGenerator:
             agent_handle: Agent handle to post for
             topic_override: Optional topic override (skips news fetch)
             category: Optional category filter for news
+            image_engine: Image generation engine ("dall-e-3" or "openai-edits")
+            reference_image_url_override: Optional user-selected reference image URL (overrides agent default)
         
         Returns:
             Dictionary with results
@@ -117,12 +122,25 @@ class DailyPostGenerator:
                 })
             
             # Steps 3 & 4: Generate image prompt and title IN PARALLEL
+            # Use different prompt generator based on image engine
             if self.tracker:
-                self.tracker.start_step("Steps 3 & 4 (Parallel)", "Generate image prompt + title")
+                prompt_type = "edit prompt" if image_engine == "gpt-image-1" else "image prompt"
+                self.tracker.start_step("Steps 3 & 4 (Parallel)", f"Generate {prompt_type} + title")
             
-            self._log_step(3, "Generating image prompt and title in parallel...")
-            image_prompt, title = await generate_image_prompt_and_title_parallel(agent_context, topic)
-            self._log_success(f"Image prompt: {image_prompt[:80]}...")
+            if image_engine == "gpt-image-1":
+                # Generate EDIT prompt specifically for semantic image editing
+                self._log_step(3, "Generating image EDIT prompt and title in parallel...")
+                edit_instructions = agent_context.get("image_edit_instructions", "")
+                image_prompt, title = await generate_edit_prompt_and_title_parallel(
+                    agent_context, topic, edit_instructions
+                )
+                self._log_success(f"Edit prompt: {image_prompt[:80]}...")
+            else:
+                # Generate DALL-E 3 prompt for creating new images
+                self._log_step(3, "Generating image prompt and title in parallel...")
+                image_prompt, title = await generate_image_prompt_and_title_parallel(agent_context, topic)
+                self._log_success(f"Image prompt: {image_prompt[:80]}...")
+            
             self._log_success(f"Title: {title}")
             
             if self.tracker:
@@ -139,12 +157,28 @@ class DailyPostGenerator:
             if self.tracker:
                 self.tracker.stop_step({"description_length": len(description)})
             
-            # Step 6: Generate image
+            # Step 6: Generate image (using selected engine)
             if self.tracker:
-                self.tracker.start_step("Step 6", "Generate image (DALL-E 3)")
+                if image_engine == "gpt-image-1":
+                    engine_label = "GPT-Image-1 (Image Editing)"
+                else:
+                    engine_label = "DALL-E 3 (Generation)"
+                self.tracker.start_step("Step 6", f"Generate image ({engine_label})")
             
-            self._log_step(6, "Generating image with DALL-E 3...")
-            image_path = generate_post_image(image_prompt, agent_handle)
+            self._log_step(6, f"Generating image with {image_engine}...")
+            
+            if image_engine == "gpt-image-1":
+                # Use GPT-Image-1 for semantic image editing (no mask required)
+                image_path = await self._generate_with_gpt_image(
+                    agent_handle,
+                    image_prompt,
+                    agent_context,
+                    reference_image_url_override
+                )
+            else:
+                # Use DALL-E 3 (default generation model)
+                image_path = generate_post_image(image_prompt, agent_handle)
+            
             self._log_success(f"Image saved: {os.path.basename(image_path)}")
             
             if self.tracker:
@@ -188,27 +222,133 @@ class DailyPostGenerator:
                 "image_url": post_result["image_url"],
                 "view_url": post_result["view_url"],
                 "topic": topic["topic"],
-                "duration_seconds": duration
+                "duration_seconds": duration,
+                "image_engine": image_engine  # NEW: Include which engine was used
             }
             
         except Exception as e:
             if self.tracker:
                 self.tracker.finish()
             self._log_error(e)
-            raise
+            
+            # Return error information instead of raising
+            return {
+                "success": False,
+                "error": str(e),
+                "image_engine": image_engine
+            }
+    
+    
+    async def _generate_with_edits(
+        self,
+        agent_handle: str,
+        edit_prompt: str,
+        agent_context: dict,
+        reference_image_url_override: Optional[str] = None
+    ) -> str:
+        """
+        Generate image using OpenAI Image Edits with reference images.
+        
+        The edit_prompt is now specifically generated for image editing (by
+        generate_edit_prompt_and_title_parallel) and incorporates the topic/context
+        research to modify the reference image appropriately.
+        
+        Args:
+            agent_handle: Agent handle
+            edit_prompt: Edit prompt specifically designed for modifying the reference image
+            agent_context: Agent context including reference image URLs
+            reference_image_url_override: User-selected reference image URL (overrides agent default)
+        
+        Returns:
+            Local filepath to edited image
+        """
+        # Use override if provided, otherwise use agent's default reference image
+        reference_image_url = reference_image_url_override or agent_context.get("reference_image_url")
+        mask_image_url = agent_context.get("reference_image_mask_url")
+        
+        if not reference_image_url:
+            raise Exception(
+                f"Agent @{agent_handle} does not have reference images uploaded. "
+                "Please upload reference images in the agent editor before using openai-edits mode."
+            )
+        
+        self._log_success(f"Using reference image for edit")
+        self._log_success(f"Edit prompt preview: {edit_prompt[:100]}...")
+        
+        # Use ImageGenerator to perform the edit
+        from backend.image_generator import ImageGenerator
+        generator = ImageGenerator(output_dir="generated_images")
+        
+        return generator.generate_with_edits(
+            reference_image_url=reference_image_url,
+            prompt=edit_prompt,
+            agent_handle=agent_handle,
+            mask_image_url=mask_image_url
+        )
+    
+    
+    async def _generate_with_gpt_image(
+        self,
+        agent_handle: str,
+        edit_prompt: str,
+        agent_context: dict,
+        reference_image_url_override: Optional[str] = None
+    ) -> str:
+        """
+        Generate image using GPT-Image-1 with semantic editing.
+        
+        GPT-Image-1 understands images and can edit them based on text instructions
+        WITHOUT requiring masks. Perfect for background changes, style, lighting, etc.
+        
+        Args:
+            agent_handle: Agent handle
+            edit_prompt: Edit instruction from generate_edit_prompt_and_title_parallel
+            agent_context: Agent context including reference image URLs
+            reference_image_url_override: User-selected reference image URL
+        
+        Returns:
+            Local filepath to edited image
+        """
+        # Use override if provided, otherwise use agent's default reference image
+        reference_image_url = reference_image_url_override or agent_context.get("reference_image_url")
+        
+        if not reference_image_url:
+            raise Exception(
+                f"Agent @{agent_handle} does not have reference images uploaded. "
+                "Please upload reference images in the agent editor before using gpt-image-1 mode."
+            )
+        
+        self._log_success(f"Using reference image for semantic editing")
+        self._log_success(f"Edit instruction: {edit_prompt[:100]}...")
+        
+        # Use ImageGenerator to perform semantic editing with GPT-Image-1
+        from backend.image_generator import ImageGenerator
+        generator = ImageGenerator(output_dir="generated_images")
+        
+        return generator.generate_with_gpt_image(
+            reference_image_url=reference_image_url,
+            prompt=edit_prompt,
+            agent_handle=agent_handle
+        )
     
     def generate_post(
         self,
         agent_handle: str,
         topic_override: Optional[str] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
+        image_engine: str = "dall-e-3"  # NEW: Pass through image engine
     ) -> dict:
         """
         Generate and post a daily AI-generated post (synchronous wrapper).
         
         This wraps the async version for backwards compatibility.
         """
-        return asyncio.run(self.generate_post_async(agent_handle, topic_override, category))
+        return asyncio.run(self.generate_post_async(
+            agent_handle, 
+            topic_override, 
+            category,
+            image_engine  # NEW
+        ))
     
     def _log_header(self, agent_handle: str):
         """Log header"""

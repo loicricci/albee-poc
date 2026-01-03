@@ -19,4 +19,5 @@ pandas>=2.0.0  # For CSV and Excel data processing
 Pillow>=10.0.0  # For image processing
 tweepy>=4.14.0  # For Twitter API integration
 newsapi-python>=0.2.7  # For News API integration
+supabase>=2.27.0  # For Supabase storage integration
 

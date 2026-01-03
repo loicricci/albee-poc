@@ -84,7 +84,10 @@ class ProfileContextLoader:
             "themes": themes,
             "knowledge_summary": knowledge_data["summary"],
             "document_count": knowledge_data["document_count"],
-                "avee_id": profile_data["avee_id"]
+            "avee_id": profile_data["avee_id"],
+            "reference_image_url": profile_data["reference_image_url"],
+            "reference_image_mask_url": profile_data["reference_image_mask_url"],
+            "image_edit_instructions": profile_data["image_edit_instructions"]
         }
         
         print(f"[ProfileContextLoader] ✅ Loaded context for {profile_data['display_name']}")
@@ -102,12 +105,15 @@ class ProfileContextLoader:
         
         query = text("""
             SELECT 
-        id as avee_id,
-        handle,
-        display_name,
-        bio,
-        persona,
-        avatar_url
+                id as avee_id,
+                handle,
+                display_name,
+                bio,
+                persona,
+                avatar_url,
+                reference_image_url,
+                reference_image_mask_url,
+                image_edit_instructions
             FROM avees
             WHERE handle = :handle
             LIMIT 1
@@ -125,7 +131,10 @@ class ProfileContextLoader:
             "display_name": row.display_name or row.handle,
             "bio": row.bio or "",
             "persona": row.persona or "",
-            "avatar_url": row.avatar_url
+            "avatar_url": row.avatar_url,
+            "reference_image_url": row.reference_image_url,
+            "reference_image_mask_url": row.reference_image_mask_url,
+            "image_edit_instructions": row.image_edit_instructions
         }
     
     def _load_knowledge_summary(self, avee_id: str) -> Dict[str, Any]:

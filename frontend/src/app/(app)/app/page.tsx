@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { ChatButton } from "@/components/ChatButton";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { QuickUpdateComposer } from "@/components/QuickUpdateComposer";
+import { CommentSection } from "@/components/CommentSection";
+import Toast, { ToastType } from "@/components/Toast";
 
 type Profile = {
   user_id: string;
@@ -96,7 +98,32 @@ type FeedUpdateItem = {
   created_at: string;
 };
 
-type UnifiedFeedItem = FeedPostItem | FeedUpdateItem;
+type FeedRepostItem = {
+  id: string;
+  type: "repost";
+  post_id: string;
+  agent_id?: string;
+  agent_handle: string;
+  agent_display_name: string | null;
+  agent_avatar_url: string | null;
+  owner_user_id: string;
+  owner_handle: string;
+  owner_display_name: string | null;
+  title: string | null;
+  description: string | null;
+  image_url: string;
+  post_type: string;
+  like_count: number;
+  comment_count: number;
+  user_has_liked: boolean;
+  created_at: string;
+  repost_comment?: string | null;
+  reposted_by_handle: string;
+  reposted_by_display_name: string | null;
+  reposted_at: string;
+};
+
+type UnifiedFeedItem = FeedPostItem | FeedUpdateItem | FeedRepostItem;
 
 type UnifiedFeedResponse = {
   items: UnifiedFeedItem[];
@@ -276,22 +303,97 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
   );
 }
 
-function FeedPostCard({ item, onLike }: { item: FeedPostItem; onLike: (postId: string) => void }) {
+function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, currentUserHandle, currentUserAvatar }: { 
+  item: FeedPostItem; 
+  onLike: (postId: string) => Promise<void>;
+  onComment: (postId: string) => void;
+  onRepost: (postId: string, comment: string) => void;
+  currentUserId?: string;
+  currentUserHandle?: string;
+  currentUserAvatar?: string | null;
+}) {
+  const [showComments, setShowComments] = useState(false);
+  const [showRepostModal, setShowRepostModal] = useState(false);
+  const [repostComment, setRepostComment] = useState("");
+  const [isLiking, setIsLiking] = useState(false);
+  const [optimisticLiked, setOptimisticLiked] = useState(item.user_has_liked);
+  const [optimisticLikeCount, setOptimisticLikeCount] = useState(item.like_count);
+
+  // Check if this is a repost
+  const isRepost = (item as any).type === "repost";
+  
+  // For reposts, we need to use post_id for actions (like/comment) not the repost id
+  const postId = isRepost ? (item as any).post_id : item.id;
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
   };
 
   const handleLike = async () => {
+    if (isLiking) return; // Prevent multiple clicks
+    
+    setIsLiking(true);
+    const previousLiked = optimisticLiked;
+    const previousCount = optimisticLikeCount;
+    
     try {
-      await onLike(item.id);
+      // Optimistic update
+      const newLiked = !optimisticLiked;
+      setOptimisticLiked(newLiked);
+      setOptimisticLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
+      
+      // Call API
+      await onLike(postId);
     } catch (error) {
+      // Revert on error
       console.error("Failed to like post:", error);
+      setOptimisticLiked(previousLiked);
+      setOptimisticLikeCount(previousCount);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleComment = () => {
+    setShowComments(!showComments);
+    onComment(postId);
+  };
+
+  const handleRepost = () => {
+    if (repostComment.trim()) {
+      onRepost(postId, repostComment);
+      setShowRepostModal(false);
+      setRepostComment("");
+    } else {
+      onRepost(postId, "");
+      setShowRepostModal(false);
     }
   };
 
   return (
+    <>
     <div className="group relative overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm transition-all hover:shadow-lg hover:border-[#2E3A59]/20">
+      {/* Repost Header - Show if this is a repost */}
+      {isRepost && (
+        <div className="px-4 pt-4 pb-2 flex items-center gap-2 text-sm text-[#2E3A59]/80 border-b border-[#E6E6E6]/50 bg-[#FAFAFA]">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>
+            <span className="font-semibold">{(item as any).reposted_by_display_name || `@${(item as any).reposted_by_handle}`}</span>
+            {' '}reposted
+          </span>
+        </div>
+      )}
+
+      {/* Repost Comment - Show if repost has a comment */}
+      {isRepost && (item as any).repost_comment && (
+        <div className="px-4 py-3 text-sm text-[#0B0B0C] italic border-l-4 border-[#2E3A59]/30 ml-4 mr-4 mt-3 pl-3 bg-[#2E3A59]/5 rounded-r-lg">
+          "{(item as any).repost_comment}"
+        </div>
+      )}
+
       {/* Header with agent/user info */}
       <div className="p-4 border-b border-[#E6E6E6]">
         <div className="flex items-center gap-3">
@@ -323,6 +425,11 @@ function FeedPostCard({ item, onLike }: { item: FeedPostItem; onLike: (postId: s
                 <span> · by {item.owner_display_name}</span>
               )}
             </p>
+            {isRepost && (
+              <p className="text-xs text-[#2E3A59]/60 mt-0.5">
+                Originally posted by @{(item as any).owner_handle}
+              </p>
+            )}
           </div>
 
           {/* Post type badge */}
@@ -360,28 +467,46 @@ function FeedPostCard({ item, onLike }: { item: FeedPostItem; onLike: (postId: s
       )}
 
       {/* Interaction buttons */}
-      <div className="p-4 flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between border-b border-[#E6E6E6]">
         <div className="flex items-center gap-4">
           {/* Like button */}
           <button
             onClick={handleLike}
-            className="flex items-center gap-1.5 text-sm transition-colors hover:text-[#C8A24A]"
-            style={{ color: item.user_has_liked ? '#C8A24A' : '#2E3A59' }}
+            disabled={isLiking}
+            className={`flex items-center gap-1.5 text-sm transition-colors hover:text-[#C8A24A] ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
+            style={{ color: optimisticLiked ? '#C8A24A' : '#2E3A59' }}
           >
-            <svg className="h-5 w-5" fill={item.user_has_liked ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+            <svg 
+              className={`h-5 w-5 ${isLiking ? "animate-pulse" : ""}`}
+              fill={optimisticLiked ? "currentColor" : "none"} 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
-            <span className="font-medium">{item.like_count}</span>
+            <span className="font-medium">{optimisticLikeCount}</span>
           </button>
 
           {/* Comment button */}
           <button
+            onClick={handleComment}
             className="flex items-center gap-1.5 text-sm text-[#2E3A59] transition-colors hover:text-[#C8A24A]"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             <span className="font-medium">{item.comment_count}</span>
+          </button>
+
+          {/* Repost button */}
+          <button
+            onClick={() => setShowRepostModal(true)}
+            className="flex items-center gap-1.5 text-sm text-[#2E3A59] transition-colors hover:text-[#C8A24A]"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span className="font-medium">Repost</span>
           </button>
         </div>
 
@@ -390,7 +515,87 @@ function FeedPostCard({ item, onLike }: { item: FeedPostItem; onLike: (postId: s
           {formatDate(item.created_at)}
         </span>
       </div>
+
+      {/* Comments Section */}
+      {showComments && (
+        <CommentSection
+          postId={item.id}
+          initialCommentCount={item.comment_count}
+          currentUserId={currentUserId}
+          currentUserHandle={currentUserHandle}
+          currentUserAvatar={currentUserAvatar}
+        />
+      )}
     </div>
+
+    {/* Repost Modal */}
+    {showRepostModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowRepostModal(false)}>
+        <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900">Repost with Mention</h3>
+            <button
+              onClick={() => setShowRepostModal(false)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Original Post Preview */}
+          <div className="mb-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 rounded-full overflow-hidden bg-[#2E3A59] flex items-center justify-center">
+                {item.agent_avatar_url ? (
+                  <img src={item.agent_avatar_url} alt={item.agent_display_name || item.agent_handle} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-xs font-bold text-white">{(item.agent_display_name || item.agent_handle)[0].toUpperCase()}</span>
+                )}
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-900">{item.agent_display_name || item.agent_handle}</div>
+                <div className="text-xs text-gray-500">@{item.agent_handle}</div>
+              </div>
+            </div>
+            {item.title && <p className="text-sm font-medium text-gray-800 mb-1">{item.title}</p>}
+            {item.description && <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>}
+          </div>
+
+          {/* Comment Input */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Add your comment (optional)
+            </label>
+            <textarea
+              value={repostComment}
+              onChange={(e) => setRepostComment(e.target.value)}
+              placeholder={`Reposting from @${item.agent_handle}...`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E3A59] focus:border-transparent resize-none"
+              rows={3}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowRepostModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleRepost}
+              className="flex-1 px-4 py-2 bg-[#2E3A59] text-white rounded-lg font-medium hover:bg-[#1a2236] transition-colors"
+            >
+              Repost
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -669,9 +874,30 @@ function LeftSidebar({
   );
 }
 
+function FeedLoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="rounded-2xl border border-[#E6E6E6] bg-white p-6 animate-pulse">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="h-16 w-16 rounded-xl bg-gray-200" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-1/3" />
+              <div className="h-3 bg-gray-200 rounded w-1/4" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-3 bg-gray-200 rounded w-full" />
+            <div className="h-3 bg-gray-200 rounded w-5/6" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AppHomePage() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true to prevent empty state flash
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avees, setAvees] = useState<Avee[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -679,6 +905,7 @@ export default function AppHomePage() {
   const [feedData, setFeedData] = useState<FeedResponse | null>(null);
   const [unifiedFeedData, setUnifiedFeedData] = useState<UnifiedFeedResponse | null>(null);
   const [feedLoading, setFeedLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -805,7 +1032,7 @@ export default function AppHomePage() {
       localStorage.setItem('app_unified_feed', JSON.stringify(uf));
     } catch (e: any) {
       console.error("Failed to follow agent:", e);
-      alert("Failed to follow agent. Please try again.");
+      setToast({ message: "Failed to follow agent. Please try again.", type: "error" });
     }
   };
 
@@ -853,7 +1080,7 @@ export default function AppHomePage() {
       localStorage.setItem('app_unified_feed', JSON.stringify(uf));
     } catch (e: any) {
       console.error("Failed to mark as read:", e);
-      alert("Failed to mark updates as read. Please try again.");
+      setToast({ message: "Failed to mark updates as read. Please try again.", type: "error" });
     }
   };
 
@@ -861,14 +1088,20 @@ export default function AppHomePage() {
     try {
       const token = await getAccessToken();
       
-      // Check current like status
-      const currentPost = unifiedFeedData?.items.find(
-        item => item.type === "post" && item.id === postId
-      ) as FeedPostItem | undefined;
+      // Check current like status - need to handle both posts and reposts
+      const currentItem = unifiedFeedData?.items.find(item => {
+        if (item.type === "post") {
+          return item.id === postId;
+        } else if (item.type === "repost") {
+          // For reposts, check the original post_id
+          return item.post_id === postId;
+        }
+        return false;
+      });
       
-      if (!currentPost) return;
+      if (!currentItem || currentItem.type === "update") return;
       
-      const wasLiked = currentPost.user_has_liked;
+      const wasLiked = currentItem.user_has_liked;
       const method = wasLiked ? "DELETE" : "POST";
       
       const res = await fetch(`${apiBase()}/posts/${postId}/like`, {
@@ -878,18 +1111,27 @@ export default function AppHomePage() {
       
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       
-      // Optimistically update UI
+      // Optimistically update UI - update all items with this post_id
       setUnifiedFeedData(prev => {
         if (!prev) return prev;
         return {
           ...prev,
           items: prev.items.map(item => {
+            // Update regular posts
             if (item.type === "post" && item.id === postId) {
               return {
                 ...item,
                 user_has_liked: !wasLiked,
                 like_count: wasLiked ? item.like_count - 1 : item.like_count + 1
               } as FeedPostItem;
+            }
+            // Update reposts of the same post
+            if (item.type === "repost" && item.post_id === postId) {
+              return {
+                ...item,
+                user_has_liked: !wasLiked,
+                like_count: wasLiked ? (item.like_count || 0) - 1 : (item.like_count || 0) + 1
+              };
             }
             return item;
           })
@@ -901,8 +1143,67 @@ export default function AppHomePage() {
     }
   };
 
+  const handleCommentPost = async (postId: string) => {
+    console.log("Comment on post:", postId);
+    // For now, just log - full implementation with CommentSection component can be added later
+  };
+
+  const handleRepostPost = async (postId: string, comment: string) => {
+    try {
+      const token = await getAccessToken();
+      
+      console.log("[Repost] Attempting to repost:", postId, "with comment:", comment);
+      
+      // Build URL with query parameters
+      const url = new URL(`${apiBase()}/posts/${postId}/share`);
+      url.searchParams.set("share_type", "repost");
+      if (comment && comment.trim()) {
+        url.searchParams.set("comment", comment.trim());
+      }
+      
+      console.log("[Repost] Request URL:", url.toString());
+      
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+      });
+      
+      console.log("[Repost] Response status:", res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("[Repost] Error response:", errorText);
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
+      
+      const result = await res.json();
+      console.log("[Repost] Success:", result);
+      
+      setToast({ message: "Post reposted successfully!", type: "success" });
+      
+      // Refresh unified feed
+      const uf = await apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token);
+      setUnifiedFeedData(uf);
+      localStorage.setItem('app_unified_feed', JSON.stringify(uf));
+    } catch (e: any) {
+      console.error("[Repost] Failed:", e);
+      const errorMsg = e.message || "Please try again.";
+      setToast({ message: `Failed to repost: ${errorMsg}`, type: "error" });
+    }
+  };
+
   return (
     <NewLayoutWrapper>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="mx-auto flex max-w-7xl gap-6">
         {/* Left Sidebar - Hidden on smaller screens (< 1024px) */}
         {loading ? (
@@ -961,21 +1262,22 @@ export default function AppHomePage() {
           </div>
 
           {/* Feed Content */}
-          {feedLoading ? (
-            <div className="rounded-2xl border border-[#E6E6E6] bg-white p-12 text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-[#2E3A59]/70">
-                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Loading feed...
-              </div>
-            </div>
+          {loading ? (
+            <FeedLoadingSkeleton />
           ) : unifiedFeedData && unifiedFeedData.items.length > 0 ? (
             <div className="space-y-6">
               {unifiedFeedData.items.map((item) => {
                 if (item.type === "post") {
-                  return <FeedPostCard key={item.id} item={item as FeedPostItem} onLike={handleLikePost} />;
+                  return <FeedPostCard 
+                    key={item.id} 
+                    item={item as FeedPostItem} 
+                    onLike={handleLikePost} 
+                    onComment={handleCommentPost} 
+                    onRepost={handleRepostPost}
+                    currentUserId={profile?.user_id}
+                    currentUserHandle={profile?.handle}
+                    currentUserAvatar={profile?.avatar_url}
+                  />;
                 } else {
                   return <FeedUpdateCard key={item.id} item={item as FeedUpdateItem} onMarkRead={handleMarkAgentRead} />;
                 }

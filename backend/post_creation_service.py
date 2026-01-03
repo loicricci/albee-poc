@@ -21,6 +21,28 @@ from db import SessionLocal
 from cache import agent_cache
 
 
+def create_autopost_notification(db_session, user_id: str, agent_handle: str, post_id: str):
+    """Create a notification for successful autopost"""
+    try:
+        from notifications_api import create_notification
+        import uuid
+        
+        create_notification(
+            db=db_session,
+            user_id=uuid.UUID(user_id),
+            notification_type="autopost_success",
+            title="Auto-post successful",
+            message=f"A new post was automatically created for @{agent_handle}",
+            link=f"/profile/{agent_handle}",
+            related_agent_id=None,  # We'll add this below if needed
+            related_post_id=uuid.UUID(post_id)
+        )
+    except Exception as e:
+        print(f"Error creating autopost notification: {e}")
+        # Rollback the failed notification transaction
+        db_session.rollback()
+
+
 class PostCreationService:
     """
     Service for creating AI-generated posts.
@@ -117,6 +139,12 @@ class PostCreationService:
             print(f"[PostCreationService] ✅ Post created successfully! (total: {total_duration:.2f}s)")
             print(f"[PostCreationService]    Post ID: {post_id}")
             print(f"[PostCreationService]    View at: {result['view_url']}")
+            
+            # Create notification for successful autopost
+            try:
+                create_autopost_notification(self.session, user_id, agent_handle, post_id)
+            except Exception as e:
+                print(f"[PostCreationService] Warning: Failed to create notification: {e}")
             
             return result
             

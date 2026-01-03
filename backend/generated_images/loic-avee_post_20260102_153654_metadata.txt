@@ -1,0 +1,18 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-02 15:36:56
+
+Model: DALL-E 2 (Image Edits)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+Mask Image: None (entire image edited)
+
+============================================================
+EDIT PROMPT:
+============================================================
+Create a cinematic, photorealistic image of a Rose Parade float under construction, set in a spacious, high-tech workshop that mirrors Loïc Ricci's strategic and creative essence. The float, a magnificent fusion of art and technology, features intricate designs of digital roses interwoven with historical and literary motifs. Volunteers, diverse and energetic, work passionately amidst an atmosphere of collaboration and innovation. The scene is illuminated by warm, ambient lighting that highlights the vibrant colors of the roses and floats. The color palette includes deep reds, golds, and emerald greens, reflecting a sense of luxury and cultural richness. In the background, a digital board displays structural schematics, symbolizing Loïc's systematic approach to problem-solving. The atmosphere is a blend of excitement and focus, capturing the community’s spirit and dedication. The composition centers on a father and son duo, embodying Loïc's familial values, working together on the float, surrounded by an array of tools and technological devices. The setting is bustling yet harmonious, with a subtle backdrop of storm clouds outside the large workshop windows, symbolizing the resilience needed to overcome weather challenges. The image exudes Loïc's core mindset of building systems and thinking in layers, creating a visually stunning narrative that seamlessly ties his persona to the cultural vibrancy of the Rose Parade.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260102_153654.png

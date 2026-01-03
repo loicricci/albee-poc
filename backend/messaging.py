@@ -23,9 +23,12 @@ from models import (
     Avee,
     Conversation,
     Message,
+    AgentFollower,
+    Notification
 )
 from orchestrator import OrchestratorEngine
 from openai import OpenAI
+from notifications_api import create_notification
 
 openai_client = OpenAI()
 
@@ -953,6 +956,43 @@ async def send_message(
         "sender_info": sender_info,
         "human_validated": "true",  # User messages are inherently "validated" by the human
     }
+    
+    # Create notification for recipient if they follow the sender
+    try:
+        recipient_user_id = (
+            conv.participant2_user_id 
+            if conv.participant1_user_id == user_uuid 
+            else conv.participant1_user_id
+        )
+        
+        # Check if recipient follows sender (any of sender's agents)
+        sender_agents = db.query(Avee).filter(Avee.owner_user_id == user_uuid).all()
+        sender_agent_ids = [agent.id for agent in sender_agents]
+        
+        if sender_agent_ids:
+            is_following = db.query(AgentFollower).filter(
+                AgentFollower.follower_user_id == recipient_user_id,
+                AgentFollower.avee_id.in_(sender_agent_ids)
+            ).first() is not None
+            
+            if is_following:
+                # Truncate message for notification
+                message_preview = new_message.content[:100] + "..." if len(new_message.content) > 100 else new_message.content
+                
+                create_notification(
+                    db=db,
+                    user_id=recipient_user_id,
+                    notification_type="new_message",
+                    title=f"New message from {sender_info['display_name']}",
+                    message=message_preview,
+                    link=f"/messages/{str(conv.id)}",
+                    related_user_id=user_uuid,
+                    related_message_id=new_message.id
+                )
+    except Exception as e:
+        print(f"Error creating message notification: {e}")
+        # Rollback the failed notification transaction
+        db.rollback()
     
     # UNIFIED MESSAGING: Determine which agent should respond
     recipient_agent = None

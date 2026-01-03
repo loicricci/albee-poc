@@ -36,14 +36,14 @@ export default function Home() {
                   }}
                 />
                 <div className="text-xl font-bold tracking-tight text-[#0B0B0C] dark:text-white">
-                  AVEE
+                  {appConfig.app_name || "AGENT"}
                 </div>
               </>
             ) : (
               <>
                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#2E3A59] to-[#1a2236] shadow-lg dark:from-white dark:to-zinc-200" />
                 <div className="text-xl font-bold tracking-tight text-[#0B0B0C] dark:text-white">
-                  {appConfig.app_name || "Avee"}
+                  {appConfig.app_name || "AGENT"}
                 </div>
               </>
             )}
@@ -841,14 +841,14 @@ export default function Home() {
                         className="h-9 w-auto object-contain"
                       />
                       <div className="text-lg font-bold text-[#0B0B0C] dark:text-white">
-                        AVEE
+                        {appConfig.app_name || "AGENT"}
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#2E3A59] to-[#1a2236] shadow-md dark:from-white dark:to-zinc-200" />
                       <div className="text-lg font-bold text-[#0B0B0C] dark:text-white">
-                        {appConfig.app_name || "Avee"}
+                        {appConfig.app_name || "AGENT"}
                       </div>
                     </>
                   )}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 
 interface UserInfo {
   user_id: string;
@@ -398,6 +398,9 @@ export default function EscalationsPage() {
     </div>
   );
 }
+
+
+
 
 
 

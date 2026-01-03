@@ -15,6 +15,12 @@ interface Avee {
     preferred_time?: string;
     categories?: string[];
   };
+  reference_images?: Array<{
+    id: string;
+    reference_image_url: string;
+    mask_image_url?: string | null;
+    is_primary: boolean;
+  }>;
 }
 
 interface AutoPostStatus {
@@ -31,6 +37,8 @@ export default function AutoPostGeneratorPage() {
   const [generating, setGenerating] = useState(false);
   const [topic, setTopic] = useState('');
   const [category, setCategory] = useState('');
+  const [imageEngine, setImageEngine] = useState<'dall-e-3' | 'gpt-image-1'>('dall-e-3'); // Image engine selection
+  const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null); // NEW: Selected reference image
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -113,6 +121,12 @@ export default function AutoPostGeneratorPage() {
       return;
     }
 
+    // Validate reference image selection for GPT-Image-1 (semantic editing)
+    if (imageEngine === 'gpt-image-1' && !selectedReferenceImage) {
+      showMessage('error', 'Please select a reference image for GPT-Image-1 editing');
+      return;
+    }
+    
     try {
       setGenerating(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -133,6 +147,8 @@ export default function AutoPostGeneratorPage() {
           avee_ids: aveeIds,
           topic: topic || null,
           category: category || null,
+          image_engine: imageEngine,
+          reference_image_url: imageEngine === 'gpt-image-1' ? selectedReferenceImage : null, // Reference for GPT-Image-1 editing
         }),
       });
 
@@ -144,7 +160,18 @@ export default function AutoPostGeneratorPage() {
       
       if (result.status === 'completed') {
         const successful = result.results.filter((r: any) => r.success).length;
-        showMessage('success', `Generated ${successful}/${result.total} posts successfully`);
+        const failed = result.results.filter((r: any) => !r.success);
+        
+        if (failed.length > 0) {
+          // Show detailed error for first failure
+          const firstFailure = failed[0];
+          const errorMessage = firstFailure.error || 'Unknown error';
+          showMessage('error', `Failed for @${firstFailure.handle}: ${errorMessage.substring(0, 150)}${errorMessage.length > 150 ? '...' : ''}`);
+        } else if (successful > 0) {
+          showMessage('success', `Generated ${successful}/${result.total} posts successfully`);
+        } else {
+          showMessage('error', 'No posts were generated');
+        }
       } else {
         showMessage('success', `Generating posts for ${result.avee_count} agents in background`);
       }
@@ -153,6 +180,8 @@ export default function AutoPostGeneratorPage() {
       setSelectedAvees(new Set());
       setTopic('');
       setCategory('');
+      setImageEngine('dall-e-3'); // Reset to default
+      setSelectedReferenceImage(null); // Reset selected image
       await loadStatus();
       
     } catch (error) {
@@ -190,6 +219,48 @@ export default function AutoPostGeneratorPage() {
   const selectEnabled = () => {
     if (!status) return;
     setSelectedAvees(new Set(status.avees.filter(a => a.auto_post_enabled).map(a => a.avee_id)));
+  };
+
+  // Check if selected agents have reference images (for OpenAI Edits mode)
+  const hasReferenceImages = () => {
+    if (!status || selectedAvees.size === 0) return false;
+    
+    // Check if all selected agents have reference images
+    const selectedAveesList = status.avees.filter(a => selectedAvees.has(a.avee_id));
+    return selectedAveesList.every(avee => 
+      avee.reference_images && avee.reference_images.length > 0
+    );
+  };
+
+  // Get available reference images from selected agents
+  const getAvailableReferenceImages = () => {
+    if (!status || selectedAvees.size === 0) return [];
+    
+    const selectedAveesList = status.avees.filter(a => selectedAvees.has(a.avee_id));
+    const images: Array<{ 
+      id: string;
+      url: string; 
+      agentHandle: string; 
+      agentName: string;
+      isPrimary: boolean;
+    }> = [];
+    
+    selectedAveesList.forEach(avee => {
+      if (avee.reference_images) {
+        avee.reference_images.forEach(img => {
+          images.push({
+            id: img.id,
+            url: img.reference_image_url,
+            agentHandle: avee.handle,
+            agentName: avee.display_name || avee.handle,
+            isPrimary: img.is_primary
+          });
+        });
+      }
+    });
+    
+    // Sort by primary first
+    return images.sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
   };
 
   if (loading) {
@@ -283,6 +354,127 @@ export default function AutoPostGeneratorPage() {
             Clear Selection
           </button>
         </div>
+
+        {/* Image Engine Selector */}
+        <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
+            🎨 Image Generation Engine
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <button
+              onClick={() => setImageEngine('dall-e-3')}
+              className={`p-3 rounded-lg border-2 transition-all text-left ${
+                imageEngine === 'dall-e-3'
+                  ? 'border-purple-600 bg-purple-100 shadow-md'
+                  : 'border-gray-300 bg-white hover:border-purple-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-4 h-4 rounded-full border-2 ${
+                  imageEngine === 'dall-e-3' ? 'border-purple-600 bg-purple-600' : 'border-gray-400'
+                }`}>
+                  {imageEngine === 'dall-e-3' && (
+                    <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                  )}
+                </div>
+                <span className="font-semibold text-sm">DALL-E 3</span>
+              </div>
+              <p className="text-xs text-gray-600 ml-6">
+                Fully AI-generated images from text prompts
+              </p>
+            </button>
+            
+            <button
+              onClick={() => setImageEngine('gpt-image-1')}
+              disabled={selectedAvees.size > 0 && !hasReferenceImages()}
+              className={`p-3 rounded-lg border-2 transition-all text-left ${
+                imageEngine === 'gpt-image-1'
+                  ? 'border-purple-600 bg-purple-100 shadow-md'
+                  : 'border-gray-300 bg-white hover:border-purple-300'
+              } ${selectedAvees.size > 0 && !hasReferenceImages() ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-4 h-4 rounded-full border-2 ${
+                  imageEngine === 'gpt-image-1' ? 'border-purple-600 bg-purple-600' : 'border-gray-400'
+                }`}>
+                  {imageEngine === 'gpt-image-1' && (
+                    <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                  )}
+                </div>
+                <span className="font-semibold text-sm">GPT-Image-1 ✨</span>
+              </div>
+              <p className="text-xs text-gray-600 ml-6">
+                Semantic image editing - no mask required!
+              </p>
+              {selectedAvees.size > 0 && hasReferenceImages() && (
+                <p className="text-xs text-green-600 ml-6 mt-1">
+                  ✓ Reference images available
+                </p>
+              )}
+            </button>
+          </div>
+          {selectedAvees.size > 0 && !hasReferenceImages() && imageEngine === 'gpt-image-1' && (
+            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+              ⚠️ Selected agents don't have reference images uploaded. Please upload reference images in the agent editor first.
+            </div>
+          )}
+        </div>
+
+        {/* Reference Image Selector (for GPT-Image-1 semantic editing) */}
+        {imageEngine === 'gpt-image-1' && selectedAvees.size > 0 && hasReferenceImages() && (
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <label className="block text-sm font-semibold text-gray-900 mb-3">
+              🖼️ Select Reference Image for Semantic Editing
+            </label>
+            <p className="text-xs text-gray-600 mb-3">
+              GPT-Image-1 will understand the image and edit it based on your topic (no mask needed!)
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {getAvailableReferenceImages().map((image) => (
+                <div
+                  key={image.id}
+                  onClick={() => setSelectedReferenceImage(image.url)}
+                  className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all ${
+                    selectedReferenceImage === image.url
+                      ? 'border-blue-600 ring-2 ring-blue-300 shadow-lg'
+                      : 'border-gray-300 hover:border-blue-400'
+                  }`}
+                >
+                  <div className="relative aspect-square bg-gray-100">
+                    <img
+                      src={image.url}
+                      alt={`${image.agentName} reference`}
+                      className="w-full h-full object-cover"
+                    />
+                    {image.isPrimary && (
+                      <div className="absolute top-2 left-2 bg-yellow-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md">
+                        ⭐
+                      </div>
+                    )}
+                    {selectedReferenceImage === image.url && (
+                      <div className="absolute top-2 right-2 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                        ✓
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2 bg-white">
+                    <p className="text-xs font-medium text-gray-900 truncate">
+                      {image.agentName}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      @{image.agentHandle}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {!selectedReferenceImage && (
+              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                ⚠️ Please select a reference image before generating posts
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Topic and Category */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

@@ -1,0 +1,24 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-02 13:17:12
+
+Model: DALL-E 2 (Image Edits)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+Mask Image: None (entire image edited)
+
+============================================================
+EDIT PROMPT:
+============================================================
+Create an artistic, cinematic image capturing Loic Ricci—a strategic thinker—standing atop a high-tech rooftop in a futuristic cityscape that blends the elegance of Cannes with the modernity of Abu Dhabi. The skyline is filled with sleek skyscrapers, their glass facades reflecting a brilliant sunset, casting hues of orange, pink, and purple across the scene. Loic, a figure of calm confidence, gazes thoughtfully over the city, embodying his role as a strategic builder. 
+
+In his hand, he holds a transparent digital tablet with holographic charts and graphs that visualize stock market trends, pulsating with dynamic energy and patterns. These holograms extend outwards, intertwining with the cityscape, representing the interconnectedness of technology and economy. The composition is balanced, with Loic as the central figure, symbolizing clarity and foresight, set against the backdrop of a world defined by art, literature, history, and technology.
+
+The scene is bathed in warm, cinematic lighting, highlighting the metallic and glass textures of the city and the holographic displays. The color palette is rich and expressive, featuring deep blues transitioning into vibrant sunset colors, contrasted with the cool, futuristic tones of the holograms. This creates a captivating and engaging visual harmony.
+
+Ensure the image is high detail, suitable for social media in a wide format, capturing Loic's creative, expressive, and engaging persona while naturally integrating the stock market trends theme. Avoid copyrighted elements, focusing on unique, creative interpretations.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260102_131710.png

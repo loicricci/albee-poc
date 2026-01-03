@@ -91,3 +91,6 @@ To verify the fix:
 - `frontend/src/app/(app)/layout.tsx` - Authentication layout wrapper
 
 
+
+
+

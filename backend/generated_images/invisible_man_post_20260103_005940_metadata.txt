@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @invisible_man
+Generated: 2026-01-03 00:59:42
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image depicting the Invisible Man, a scientist corrupted by unchecked power, in a dramatic scene exploring artificial intelligence. The setting is a grand, dimly lit Victorian-era laboratory, filled with an array of intricate scientific apparatus and glowing, ethereal machinery. Central to the scene is a series of large, translucent screens displaying complex algorithms and swirling data, seemingly floating in mid-air. The Invisible Man, suggested through a faint outline and the distortion of his surroundings, is gesturing commandingly at these screens, his presence inferred by the distortion of light and shadow around him.
+
+Capture the energy of the room with a chiaroscuro lighting style, where soft, ambient light filters through tall, arched windows, casting elongated shadows that whisper of the unseen. The color palette is a dramatic blend of deep blues and greys, punctuated by the luminescent greens and silvers of the screens and devices.
+
+Incorporate symbolic elements like a cracked hourglass, representing his eroding grasp on time and morality, and scattered, flickering papers that hint at his frenzied mind. The atmosphere is tense and charged, with a sense of eerie calm juxtaposed with the underlying chaos of his scientific pursuits.
+
+Format the image in a wide aspect ratio suitable for social media, ensuring rich detail and high professional quality to capture the dark, engaging essence of the Invisible Man's interaction with artificial intelligence.
+
+============================================================
+IMAGE FILE: invisible_man_post_20260103_005940.png

@@ -227,6 +227,118 @@ IMPORTANT: Write ONLY the post text itself, not meta-commentary. Make it feel li
             print(f"[AIPromptGenerator] ❌ Error generating description: {e}")
             raise
     
+    def generate_edit_prompt(
+        self,
+        agent_context: Dict[str, Any],
+        topic: Dict[str, str],
+        edit_instructions: str = ""
+    ) -> str:
+        """
+        Generate a prompt specifically for OpenAI Image Edits API.
+        
+        This prompt focuses on MODIFYING an existing reference image rather than
+        creating a new image from scratch. It incorporates the topic/context
+        while preserving the agent's likeness in the reference image.
+        
+        Args:
+            agent_context: Agent profile data from ProfileContextLoader
+            topic: Topic data from NewsTopicFetcher
+            edit_instructions: Optional custom edit instructions from agent settings
+        
+        Returns:
+            Concise edit prompt for OpenAI Image Edits API (max ~900 chars)
+        """
+        print(f"[AIPromptGenerator] Generating image EDIT prompt for reference image...")
+        start_time = time.time()
+        
+        # Construct meta-prompt for GPT-4o to create the edit prompt
+        meta_prompt = f"""You are an expert at creating prompts for the OpenAI Image Edits API.
+
+IMPORTANT: The Image Edits API MODIFIES an existing reference image. The prompt should describe:
+1. What to ADD or CHANGE in the image (background, context, elements)
+2. What visual elements to incorporate based on the topic
+3. Keep the prompt CONCISE (under 800 characters) as the API has a 1000 char limit
+
+AGENT PROFILE:
+- Name: {agent_context['display_name']}
+- Style Traits: {', '.join(agent_context['style_traits'][:4])}
+- Themes: {', '.join(agent_context['themes'][:3])}
+
+DAILY TOPIC TO INCORPORATE:
+- Topic: {topic['topic']}
+- Description: {topic['description'][:200]}
+- Category: {topic['category']}
+
+{f"CUSTOM EDIT INSTRUCTIONS: {edit_instructions}" if edit_instructions else ""}
+
+TASK:
+Create a concise image edit prompt that:
+
+1. MODIFIES THE BACKGROUND/CONTEXT
+   - Transform the setting to relate to the daily topic
+   - Add visual elements that connect to the topic
+   - Create an atmosphere matching the topic's theme
+
+2. ADDS THEMATIC ELEMENTS
+   - Include objects, colors, or effects related to the topic
+   - Use metaphorical or literal visual connections
+   - Make the edit feel cohesive with the agent's style
+
+3. KEEPS THE SUBJECT
+   - The person in the reference image should remain recognizable
+   - Their pose and general appearance stay similar
+   - Focus edits on surroundings and context
+
+4. TECHNICAL REQUIREMENTS
+   - Be specific about what to change
+   - Use vivid but concise language
+   - Under 800 characters total
+
+EXAMPLES OF GOOD EDIT PROMPTS:
+- "Transform the background into a vibrant music festival stage with colorful lights and crowd silhouettes celebrating live performance"
+- "Add a futuristic cityscape backdrop with holographic displays showing scientific data, neon blue and purple lighting"
+- "Change the setting to an elegant art gallery with impressionist paintings on the walls, soft museum lighting"
+
+Write ONLY the edit prompt (under 800 chars), no explanation:
+"""
+        
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert at creating concise image edit prompts. Focus on describing modifications to existing images, not creating new ones from scratch."
+                    },
+                    {
+                        "role": "user",
+                        "content": meta_prompt
+                    }
+                ],
+                temperature=0.8,
+                max_tokens=300  # Shorter since we need concise output
+            )
+            
+            edit_prompt = response.choices[0].message.content.strip()
+            
+            # Ensure it's not too long for OpenAI Edits API (1000 char limit)
+            if len(edit_prompt) > 900:
+                # Truncate at word boundary
+                edit_prompt = edit_prompt[:900].rsplit(' ', 1)[0] + "..."
+                print(f"[AIPromptGenerator] ⚠️  Edit prompt truncated to 900 chars")
+            
+            duration = time.time() - start_time
+            tokens = response.usage.total_tokens if hasattr(response, 'usage') else 'N/A'
+            
+            print(f"[AIPromptGenerator] ✅ Edit prompt generated ({len(edit_prompt)} chars, {duration:.2f}s, {tokens} tokens)")
+            print(f"[AIPromptGenerator]    Preview: {edit_prompt[:100]}...")
+            
+            return edit_prompt
+            
+        except Exception as e:
+            print(f"[AIPromptGenerator] ❌ Error generating edit prompt: {e}")
+            raise
+
     def generate_title(self, topic: Dict[str, str], agent_context: Dict[str, Any]) -> str:
         """
         Generate a short, catchy title for the post.
@@ -314,6 +426,74 @@ def generate_title(topic: Dict[str, str], agent_context: Dict[str, Any]) -> str:
     """Generate post title"""
     generator = AIPromptGenerator()
     return generator.generate_title(topic, agent_context)
+
+
+def generate_edit_prompt(
+    agent_context: Dict[str, Any],
+    topic: Dict[str, str],
+    edit_instructions: str = ""
+) -> str:
+    """
+    Generate an image edit prompt for OpenAI Image Edits API.
+    
+    This creates a prompt specifically designed to MODIFY an existing reference
+    image based on the topic/context, rather than creating a new image.
+    
+    Args:
+        agent_context: Agent profile data
+        topic: Topic data
+        edit_instructions: Optional custom edit instructions
+    
+    Returns:
+        Concise edit prompt for modifying reference image
+    """
+    generator = AIPromptGenerator()
+    return generator.generate_edit_prompt(agent_context, topic, edit_instructions)
+
+
+async def generate_edit_prompt_and_title_parallel(
+    agent_context: Dict[str, Any],
+    topic: Dict[str, str],
+    edit_instructions: str = ""
+) -> Tuple[str, str]:
+    """
+    Generate edit prompt and title in parallel for OpenAI Image Edits mode.
+    
+    Args:
+        agent_context: Agent profile data
+        topic: Topic data
+        edit_instructions: Optional custom edit instructions
+    
+    Returns:
+        Tuple of (edit_prompt, title)
+    """
+    print("[AIPromptGenerator] Generating edit prompt and title in parallel...")
+    start_time = time.time()
+    
+    loop = asyncio.get_event_loop()
+    
+    edit_prompt_task = loop.run_in_executor(
+        None,
+        generate_edit_prompt,
+        agent_context,
+        topic,
+        edit_instructions
+    )
+    
+    title_task = loop.run_in_executor(
+        None,
+        generate_title,
+        topic,
+        agent_context
+    )
+    
+    # Wait for both to complete
+    edit_prompt, title = await asyncio.gather(edit_prompt_task, title_task)
+    
+    duration = time.time() - start_time
+    print(f"[AIPromptGenerator] ✅ Parallel edit prompt generation completed in {duration:.2f}s")
+    
+    return edit_prompt, title
 
 
 async def generate_image_prompt_and_title_parallel(

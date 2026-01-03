@@ -674,3 +674,6 @@ GROUP BY model_used;
 
 
 
+
+
+

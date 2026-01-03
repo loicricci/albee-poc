@@ -211,7 +211,7 @@ function MyAgentsContent() {
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          disabled={limitStatus && !limitStatus.can_create_more}
+          disabled={limitStatus ? !limitStatus.can_create_more : false}
           className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           title={limitStatus && !limitStatus.can_create_more ? "You've reached the maximum number of agents" : ""}
         >

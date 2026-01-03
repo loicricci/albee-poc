@@ -13,9 +13,10 @@ from datetime import datetime
 
 from db import SessionLocal
 from auth_supabase import get_current_user_id
-from models import AgentUpdate, Avee, Document, DocumentChunk
+from models import AgentUpdate, Avee, Document, DocumentChunk, AgentFollower, Notification
 from rag_utils import chunk_text
 from openai_embed import embed_texts
+from notifications_api import create_notification
 
 router = APIRouter()
 
@@ -200,6 +201,27 @@ async def create_update(
     except Exception as e:
         # Log error but don't fail the update creation
         print(f"Error creating document from update: {e}")
+    
+    # Create notifications for all followers of this agent
+    try:
+        followers = db.query(AgentFollower).filter(AgentFollower.avee_id == agent.id).all()
+        for follower in followers:
+            # Don't notify the owner
+            if follower.follower_user_id != user_id:
+                create_notification(
+                    db=db,
+                    user_id=follower.follower_user_id,
+                    notification_type="agent_update",
+                    title=f"New update from {agent.display_name or agent.handle}",
+                    message=update.title,
+                    link=f"/profile/{agent.handle}",
+                    related_agent_id=agent.id,
+                    related_update_id=update.id
+                )
+    except Exception as e:
+        print(f"Error creating update notifications: {e}")
+        # Rollback the failed notification transaction
+        db.rollback()
 
     return AgentUpdateResponse(
         id=str(update.id),

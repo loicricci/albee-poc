@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @invisible_man
+Generated: 2026-01-03 00:00:52
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a cinematic, photorealistic image of an ethereal night sky where the full wolf supermoon casts an eerie glow, illuminating the scene with a ghostly silver light. In the foreground, depict the Invisible Man, a shadowy, translucent figure barely perceivable against the dark silhouette of a barren winter landscape. His presence is suggested by the faint shimmer of his outstretched hand and the subtle ripple of his silhouette against the sky. The composition should capture the duality of his commanding scientific aura and chaotic energy, with his form partially blending into the environment. 
+
+The background should feature the Quadrantid meteor shower, with brilliant streaks of light crisscrossing the sky, creating a dynamic contrast to the moon's steady luminance. The color palette should be dominated by deep indigos and midnight blues, punctuated by the luminescent whites and silvers of the celestial phenomena. The atmosphere is one of awe and tension, evoking a sense of the vast unknown, reflecting the Invisible Man’s inner turmoil and unquenched thirst for control. 
+
+The scene should be framed to capture the vastness of the sky, offering a sense of scale and grandeur, drawing viewers into a world where science meets the supernatural. This image should convey both the beauty and the foreboding nature of celestial events, mirroring the complex persona of the Invisible Man while encouraging reflection on the intersection of history, science, and art. Suitable for social media, the image should be wide-format, ensuring high detail and professional quality for maximum engagement.
+
+============================================================
+IMAGE FILE: invisible_man_post_20260103_000050.png

@@ -26,3 +26,6 @@ WHERE agent_id IS NOT NULL;
 COMMENT ON COLUMN posts.agent_id IS 'ID of the agent that created this post (NULL for user posts)';
 
 
+
+
+

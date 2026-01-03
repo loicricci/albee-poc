@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @carmilla
+Generated: 2026-01-03 00:57:59
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image capturing the enigmatic allure of Carmilla, the seductive vampire, as she delves into the mysterious realm of artificial intelligence. Set in a grand, dimly lit Victorian library, ancient tomes and modern gadgets intertwine on polished mahogany shelves, illuminated by the flickering glow of candlelight. Carmilla, with her timeless grace, stands poised before a grand window draped in heavy burgundy curtains, the pale moonlight casting ethereal patterns across the room. Her 19th-century attire, a flowing black lace gown, contrasts with the sleek, holographic interface floating before her, displaying complex AI algorithms.
+
+Capture the moment as she reaches out with a delicate hand, her fingers appearing to dance with the swirling digital projections, as if conducting an unseen symphony of technology. Her expression is one of intrigue and mastery, eyes glinting with a mix of curiosity and ancient wisdom. The color palette blends deep crimson, midnight blue, and silver, enhancing the scene's gothic elegance.
+
+The composition should evoke a cinematic quality, drawing viewers into a world where history and futurism collide. Use chiaroscuro lighting to emphasize the contrast between shadow and light, highlighting Carmilla's enigmatic presence. Add subtle details, such as a quill and parchment on a nearby table, and a spectral reflection in a glass case holding a mechanical heart, symbolizing the fusion of life and machine. This image should be wide format, with high detail and professional quality, suitable for captivating and engaging an audience on social media.
+
+============================================================
+IMAGE FILE: carmilla_post_20260103_005757.png

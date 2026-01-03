@@ -14,7 +14,7 @@ import asyncio
 
 from db import SessionLocal
 from auth_supabase import get_current_user_id
-from models import Avee, AgentUpdate, AgentFollower, UpdateReadStatus, Profile, Post, PostLike
+from models import Avee, AgentUpdate, AgentFollower, UpdateReadStatus, Profile, Post, PostLike, PostShare
 
 router = APIRouter()
 
@@ -650,8 +650,38 @@ async def get_unified_feed(
         )
         print(f"[UnifiedFeed] Found {len(user_posts)} user posts")
         
+        # Step 4.5: Fetch reposts by current user and followed users
+        reposts = []
+        # Get all user IDs to include (current user + owners of followed agents)
+        followed_owner_ids = []
+        if all_agent_ids:
+            followed_owners = (
+                db.query(Avee.owner_user_id)
+                .filter(Avee.id.in_(all_agent_ids))
+                .distinct()
+                .all()
+            )
+            followed_owner_ids = [owner[0] for owner in followed_owners]
+        
+        # Always include current user's reposts
+        user_ids_for_reposts = [user_id] + followed_owner_ids if followed_owner_ids else [user_id]
+        
+        # Fetch reposts
+        reposts = (
+            db.query(PostShare, Post, Profile, Avee)
+            .join(Post, PostShare.post_id == Post.id)
+            .join(Profile, PostShare.user_id == Profile.user_id)
+            .outerjoin(Avee, Post.agent_id == Avee.id)
+            .filter(
+                PostShare.user_id.in_(user_ids_for_reposts),
+                Post.visibility == "public"  # Only public posts can be seen when reposted
+            )
+            .all()
+        )
+        print(f"[UnifiedFeed] Found {len(reposts)} reposts")
+        
         # Check for post likes
-        post_ids = [p[0].id for p in agent_posts] + [p[0].id for p in user_posts]
+        post_ids = [p[0].id for p in agent_posts] + [p[0].id for p in user_posts] + [r[1].id for r in reposts]
         liked_post_ids = set()
         if post_ids:
             liked = (
@@ -706,6 +736,7 @@ async def get_unified_feed(
                 "post_type": post.post_type,
                 "like_count": post.like_count,
                 "comment_count": post.comment_count,
+                "share_count": post.share_count,
                 "user_has_liked": post.id in liked_post_ids,
                 "created_at": post.created_at.isoformat(),
             })
@@ -728,8 +759,50 @@ async def get_unified_feed(
                 "post_type": post.post_type,
                 "like_count": post.like_count,
                 "comment_count": post.comment_count,
+                "share_count": post.share_count,
                 "user_has_liked": post.id in liked_post_ids,
                 "created_at": post.created_at.isoformat(),
+            })
+        
+        # Add reposts
+        for share, post, sharer_profile, post_agent in reposts:
+            # Get original post owner
+            post_owner = db.query(Profile).filter(Profile.user_id == post.owner_user_id).first()
+            
+            if not post_owner:
+                continue
+            
+            # Check if user liked the original post
+            user_liked = post.id in liked_post_ids
+            
+            feed_items.append({
+                "id": f"repost-{str(share.id)}",  # Unique ID for repost
+                "type": "repost",
+                "repost_id": str(share.id),
+                "repost_comment": share.comment,
+                "reposted_by_user_id": str(sharer_profile.user_id),
+                "reposted_by_handle": sharer_profile.handle,
+                "reposted_by_display_name": sharer_profile.display_name,
+                "reposted_by_avatar_url": sharer_profile.avatar_url,
+                "reposted_at": share.created_at.isoformat(),
+                # Original post data (flattened for easier frontend consumption)
+                "post_id": str(post.id),
+                "agent_id": str(post_agent.id) if post_agent else None,
+                "agent_handle": post_agent.handle if post_agent else post_owner.handle,
+                "agent_display_name": post_agent.display_name if post_agent else post_owner.display_name,
+                "agent_avatar_url": post_agent.avatar_url if post_agent else post_owner.avatar_url,
+                "owner_user_id": str(post_owner.user_id),
+                "owner_handle": post_owner.handle,
+                "owner_display_name": post_owner.display_name,
+                "title": post.title,
+                "description": post.description,
+                "image_url": post.image_url,
+                "post_type": post.post_type,
+                "like_count": post.like_count,
+                "comment_count": post.comment_count,
+                "share_count": post.share_count,
+                "user_has_liked": user_liked,
+                "created_at": share.created_at.isoformat(),  # Use repost time for chronological sorting
             })
         
         # Step 6: Sort by created_at (chronological, newest first)

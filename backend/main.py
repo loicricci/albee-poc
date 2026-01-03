@@ -41,6 +41,7 @@ from models import (
     PostComment,
     CommentLike,
     PostShare,
+    Notification
 )
 
 app = FastAPI()
@@ -134,6 +135,10 @@ app.include_router(onboarding_router, tags=["onboarding"])
 # Import Posts router
 from posts_api import router as posts_router
 app.include_router(posts_router, tags=["posts"])
+
+# Import Notifications router
+from notifications_api import router as notifications_router
+app.include_router(notifications_router, tags=["notifications"])
 
 
 # -----------------------------
@@ -996,21 +1001,45 @@ def list_all_avees(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    """Get random public agents for discovery/recommendations, excluding the current user's agents"""
+    """Get random public agents for discovery/recommendations, excluding the current user's agents and already-followed agents"""
     user_uuid = _parse_uuid(user_id, "user_id")
     
     # Enforce maximum limit to prevent abuse
     limit = min(limit, 100)
     
-    # Get agents from other users, ordered randomly
-    rows = (
+    # Get list of agent IDs the user is already following
+    followed_agent_ids = (
+        db.query(AgentFollower.avee_id)
+        .filter(AgentFollower.follower_user_id == user_uuid)
+        .all()
+    )
+    followed_ids = [str(f.avee_id) for f in followed_agent_ids]
+    
+    print(f"[Recommendations] User {user_uuid} is following {len(followed_ids)} agents")
+    if followed_ids:
+        print(f"[Recommendations] Followed agent IDs: {followed_ids[:5]}{'...' if len(followed_ids) > 5 else ''}")
+    
+    # Get agents from other users, excluding already followed agents, ordered randomly
+    query = (
         db.query(Avee)
         .filter(Avee.owner_user_id != user_uuid)
+    )
+    
+    # Exclude already followed agents
+    if followed_ids:
+        query = query.filter(~Avee.id.in_([uuid.UUID(fid) for fid in followed_ids]))
+    
+    rows = (
+        query
         .order_by(func.random())  # Random order for recommendations
         .limit(limit)
         .offset(offset)
         .all()
     )
+    
+    print(f"[Recommendations] Returning {len(rows)} recommended agents")
+    for r in rows[:3]:
+        print(f"[Recommendations]   - {r.display_name} (@{r.handle}) [ID: {r.id}]")
 
     return [{
         "id": str(a.id),

@@ -93,14 +93,14 @@ export default function UpdatePasswordPage() {
                   }}
                 />
                 <div className="text-2xl font-bold tracking-tight text-[#0B0B0C] dark:text-white">
-                  AVEE
+                  {appConfig.app_name || "AGENT"}
                 </div>
               </>
             ) : (
               <>
                 <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#2E3A59] to-[#1a2236] shadow-lg dark:from-white dark:to-zinc-200" />
                 <div className="text-2xl font-bold tracking-tight text-[#0B0B0C] dark:text-white">
-                  {appConfig.app_name || "Avee"}
+                  {appConfig.app_name || "AGENT"}
                 </div>
               </>
             )}
@@ -205,6 +205,9 @@ export default function UpdatePasswordPage() {
     </div>
   );
 }
+
+
+
 
 
 

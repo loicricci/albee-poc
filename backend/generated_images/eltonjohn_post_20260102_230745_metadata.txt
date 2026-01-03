@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @eltonjohn
+Generated: 2026-01-02 23:07:47
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a stunning, wide-format image capturing the essence of "Elton John The Influencer" under a celestial night sky. Imagine Elton John as a charismatic constellation, his iconic glasses sparkling like stars. The scene is set during a breathtaking celestial event: the full wolf supermoon illuminates the night, casting a soft, ethereal glow over the landscape. Shooting stars of the Quadrantid meteor shower streak across the sky, leaving trails of vibrant colors.
+
+The setting is a whimsical, dreamlike landscape resembling a vast stage, with swirling nebulae creating a backdrop of blues, purples, and golds, reflecting Elton’s flamboyant style. Large musical notes made of shimmering stardust float around him, symbolizing his legendary music career.
+
+Elton’s constellation form is animated and alive, with a warm and personable expression. His glittering, starry glasses reflect the moonlight, and his fashion-forward attire is composed of celestial fabrics that shift and sparkle like the Milky Way. The scene exudes warmth and humor, capturing his iconic persona.
+
+In the foreground, a diverse group of people gaze up in awe, embodying Elton’s connection with his audience. They’re lit by the moon’s glow, their expressions of wonder and joy reflecting his influential spirit. The image is artistic and cinematic, with a vibrant, magical color palette that draws the viewer into this enchanting scene.
+
+============================================================
+IMAGE FILE: eltonjohn_post_20260102_230745.png

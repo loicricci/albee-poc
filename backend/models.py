@@ -88,8 +88,26 @@ class Avee(Base):
     twitter_sharing_enabled = Column(Boolean, default=False)  # Whether this agent can share posts to Twitter
     twitter_posting_mode = Column(Text, default="manual")  # 'auto' or 'manual'
 
+    # NEW (Phase 8): Autopost image engine selection
+    reference_image_url = Column(Text)  # URL to reference image for OpenAI Image Edits
+    reference_image_mask_url = Column(Text)  # URL to optional mask image (if null, entire image is edited)
+    image_edit_instructions = Column(Text)  # Optional default instructions for image editing prompts
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+
+class ReferenceImage(Base):
+    """Multiple reference images per agent for OpenAI Image Edits"""
+    __tablename__ = "reference_images"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    avee_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="CASCADE"), nullable=False)
+    reference_image_url = Column(Text, nullable=False)  # URL to reference image
+    mask_image_url = Column(Text)  # URL to optional mask image
+    edit_instructions = Column(Text)  # Optional instructions for image editing
+    image_dimensions = Column(String)  # Dimensions like "1024x1024"
+    is_primary = Column(Boolean, default=False)  # Whether this is the primary/default image
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class AveeLayer(Base):
@@ -528,8 +546,9 @@ class Post(Base):
     description = Column(Text)
     image_url = Column(Text, nullable=False)
     
-    # Post type
-    post_type = Column(String, default="image")  # 'image', 'ai_generated', 'update'
+    # Post type: 'image' (user uploaded), 'ai_generated' (AI-created), 'text' (text-only)
+    # NOTE: Do NOT use 'update' here - that's for AgentUpdate model, not Post model
+    post_type = Column(String, default="image")  # 'image', 'ai_generated', 'text'
     
     # AI metadata (for AI-generated images)
     ai_metadata = Column(Text, default="{}")  # JSON as text: model, prompt, style, etc.
@@ -547,6 +566,9 @@ class Post(Base):
     twitter_post_id = Column(Text)  # Twitter tweet ID
     twitter_post_url = Column(Text)  # Full Twitter URL to the tweet
     twitter_posted_at = Column(DateTime(timezone=True))  # Timestamp when posted to Twitter
+    
+    # Image generation engine tracking
+    image_generation_engine = Column(String(50), default="dall-e-3")  # 'dall-e-3' or 'openai-edits'
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -635,4 +657,34 @@ class TwitterOAuthState(Base):
     oauth_token_secret = Column(Text, nullable=False)  # Request token secret
     user_id = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Notification(Base):
+    """Stores notifications for user activity"""
+    __tablename__ = "notifications"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    
+    # Notification type: agent_update, post_like, post_comment, post_repost, autopost_success, new_message
+    notification_type = Column(String(50), nullable=False)
+    
+    # Title and message
+    title = Column(Text, nullable=False)
+    message = Column(Text, nullable=False)
+    
+    # Link to relevant resource
+    link = Column(Text)
+    
+    # Related entity IDs (stored as text for flexibility)
+    related_user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"))
+    related_agent_id = Column(UUID(as_uuid=True), ForeignKey("avees.id", ondelete="CASCADE"))
+    related_post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"))
+    related_update_id = Column(UUID(as_uuid=True), ForeignKey("agent_updates.id", ondelete="CASCADE"))
+    related_message_id = Column(UUID(as_uuid=True), ForeignKey("direct_messages.id", ondelete="CASCADE"))
+    
+    # Read status
+    is_read = Column(String, default="false")  # Store as string for consistency
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

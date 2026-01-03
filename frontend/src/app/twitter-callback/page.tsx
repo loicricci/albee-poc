@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function TwitterCallbackPage() {
+function TwitterCallbackContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"connecting" | "success" | "error">("connecting");
   const [message, setMessage] = useState("Connecting to Twitter...");
@@ -146,6 +146,18 @@ export default function TwitterCallbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TwitterCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#2E3A59] to-[#1a2332]">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <TwitterCallbackContent />
+    </Suspense>
   );
 }
 

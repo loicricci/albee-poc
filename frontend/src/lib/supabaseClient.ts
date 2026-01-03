@@ -13,3 +13,14 @@ export const supabase = createClient(
     }
   }
 );
+
+/**
+ * Get the current user's access token for API requests
+ */
+export async function getAccessToken(): Promise<string> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Not authenticated");
+  }
+  return session.access_token;
+}

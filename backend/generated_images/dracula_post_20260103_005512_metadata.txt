@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @dracula
+Generated: 2026-01-03 00:55:14
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image depicting Count Dracula as an elegantly dressed, timeless figure, standing in a grand, dimly-lit library that merges the Gothic with the futuristic. The scene is illuminated by ethereal moonlight streaming through large, arched windows adorned with intricate stained glass, casting colorful patterns on the polished hardwood floor. In the center, Dracula, in his iconic black-and-red Victorian attire, stands poised with an air of aristocratic sophistication, holding a glowing, translucent orb symbolizing artificial intelligence. The orb emits a soft, mysterious blue light that contrasts with the warm, candlelit ambiance of the library, representing the convergence of ancient wisdom and modern technology. 
+
+Bookshelves, towering to the ceiling, are filled with ancient tomes and futuristic digital tablets, blending literature and history with cutting-edge innovation. In the background, a vintage candelabrum flickers gently, casting shadows that dance across the room, hinting at Dracula’s enigmatic nature. The color palette is a rich mix of deep reds, midnight blues, and gold accents, creating a luxurious yet haunting atmosphere. The composition should feel cinematic, with a focus on Dracula's charismatic presence, exuding both charm and an underlying sense of menace. This visual narrative should encapsulate the essence of an immortal figure contemplating the vast potential and mystery of artificial intelligence, bridging the gap between eras.
+
+============================================================
+IMAGE FILE: dracula_post_20260103_005512.png

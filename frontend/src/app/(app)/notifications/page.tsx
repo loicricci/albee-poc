@@ -4,52 +4,46 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { ChatButton } from "@/components/ChatButton";
-import { getFeed, markUpdatesAsRead, markAllAgentUpdatesAsRead } from "@/lib/api";
-
-type FeedUpdate = {
-  id: string;
-  title: string;
-  content: string;
-  topic?: string | null;
-  layer: string;
-  is_pinned: boolean;
-  created_at: string;
-  is_read: boolean;
-};
-
-type FeedItem = {
-  agent_id: string;
-  agent_handle: string;
-  agent_display_name?: string | null;
-  agent_avatar_url?: string | null;
-  agent_bio?: string | null;
-  is_own_agent: boolean;
-  unread_count: number;
-  total_updates: number;
-  latest_update?: FeedUpdate | null;
-  owner_user_id: string;
-  owner_handle?: string | null;
-  owner_display_name?: string | null;
-};
-
-type FeedResponse = {
-  items: FeedItem[];
-  total_items: number;
-  total_unread: number;
-};
+import { 
+  getNotifications, 
+  markNotificationsRead, 
+  markAllNotificationsRead,
+  deleteNotification 
+} from "@/lib/api";
 
 type Notification = {
   id: string;
-  type: "update" | "system";
+  notification_type: string;
   title: string;
   message: string;
-  timestamp: string;
-  read: boolean;
   link?: string;
-  agentHandle?: string;
-  agentName?: string;
-  avatar?: string;
-  updateId?: string;
+  is_read: boolean;
+  created_at: string;
+  related_user?: {
+    user_id: string;
+    handle: string;
+    display_name: string;
+    avatar_url?: string;
+  };
+  related_agent?: {
+    id: string;
+    handle: string;
+    display_name: string;
+    avatar_url?: string;
+  };
+  related_post?: {
+    id: string;
+    image_url: string;
+    description?: string;
+  };
+};
+
+type NotificationsResponse = {
+  notifications: Notification[];
+  total: number;
+  unread_count: number;
+  limit: number;
+  offset: number;
 };
 
 function formatRelativeTime(dateString: string): string {
@@ -69,9 +63,9 @@ function formatRelativeTime(dateString: string): string {
   return `${Math.floor(diffDays / 365)}y ago`;
 }
 
-function getNotificationIcon(type: Notification["type"]) {
+function getNotificationIcon(type: string) {
   switch (type) {
-    case "update":
+    case "agent_update":
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -88,7 +82,92 @@ function getNotificationIcon(type: Notification["type"]) {
           />
         </svg>
       );
-    case "system":
+    case "post_like":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="h-5 w-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+          />
+        </svg>
+      );
+    case "post_comment":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="h-5 w-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
+          />
+        </svg>
+      );
+    case "post_repost":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="h-5 w-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3"
+          />
+        </svg>
+      );
+    case "autopost_success":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="h-5 w-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      );
+    case "new_message":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="h-5 w-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+          />
+        </svg>
+      );
+    default:
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -110,31 +189,49 @@ function getNotificationIcon(type: Notification["type"]) {
 
 function NotificationCard({ 
   notification, 
-  onMarkAsRead 
+  onMarkAsRead,
+  onDelete
 }: { 
   notification: Notification; 
-  onMarkAsRead: (id: string, updateId?: string) => void;
+  onMarkAsRead: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case "agent_update":
+        return "from-[#2E3A59] to-[#1a2236]";
+      case "post_like":
+        return "from-[#C8A24A] to-[#b8923a]";
+      case "post_comment":
+        return "from-blue-600 to-blue-700";
+      case "post_repost":
+        return "from-green-600 to-green-700";
+      case "autopost_success":
+        return "from-emerald-600 to-emerald-700";
+      case "new_message":
+        return "from-purple-600 to-purple-700";
+      default:
+        return "from-[#2E3A59]/70 to-[#2E3A59]/50";
+    }
+  };
+  
   return (
     <div
       className={`group border-b border-[#E6E6E6] p-5 transition-all ${
-        !notification.read ? "bg-[#2E3A59]/5" : "bg-white hover:bg-[#FAFAFA]"
+        !notification.is_read ? "bg-[#2E3A59]/5" : "bg-white hover:bg-[#FAFAFA]"
       }`}
     >
       <div className="flex items-start gap-4">
         {/* Icon */}
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
-          notification.type === "update" ? "bg-gradient-to-br from-[#2E3A59] to-[#1a2236]" :
-          "bg-gradient-to-br from-[#2E3A59]/70 to-[#2E3A59]/50"
-        } text-white shadow-md`}>
-          {getNotificationIcon(notification.type)}
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${getNotificationColor(notification.notification_type)} text-white shadow-md`}>
+          {getNotificationIcon(notification.notification_type)}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
             <h3 className="font-semibold text-[#0B0B0C]">{notification.title}</h3>
-            {!notification.read && (
+            {!notification.is_read && (
               <span className="flex h-2 w-2 shrink-0 mt-2">
                 <span className="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-[#C8A24A] opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C8A24A]"></span>
@@ -142,22 +239,43 @@ function NotificationCard({
             )}
           </div>
           <p className="text-sm text-[#2E3A59]/70 mb-3">{notification.message}</p>
+          
+          {/* Related entity preview */}
+          {notification.related_user && (
+            <div className="flex items-center gap-2 mb-3 text-xs text-[#2E3A59]/60">
+              {notification.related_user.avatar_url && (
+                <img 
+                  src={notification.related_user.avatar_url} 
+                  alt={notification.related_user.display_name}
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+              )}
+              <span>@{notification.related_user.handle}</span>
+            </div>
+          )}
+          
+          {notification.related_agent && (
+            <div className="flex items-center gap-2 mb-3 text-xs text-[#2E3A59]/60">
+              {notification.related_agent.avatar_url && (
+                <img 
+                  src={notification.related_agent.avatar_url} 
+                  alt={notification.related_agent.display_name}
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+              )}
+              <span>@{notification.related_agent.handle}</span>
+            </div>
+          )}
+          
           <div className="flex items-center gap-4 text-xs">
             <span className="flex items-center gap-1 text-[#2E3A59]/70">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {notification.timestamp}
+              {formatRelativeTime(notification.created_at)}
             </span>
-            {notification.agentHandle && (
-              <ChatButton
-                handle={notification.agentHandle}
-                className="font-medium text-[#2E3A59] hover:text-[#1a2236] transition-colors"
-              >
-                Chat with {notification.agentName || notification.agentHandle}
-              </ChatButton>
-            )}
-            {notification.link && !notification.agentHandle && (
+            
+            {notification.link && (
               <Link
                 href={notification.link}
                 className="font-medium text-[#2E3A59] hover:text-[#1a2236] transition-colors"
@@ -165,14 +283,31 @@ function NotificationCard({
                 View
               </Link>
             )}
-            {!notification.read && (
+            
+            {notification.related_agent?.handle && (
+              <ChatButton
+                handle={notification.related_agent.handle}
+                className="font-medium text-[#2E3A59] hover:text-[#1a2236] transition-colors"
+              >
+                Chat
+              </ChatButton>
+            )}
+            
+            {!notification.is_read && (
               <button
-                onClick={() => onMarkAsRead(notification.id, notification.updateId)}
+                onClick={() => onMarkAsRead(notification.id)}
                 className="font-medium text-[#2E3A59]/70 hover:text-[#0B0B0C] transition-colors"
               >
                 Mark as read
               </button>
             )}
+            
+            <button
+              onClick={() => onDelete(notification.id)}
+              className="font-medium text-red-600/70 hover:text-red-600 transition-colors ml-auto"
+            >
+              Delete
+            </button>
           </div>
         </div>
       </div>
@@ -185,64 +320,24 @@ function NotificationsContent() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const loadNotifications = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const feedData: FeedResponse = await getFeed({ limit: 100 });
+      const data: NotificationsResponse = await getNotifications({
+        limit: 100,
+        unread_only: filter === "unread"
+      });
       
-      // Convert feed items to notifications
-      const newNotifications: Notification[] = [];
-      
-      // Add system notification if no updates
-      if (feedData.total_items === 0) {
-        newNotifications.push({
-          id: "welcome",
-          type: "system",
-          title: "Welcome to AVEE!",
-          message: "Start following Agents to get updates in your notifications.",
-          timestamp: "now",
-          read: true,
-          link: "/network",
-        });
-      }
-      
-      // Convert each feed item's latest update to a notification
-      for (const item of feedData.items) {
-        if (item.latest_update) {
-          const update = item.latest_update;
-          newNotifications.push({
-            id: `update-${update.id}`,
-            updateId: update.id,
-            type: "update",
-            title: `New update from ${item.agent_display_name || item.agent_handle}`,
-            message: update.title,
-            timestamp: formatRelativeTime(update.created_at),
-            read: update.is_read,
-            agentHandle: item.agent_handle,
-            agentName: item.agent_display_name || item.agent_handle,
-            avatar: item.agent_avatar_url || undefined,
-          });
-        }
-      }
-      
-      setNotifications(newNotifications);
+      setNotifications(data.notifications);
+      setUnreadCount(data.unread_count);
     } catch (e: any) {
       console.error("Failed to load notifications:", e);
       setError(e.message || "Failed to load notifications");
-      
-      // Set welcome message on error
-      setNotifications([{
-        id: "welcome",
-        type: "system",
-        title: "Welcome to AVEE!",
-        message: "Start following Agents to get updates in your notifications.",
-        timestamp: "now",
-        read: true,
-        link: "/network",
-      }]);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
@@ -250,28 +345,19 @@ function NotificationsContent() {
 
   useEffect(() => {
     loadNotifications();
-  }, []);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+  }, [filter]);
 
   const filteredNotifications = filter === "unread" 
-    ? notifications.filter(n => !n.read)
+    ? notifications.filter(n => !n.is_read)
     : notifications;
 
-  const markAsRead = async (id: string, updateId?: string) => {
-    if (!updateId) {
-      // System notifications - just mark locally
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      );
-      return;
-    }
-
+  const markAsRead = async (id: string) => {
     try {
-      await markUpdatesAsRead([updateId]);
+      await markNotificationsRead([id]);
       setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
+        prev.map(n => n.id === id ? { ...n, is_read: true } : n)
       );
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (e: any) {
       console.error("Failed to mark as read:", e);
       setError(e.message || "Failed to mark as read");
@@ -279,20 +365,30 @@ function NotificationsContent() {
   };
 
   const markAllAsRead = async () => {
-    const unreadUpdateIds = notifications
-      .filter(n => !n.read && n.updateId)
-      .map(n => n.updateId!);
-    
-    if (unreadUpdateIds.length === 0) {
-      return;
-    }
+    if (unreadCount === 0) return;
 
     try {
-      await markUpdatesAsRead(unreadUpdateIds);
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      await markAllNotificationsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
     } catch (e: any) {
       console.error("Failed to mark all as read:", e);
       setError(e.message || "Failed to mark all as read");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      // Update unread count if deleted notification was unread
+      const deletedNotif = notifications.find(n => n.id === id);
+      if (deletedNotif && !deletedNotif.is_read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (e: any) {
+      console.error("Failed to delete notification:", e);
+      setError(e.message || "Failed to delete notification");
     }
   };
 
@@ -441,6 +537,7 @@ function NotificationsContent() {
               key={notification.id}
               notification={notification}
               onMarkAsRead={markAsRead}
+              onDelete={handleDelete}
             />
           ))
         )}

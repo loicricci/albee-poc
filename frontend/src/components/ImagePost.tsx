@@ -41,7 +41,7 @@ type Comment = {
 
 type ImagePostProps = {
   post: PostData;
-  onLike?: (postId: string, liked: boolean) => void;
+  onLike?: (postId: string, liked: boolean) => Promise<void> | void;
   onComment?: (postId: string) => void;
   onShare?: (postId: string) => void;
   onDelete?: (postId: string) => void;
@@ -80,12 +80,31 @@ export function ImagePost({
   const [liked, setLiked] = useState(post.user_has_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
-  const handleLike = () => {
-    const newLiked = !liked;
-    setLiked(newLiked);
-    setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
-    onLike?.(post.id, newLiked);
+  const handleLike = async () => {
+    if (isLiking) return; // Prevent multiple clicks
+    
+    setIsLiking(true);
+    const previousLiked = liked;
+    const previousCount = likeCount;
+    
+    try {
+      // Optimistic update
+      const newLiked = !liked;
+      setLiked(newLiked);
+      setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
+      
+      // Call API if handler provided
+      await onLike?.(post.id, newLiked);
+    } catch (error) {
+      // Revert on error
+      console.error("Failed to like/unlike:", error);
+      setLiked(previousLiked);
+      setLikeCount(previousCount);
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const handleComment = () => {
@@ -192,12 +211,13 @@ export function ImagePost({
         {/* Like */}
         <button
           onClick={handleLike}
+          disabled={isLiking}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-[#2E3A59]/5 ${
             liked ? "text-red-600" : "text-[#2E3A59]"
-          }`}
+          } ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <svg 
-            className="h-5 w-5" 
+            className={`h-5 w-5 ${isLiking ? "animate-pulse" : ""}`}
             fill={liked ? "currentColor" : "none"} 
             viewBox="0 0 24 24" 
             stroke="currentColor"
@@ -275,6 +295,9 @@ export function ImagePost({
     </div>
   );
 }
+
+
+
 
 
 

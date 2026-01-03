@@ -90,20 +90,20 @@ export default function LoginPage() {
                   }}
                 />
                 <div className="text-2xl font-bold tracking-tight text-[#0B0B0C] dark:text-white">
-                  AVEE
+                  {appConfig.app_name || "AGENT"}
                 </div>
               </>
             ) : (
               <>
                 <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#2E3A59] to-[#1a2236] shadow-lg dark:from-white dark:to-zinc-200" />
                 <div className="text-2xl font-bold tracking-tight text-[#0B0B0C] dark:text-white">
-                  {appConfig.app_name || "Avee"}
+                  {appConfig.app_name || "AGENT"}
                 </div>
               </>
             )}
           </Link>
           <h1 className="mt-6 text-3xl font-bold text-[#0B0B0C] dark:text-white">Welcome back</h1>
-          <p className="mt-2 text-[#2E3A59]/70 dark:text-zinc-400">Sign in to your {appConfig.app_name || "Avee"} account</p>
+          <p className="mt-2 text-[#2E3A59]/70 dark:text-zinc-400">Sign in to your {appConfig.app_name || "AGENT"} account</p>
         </div>
 
         <form

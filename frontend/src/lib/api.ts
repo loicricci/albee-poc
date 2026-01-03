@@ -297,6 +297,52 @@ export async function markUpdatesAsRead(updateIds: string[]) {
   });
 }
 
+// ========== Notifications API ==========
+
+export async function getNotifications(params?: {
+  limit?: number;
+  offset?: number;
+  unread_only?: boolean;
+  notification_type?: string;
+}) {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set("limit", params.limit.toString());
+  if (params?.offset) query.set("offset", params.offset.toString());
+  if (params?.unread_only) query.set("unread_only", "true");
+  if (params?.notification_type) query.set("notification_type", params.notification_type);
+  
+  const queryString = query.toString();
+  return apiFetch(`/notifications${queryString ? `?${queryString}` : ""}`, {
+    method: "GET",
+  });
+}
+
+export async function getUnreadNotificationCount() {
+  return apiFetch("/notifications/unread-count", { method: "GET" });
+}
+
+export async function markNotificationsRead(notificationIds: string[]) {
+  return apiFetch("/notifications/mark-read", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ notification_ids: notificationIds }),
+  });
+}
+
+export async function markAllNotificationsRead() {
+  return apiFetch("/notifications/mark-all-read", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+}
+
+export async function deleteNotification(notificationId: string) {
+  return apiFetch(`/notifications/${notificationId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function getAgentUpdatesForFeed(agentId: string) {
   return apiFetch(`/feed/agent/${agentId}/updates`, { method: "GET" });
 }
@@ -481,5 +527,111 @@ export async function getPostTwitterStatus(postId: string): Promise<{
 
 export async function getPendingTwitterPosts(limit = 20): Promise<{ posts: PostData[]; total: number }> {
   return api.get(`/posts/pending-twitter?limit=${limit}`);
+}
+
+// =====================================
+// COMMENTS API
+// =====================================
+
+export type CommentData = {
+  id: string;
+  post_id: string;
+  user_id: string;
+  user_handle: string;
+  user_display_name: string | null;
+  user_avatar_url: string | null;
+  content: string;
+  parent_comment_id: string | null;
+  like_count: number;
+  reply_count: number;
+  user_has_liked: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function getComments(postId: string, limit = 50, offset = 0): Promise<{ comments: CommentData[] }> {
+  const params = new URLSearchParams();
+  params.set("limit", limit.toString());
+  params.set("offset", offset.toString());
+  
+  return api.get(`/posts/${postId}/comments?${params.toString()}`);
+}
+
+export async function createComment(
+  postId: string,
+  content: string,
+  parentCommentId?: string
+): Promise<{ id: string; message: string }> {
+  return api.post(`/posts/${postId}/comments`, {
+    content,
+    parent_comment_id: parentCommentId || null,
+  });
+}
+
+export async function deleteComment(commentId: string): Promise<{ message: string }> {
+  return api.delete(`/comments/${commentId}`);
+}
+
+export async function likeComment(commentId: string): Promise<{ message: string }> {
+  return api.post(`/comments/${commentId}/like`, {});
+}
+
+export async function unlikeComment(commentId: string): Promise<{ message: string }> {
+  return api.delete(`/comments/${commentId}/like`);
+}
+
+// =====================================
+// UNIFIED FEED API
+// =====================================
+
+export type UnifiedFeedItem = {
+  id: string;
+  type: "post" | "update" | "repost";  // Three distinct content types
+  agent_id?: string | null;
+  agent_handle: string;
+  agent_display_name: string | null;
+  agent_avatar_url: string | null;
+  owner_user_id: string;
+  owner_handle: string;
+  owner_display_name: string | null;
+  created_at: string;
+  // Post-specific fields (also used by reposts for original post data)
+  title?: string | null;
+  description?: string | null;
+  image_url?: string;
+  post_type?: string;  // Valid values: 'image', 'ai_generated', 'text' (NOT 'update')
+  like_count?: number;
+  comment_count?: number;
+  share_count?: number;
+  user_has_liked?: boolean;
+  // Update-specific fields (AgentUpdate content)
+  content?: string;
+  topic?: string | null;
+  layer?: string;
+  is_pinned?: boolean;
+  is_read?: boolean;
+  // Repost-specific fields
+  repost_id?: string;
+  repost_comment?: string | null;
+  reposted_by_user_id?: string;
+  reposted_by_handle?: string;
+  reposted_by_display_name?: string | null;
+  reposted_by_avatar_url?: string | null;
+  reposted_at?: string;
+  post_id?: string;  // Original post ID for reposts
+};
+
+export type UnifiedFeedResponse = {
+  items: UnifiedFeedItem[];
+  total_items: number;
+  has_more: boolean;
+};
+
+export async function getUnifiedFeed(limit = 20, offset = 0): Promise<UnifiedFeedResponse> {
+  const params = new URLSearchParams();
+  params.set("limit", limit.toString());
+  params.set("offset", offset.toString());
+  
+  return api.get(`/feed/unified?${params.toString()}`);
 }
 

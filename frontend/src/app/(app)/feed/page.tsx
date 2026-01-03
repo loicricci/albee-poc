@@ -4,6 +4,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { QuickUpdateComposer } from "@/components/QuickUpdateComposer";
+import { FeedPostCard } from "@/components/FeedPostCard";
+import { 
+  getUnifiedFeed, 
+  likePost, 
+  unlikePost, 
+  sharePost,
+  UnifiedFeedItem 
+} from "@/lib/api";
 
 type Profile = {
   user_id: string;
@@ -20,79 +28,6 @@ type Avee = {
   avatar_url?: string | null;
   bio?: string | null;
 };
-
-// Mock data for feed items with updates
-const mockFeedData = [
-  {
-    id: "1",
-    name: "Cointelegraph",
-    handle: "cointelegraph",
-    followers: 123456,
-    avatarUrl: null,
-    lastUpdate: "12/12/2025",
-    latestNews: "CRYPTO WILL BE BANNED FROM CHINA?",
-    updateCount: 12,
-    isStarred: true,
-  },
-  {
-    id: "2",
-    name: "L'EQUIPE",
-    handle: "lequipe",
-    followers: 93453,
-    avatarUrl: null,
-    lastUpdate: "12/10/2025",
-    latestNews: "PSG WON THE FINAL CUP",
-    updateCount: 7,
-    isStarred: true,
-  },
-  {
-    id: "3",
-    name: "JENN SKYBA",
-    handle: "jennskyba",
-    followers: 560,
-    avatarUrl: null,
-    lastUpdate: "12/12/2025",
-    latestNews: "WITH CHARLINE ON THE BEACH?",
-    updateCount: 2,
-    isStarred: true,
-  },
-  {
-    id: "4",
-    name: "LEONARDO DICAPRIO",
-    handle: "leonardodicaprio",
-    followers: 234134334,
-    avatarUrl: null,
-    lastUpdate: "12/12/2025",
-    latestNews: "SHOOTING ADS IN CAIRO. WHAT UP?",
-    updateCount: 230,
-    isStarred: true,
-  },
-];
-
-// Mock recommendations
-const mockRecommendations = [
-  {
-    id: "rec1",
-    name: "TechCrunch",
-    handle: "techcrunch",
-    followers: 8500000,
-    bio: "Reporting on the business of technology, startups, venture capital funding",
-  },
-  {
-    id: "rec2",
-    name: "NASA",
-    handle: "nasa",
-    followers: 95000000,
-    bio: "Explore the universe and discover our home planet",
-  },
-  {
-    id: "rec3",
-    name: "National Geographic",
-    handle: "natgeo",
-    followers: 78000000,
-    bio: "Experience the world through the eyes of National Geographic photographers",
-  },
-];
 
 async function getAccessToken(): Promise<string> {
   const { data, error } = await supabase.auth.getSession();
@@ -124,70 +59,6 @@ function formatFollowers(count: number): string {
     return `${(count / 1000).toFixed(1)}K`;
   }
   return count.toString();
-}
-
-function AveeFeedCard({ avee }: { avee: typeof mockFeedData[0] }) {
-  const [isStarred, setIsStarred] = useState(avee.isStarred);
-
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm transition-all hover:shadow-lg">
-      {/* Update count badge */}
-      <div className="absolute right-4 top-4 md:right-6 md:top-6 flex flex-col items-center rounded-xl border-2 border-blue-100 bg-gradient-to-br from-[#e6eaff] to-[#f0f2ff] px-3 py-1.5 md:px-4 md:py-2">
-        <div className="text-base md:text-lg font-bold text-[#001f98]">{avee.updateCount}</div>
-        <div className="text-xs font-medium text-gray-600 hidden sm:block">updates</div>
-      </div>
-
-      {/* Main content */}
-      <div className="mb-3 md:mb-4 flex items-start gap-3 md:gap-4">
-        {/* Avatar */}
-        <div className="h-12 w-12 md:h-16 md:w-16 shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm">
-          {avee.avatarUrl ? (
-            <img src={avee.avatarUrl} alt={avee.name} className="h-full w-full object-cover" />
-          ) : (
-            <svg className="h-6 w-6 md:h-8 md:w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          )}
-        </div>
-
-        {/* Avee info */}
-        <div className="flex-1 min-w-0 pr-16 md:pr-20">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base md:text-lg font-bold text-gray-900 truncate">{avee.name}</h3>
-            <button
-              onClick={() => setIsStarred(!isStarred)}
-              className="shrink-0 text-lg md:text-xl transition-transform hover:scale-110"
-              aria-label={isStarred ? "Unstar" : "Star"}
-            >
-              {isStarred ? "⭐" : "☆"}
-            </button>
-          </div>
-          <p className="text-xs md:text-sm text-gray-500">
-            @{avee.handle} · {formatFollowers(avee.followers)} followers
-          </p>
-          <p className="mt-1 text-xs text-gray-400">
-            Latest update: {avee.lastUpdate}
-          </p>
-        </div>
-      </div>
-
-      {/* Latest update box */}
-      <div className="mb-3 md:mb-4 rounded-lg border border-blue-200 bg-gradient-to-r from-[#e6eaff] to-[#f0f2ff] px-3 py-2 md:px-4 md:py-3">
-        <p className="text-xs md:text-sm font-medium text-gray-900">{avee.latestNews}</p>
-      </div>
-
-      {/* CTA Button */}
-      <Link
-        href={`/chat/${avee.handle}`}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#001f98] px-4 py-2 md:px-6 md:py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.02]"
-      >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-        Get updated
-      </Link>
-    </div>
-  );
 }
 
 function LeftSidebar({
@@ -327,33 +198,6 @@ function LeftSidebar({
           )}
         </div>
       </div>
-
-      {/* Recommendations */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-100 bg-gray-50 p-4">
-          <h2 className="font-semibold text-gray-900">Recommended</h2>
-          <p className="mt-1 text-xs text-gray-500">Discover new Avees</p>
-        </div>
-        <div className="divide-y divide-gray-100 p-4 space-y-4">
-          {mockRecommendations.map((rec) => (
-            <div key={rec.id} className="pt-4 first:pt-0">
-              <div className="mb-2">
-                <div className="font-semibold text-sm text-gray-900">{rec.name}</div>
-                <div className="text-xs text-gray-500">@{rec.handle}</div>
-                <div className="text-xs text-gray-400 mt-0.5">
-                  {formatFollowers(rec.followers)} followers
-                </div>
-              </div>
-              <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                {rec.bio}
-              </p>
-              <button className="w-full rounded-lg border border-[#001f98] px-3 py-2 text-xs font-medium text-[#001f98] transition-colors hover:bg-[#e6eaff]">
-                Follow
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -371,7 +215,7 @@ function TopNavigation({ profile }: { profile: Profile | null }) {
             <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-xl bg-[#001f98] shadow-md transition-transform group-hover:scale-105">
               <span className="text-base md:text-lg font-bold text-white">A</span>
             </div>
-            <span className="hidden sm:inline text-xl font-bold text-gray-900">AVEE</span>
+            <span className="hidden sm:inline text-xl font-bold text-gray-900">AGENT</span>
           </Link>
 
           <div className="flex-1 max-w-md">
@@ -501,6 +345,9 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avees, setAvees] = useState<Avee[]>([]);
+  const [feedItems, setFeedItems] = useState<UnifiedFeedItem[]>([]);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -522,6 +369,9 @@ export default function FeedPage() {
         console.log("Avatar URL:", p?.avatar_url);
         setProfile(p);
         setAvees(Array.isArray(a) ? a : []);
+        
+        // Load feed
+        loadFeed();
       } catch (e: any) {
         if (!alive) return;
         console.error("Failed to load data:", e);
@@ -534,6 +384,54 @@ export default function FeedPage() {
       alive = false;
     };
   }, []);
+
+  async function loadFeed() {
+    setFeedLoading(true);
+    setFeedError(null);
+
+    try {
+      const feedData = await getUnifiedFeed(20, 0);
+      setFeedItems(feedData.items);
+    } catch (e: any) {
+      console.error("Failed to load feed:", e);
+      setFeedError(e?.message || "Failed to load feed");
+    } finally {
+      setFeedLoading(false);
+    }
+  }
+
+  async function handleLike(postId: string, liked: boolean) {
+    try {
+      if (liked) {
+        await likePost(postId);
+      } else {
+        await unlikePost(postId);
+      }
+      // Success - optimistic UI update already happened in FeedPostCard
+    } catch (e: any) {
+      console.error("Failed to toggle like:", e);
+      // Error will be handled by FeedPostCard (revert optimistic update)
+      throw e; // Re-throw to let FeedPostCard handle the error
+    }
+  }
+
+  async function handleComment(postId: string) {
+    // For now, just show the comments section
+    // In the future, we can load actual comments here
+    console.log("View comments for post:", postId);
+  }
+
+  async function handleRepost(postId: string, comment: string) {
+    try {
+      await sharePost(postId, "repost", comment || undefined);
+      alert("Post reposted successfully!");
+      // Reload feed to show the new repost
+      loadFeed();
+    } catch (e: any) {
+      console.error("Failed to repost:", e);
+      alert(e?.message || "Failed to repost");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -550,17 +448,88 @@ export default function FeedPage() {
           {/* Quick Update Composer */}
           <div className="mb-4 md:mb-6">
             <QuickUpdateComposer agents={avees} onUpdatePosted={() => {
-              // For now, just refresh the page to show new updates
-              // In production, you'd want to fetch the feed data properly
-              window.location.reload();
+              // Reload feed to show new update
+              loadFeed();
             }} />
           </div>
 
-          <div className="space-y-4 md:space-y-6">
-            {mockFeedData.map((avee) => (
-              <AveeFeedCard key={avee.id} avee={avee} />
-            ))}
-          </div>
+          {/* Feed Items */}
+          {feedLoading && (
+            <div className="space-y-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+                    <div>
+                      <div className="h-4 w-32 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-3 w-24 bg-gray-100 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="h-64 w-full bg-gray-200 rounded-lg mb-4"></div>
+                  <div className="h-4 w-3/4 bg-gray-100 rounded"></div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {feedError && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
+              <svg className="mx-auto h-12 w-12 text-red-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-lg font-semibold text-red-900 mb-2">Failed to load feed</h3>
+              <p className="text-red-700 mb-4">{feedError}</p>
+              <button
+                onClick={loadFeed}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-white font-semibold hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {!feedLoading && !feedError && feedItems.length === 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+              <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Your feed is empty</h3>
+              <p className="text-gray-600 mb-4">
+                Start following agents or create your own to see updates here!
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Link
+                  href="/network"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Discover Agents
+                </Link>
+                <Link
+                  href="/my-agents"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#001f98] px-4 py-2 text-white font-medium hover:bg-[#001670] transition-colors"
+                >
+                  Create Agent
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {!feedLoading && !feedError && feedItems.length > 0 && (
+            <div className="space-y-4 md:space-y-6">
+              {feedItems.map((item) => (
+                <FeedPostCard
+                  key={`${item.type}-${item.id}`}
+                  item={item}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  onRepost={handleRepost}
+                  currentUserId={profile?.user_id}
+                  currentUserHandle={profile?.handle}
+                  currentUserAvatar={profile?.avatar_url}
+                />
+              ))}
+            </div>
+          )}
         </main>
       </div>
     </div>
