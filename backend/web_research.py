@@ -10,7 +10,7 @@ import json
 import requests
 from typing import List, Dict, Optional
 from urllib.parse import quote_plus
-from url_scraper import scrape_url
+from backend.url_scraper import scrape_url
 
 
 class WebResearcher:

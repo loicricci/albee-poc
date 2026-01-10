@@ -121,11 +121,9 @@ export default function AutoPostGeneratorPage() {
       return;
     }
 
-    // Validate reference image selection for GPT-Image-1 (semantic editing)
-    if (imageEngine === 'gpt-image-1' && !selectedReferenceImage) {
-      showMessage('error', 'Please select a reference image for GPT-Image-1 editing');
-      return;
-    }
+    // Note: Reference image is now optional for GPT-Image-1
+    // - With reference: Semantic editing
+    // - Without reference: Pure text-to-image generation
     
     try {
       setGenerating(true);
@@ -152,8 +150,11 @@ export default function AutoPostGeneratorPage() {
         }),
       });
 
+      // Handle error responses
       if (!response.ok) {
-        throw new Error('Failed to generate posts');
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        const errorMessage = errorData.detail || 'Failed to generate posts';
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -404,30 +405,26 @@ export default function AutoPostGeneratorPage() {
                 <span className="font-semibold text-sm">GPT-Image-1 ✨</span>
               </div>
               <p className="text-xs text-gray-600 ml-6">
-                Semantic image editing - no mask required!
+                Latest OpenAI model - works with or without reference images
               </p>
               {selectedAvees.size > 0 && hasReferenceImages() && (
                 <p className="text-xs text-green-600 ml-6 mt-1">
-                  ✓ Reference images available
+                  ✓ Reference images available (optional)
                 </p>
               )}
             </button>
           </div>
-          {selectedAvees.size > 0 && !hasReferenceImages() && imageEngine === 'gpt-image-1' && (
-            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-              ⚠️ Selected agents don't have reference images uploaded. Please upload reference images in the agent editor first.
-            </div>
-          )}
         </div>
 
-        {/* Reference Image Selector (for GPT-Image-1 semantic editing) */}
+        {/* Reference Image Selector (Optional for GPT-Image-1) */}
         {imageEngine === 'gpt-image-1' && selectedAvees.size > 0 && hasReferenceImages() && (
           <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <label className="block text-sm font-semibold text-gray-900 mb-3">
-              🖼️ Select Reference Image for Semantic Editing
+              🖼️ Select Reference Image (Optional)
             </label>
             <p className="text-xs text-gray-600 mb-3">
-              GPT-Image-1 will understand the image and edit it based on your topic (no mask needed!)
+              <strong>With reference:</strong> GPT-Image-1 will edit the image semantically based on your topic.<br/>
+              <strong>Without reference:</strong> GPT-Image-1 will generate a brand new image from text.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {getAvailableReferenceImages().map((image) => (
@@ -469,8 +466,8 @@ export default function AutoPostGeneratorPage() {
               ))}
             </div>
             {!selectedReferenceImage && (
-              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                ⚠️ Please select a reference image before generating posts
+              <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                ℹ️ No reference selected - GPT-Image-1 will generate a new image from text
               </div>
             )}
           </div>

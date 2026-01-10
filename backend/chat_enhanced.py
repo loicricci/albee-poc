@@ -25,14 +25,14 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from models import Conversation, Message, Avee
-from streaming_service import StreamingChatService, format_sse_token, format_sse
-from context_manager import ContextManager
-from conversation_intelligence import ConversationIntelligence
-from openai_embed import embed_texts
-from reranker import rerank_chunks
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.models import Conversation, Message, Avee
+from backend.streaming_service import StreamingChatService, format_sse_token, format_sse
+from backend.context_manager import ContextManager
+from backend.conversation_intelligence import ConversationIntelligence
+from backend.openai_embed import embed_texts
+from backend.reranker import rerank_chunks
 
 router = APIRouter()
 

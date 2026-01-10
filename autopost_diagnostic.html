@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoPost Diagnostic Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+
+        .output-panel {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .status-banner {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status-banner.running {
+            background: #cfe2ff;
+            color: #084298;
+            border: 2px solid #9ec5fe;
+            display: block;
+        }
+
+        .status-banner.success {
+            background: #d1e7dd;
+            color: #0f5132;
+            border: 2px solid #a3cfbb;
+            display: block;
+        }
+
+        .status-banner.error {
+            background: #f8d7da;
+            color: #842029;
+            border: 2px solid #f1aeb5;
+            display: block;
+        }
+
+        .step-container {
+            margin-bottom: 25px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .step-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .step-header:hover {
+            background: #e9ecef;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #212529;
+        }
+
+        .step-status {
+            font-size: 24px;
+        }
+
+        .step-body {
+            padding: 20px;
+            display: none;
+            border-top: 2px solid #dee2e6;
+        }
+
+        .step-body.expanded {
+            display: block;
+        }
+
+        .step-meta {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .step-meta div {
+            margin-bottom: 5px;
+        }
+
+        .step-meta div:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-meta strong {
+            color: #495057;
+            min-width: 100px;
+            display: inline-block;
+        }
+
+        .code-block {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
+        .json-key {
+            color: #e06c75;
+        }
+
+        .json-string {
+            color: #98c379;
+        }
+
+        .json-number {
+            color: #d19a66;
+        }
+
+        .json-boolean {
+            color: #56b6c2;
+        }
+
+        .json-null {
+            color: #c678dd;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+        }
+
+        .summary-card h3 {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        .generated-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .placeholder svg {
+            width: 100px;
+            height: 100px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .agent-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .agent-item {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .agent-item:hover {
+            background: #f8f9fa;
+        }
+
+        .agent-item:last-child {
+            border-bottom: none;
+        }
+
+        .agent-item.selected {
+            background: #e7f1ff;
+            border-left: 4px solid #667eea;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .agent-handle {
+            color: #6c757d;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 AutoPost Diagnostic Tool</h1>
+            <p>End-to-end analysis of autopost generation flow</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h2 style="margin-bottom: 20px; color: #212529;">Configuration</h2>
+
+                <div class="form-group">
+                    <label>API Endpoint</label>
+                    <input type="text" id="apiEndpoint" value="http://localhost:8000">
+                    <small>Backend API base URL</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Auth Token</label>
+                    <input type="password" id="authToken" placeholder="Auto-loading..." readonly style="opacity: 0.7;">
+                    <small>Token is loaded automatically from your login session</small>
+                </div>
+
+                <button class="btn btn-secondary" onclick="loadAgents()">Reload Agents</button>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Select Agent</label>
+                    <div id="agentList" class="agent-list" style="display: none;">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Agent ID</label>
+                    <input type="text" id="agentId" placeholder="Will be set when you select an agent">
+                    <small>Selected agent UUID</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Topic (Optional)</label>
+                    <input type="text" id="topic" placeholder="Leave empty for auto-fetch">
+                    <small>Override topic or let it fetch from news</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Category (Optional)</label>
+                    <select id="category">
+                        <option value="">Auto</option>
+                        <option value="technology">Technology</option>
+                        <option value="science">Science</option>
+                        <option value="business">Business</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="health">Health</option>
+                        <option value="sports">Sports</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Image Engine</label>
+                    <select id="imageEngine">
+                        <option value="dall-e-3">DALL-E 3</option>
+                        <option value="gpt-image-1">GPT-Image-1</option>
+                    </select>
+                </div>
+
+                <button class="btn" id="generateBtn" onclick="generatePost()">
+                    Generate Post
+                </button>
+
+                <button class="btn btn-secondary" onclick="clearOutput()">
+                    Clear Output
+                </button>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="output-panel">
+                <div id="statusBanner" class="status-banner"></div>
+                
+                <div id="output">
+                    <div class="placeholder">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <p>Configure settings and click "Generate Post" to start analysis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let agents = [];
+        let authToken = null;
+
+        // Auto-load auth token from localStorage on page load
+        function initializeAuth() {
+            try {
+                // Try to get the token from Supabase storage
+                const storageKey = 'supabase.auth.token';
+                const authData = localStorage.getItem(storageKey);
+                
+                if (authData) {
+                    const parsed = JSON.parse(authData);
+                    authToken = parsed.access_token;
+                    document.getElementById('authToken').value = authToken ? '✓ Token loaded automatically' : '';
+                    
+                    // Auto-load agents if token is present
+                    if (authToken) {
+                        loadAgents();
+                    }
+                } else {
+                    document.getElementById('authToken').placeholder = 'Please log in to the main app first';
+                }
+            } catch (error) {
+                console.error('Failed to load auth token:', error);
+            }
+        }
+
+        async function loadAgents() {
+            const apiEndpoint = document.getElementById('apiEndpoint').value;
+            
+            // If token wasn't auto-loaded, try to get from input field
+            if (!authToken) {
+                const manualToken = document.getElementById('authToken').value;
+                if (manualToken && manualToken !== '✓ Token loaded automatically') {
+                    authToken = manualToken;
+                }
+            }
+
+            if (!authToken) {
+                alert('Please enter your auth token first, or log in to the main app');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiEndpoint}/auto-post/status`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                agents = data.avees || [];
+
+                if (agents.length === 0) {
+                    alert('No agents found. Make sure you are logged in as an admin or agent owner.');
+                    return;
+                }
+
+                const agentListEl = document.getElementById('agentList');
+                agentListEl.innerHTML = agents.map(agent => `
+                    <div class="agent-item" onclick="selectAgent('${agent.avee_id}', '${escapeHtml(agent.handle)}', '${escapeHtml(agent.display_name || agent.handle)}')">
+                        <div class="agent-name">${escapeHtml(agent.display_name || agent.handle)}</div>
+                        <div class="agent-handle">@${escapeHtml(agent.handle)}</div>
+                    </div>
+                `).join('');
+
+                agentListEl.style.display = 'block';
+                
+                console.log(`Loaded ${agents.length} agents`);
+
+            } catch (error) {
+                console.error('Load agents error:', error);
+                alert(`Failed to load agents: ${error.message}`);
+            }
+        }
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', initializeAuth);
+
+        function selectAgent(agentId, handle, displayName) {
+            document.getElementById('agentId').value = agentId;
+            
+            // Update selected state
+            document.querySelectorAll('.agent-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            console.log(`Selected agent: ${displayName} (@${handle}) - ID: ${agentId}`);
+        }
+
+        async function generatePost() {
+            const apiEndpoint = document.getElementById('apiEndpoint').value;
+            const agentId = document.getElementById('agentId').value;
+            const topic = document.getElementById('topic').value;
+            const category = document.getElementById('category').value;
+            const imageEngine = document.getElementById('imageEngine').value;
+
+            if (!authToken) {
+                alert('Please enter your auth token or log in to the main app first');
+                return;
+            }
+
+            if (!agentId) {
+                alert('Please select an agent');
+                return;
+            }
+
+            // Update UI
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span class="loading-spinner"></span> Generating...';
+
+            const statusBanner = document.getElementById('statusBanner');
+            statusBanner.className = 'status-banner running';
+            statusBanner.innerHTML = '<span class="loading-spinner"></span> Generation in progress...';
+
+            const output = document.getElementById('output');
+            output.innerHTML = '<div class="placeholder"><p>Fetching diagnostic data...</p></div>';
+
+            try {
+                const response = await fetch(`${apiEndpoint}/auto-post/diagnostic/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        avee_id: agentId,
+                        topic: topic || null,
+                        category: category || null,
+                        image_engine: imageEngine
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    renderSuccessOutput(data);
+                    statusBanner.className = 'status-banner success';
+                    statusBanner.textContent = '✅ Post generated successfully!';
+                } else {
+                    renderErrorOutput(data);
+                    statusBanner.className = 'status-banner error';
+                    statusBanner.textContent = `❌ Generation failed: ${data.error}`;
+                }
+
+            } catch (error) {
+                statusBanner.className = 'status-banner error';
+                statusBanner.textContent = `❌ Error: ${error.message}`;
+                output.innerHTML = `<div class="placeholder"><p style="color: #842029;">Error: ${error.message}</p></div>`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Post';
+            }
+        }
+
+        function renderSuccessOutput(data) {
+            const output = document.getElementById('output');
+            
+            let html = '';
+
+            // Summary cards
+            html += '<div class="summary-grid">';
+            html += `
+                <div class="summary-card">
+                    <h3>Total Duration</h3>
+                    <div class="value">${data.total_duration.toFixed(2)}s</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Steps Completed</h3>
+                    <div class="value">${data.steps.length}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Post ID</h3>
+                    <div class="value" style="font-size: 14px; word-break: break-all;">${data.post_id || 'N/A'}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Image Engine</h3>
+                    <div class="value" style="font-size: 18px;">${data.image_engine}</div>
+                </div>
+            `;
+            html += '</div>';
+
+            // Steps
+            data.steps.forEach((step, index) => {
+                const statusIcon = step.success ? '✅' : '❌';
+                html += `
+                    <div class="step-container">
+                        <div class="step-header" onclick="toggleStep(${index})">
+                            <div class="step-title">
+                                ${step.step_number}. ${step.step_name}
+                            </div>
+                            <div class="step-status">${statusIcon}</div>
+                        </div>
+                        <div class="step-body" id="step-${index}">
+                            <div class="step-meta">
+                                <div><strong>Duration:</strong> ${step.duration.toFixed(3)}s</div>
+                                <div><strong>Status:</strong> ${step.success ? 'Success' : 'Failed'}</div>
+                                ${step.error ? `<div><strong>Error:</strong> ${step.error}</div>` : ''}
+                            </div>
+                `;
+
+                // Render step-specific data
+                if (step.data) {
+                    if (step.step_name.includes('topic')) {
+                        html += `<h4 style="margin-bottom: 10px;">Topic Data</h4>`;
+                        html += renderJSON(step.data);
+                    } else if (step.step_name.includes('context')) {
+                        html += `<h4 style="margin-bottom: 10px;">Agent Context</h4>`;
+                        html += renderJSON({
+                            handle: step.data.handle,
+                            display_name: step.data.display_name,
+                            document_count: step.data.document_count,
+                            has_reference_image: step.data.has_reference_image
+                        });
+                    } else if (step.step_name.includes('prompt') || step.step_name.includes('title')) {
+                        html += `<h4 style="margin-bottom: 10px;">Generated Content</h4>`;
+                        html += renderJSON(step.data);
+                    } else if (step.step_name.includes('description')) {
+                        html += `<h4 style="margin-bottom: 10px;">Description</h4>`;
+                        html += `<div class="code-block">${escapeHtml(step.data.description || '')}</div>`;
+                    } else if (step.step_name.includes('image')) {
+                        html += `<h4 style="margin-bottom: 10px;">Image Generation</h4>`;
+                        html += renderJSON({
+                            image_path: step.data.image_path,
+                            engine: step.data.engine,
+                            size_kb: step.data.size_kb
+                        });
+                        if (step.data.image_url) {
+                            html += `<img src="${step.data.image_url}" class="generated-image" alt="Generated image">`;
+                        }
+                    } else if (step.step_name.includes('post')) {
+                        html += `<h4 style="margin-bottom: 10px;">Post Creation Result</h4>`;
+                        html += renderJSON(step.data);
+                    } else {
+                        html += renderJSON(step.data);
+                    }
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Final result
+            if (data.final_result) {
+                html += `
+                    <div class="step-container">
+                        <div class="step-header" onclick="toggleStep('final')">
+                            <div class="step-title">📊 Final Result</div>
+                            <div class="step-status">📋</div>
+                        </div>
+                        <div class="step-body" id="step-final">
+                            ${renderJSON(data.final_result)}
+                            ${data.final_result.view_url ? `
+                                <div style="margin-top: 20px;">
+                                    <a href="${data.final_result.view_url}" target="_blank" 
+                                       style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                                        🔗 View Post
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            output.innerHTML = html;
+        }
+
+        function renderErrorOutput(data) {
+            const output = document.getElementById('output');
+            
+            let html = `
+                <div class="step-container">
+                    <div class="step-header">
+                        <div class="step-title">❌ Error</div>
+                    </div>
+                    <div class="step-body expanded">
+                        <div class="code-block" style="color: #ff6b6b;">${escapeHtml(data.error)}</div>
+            `;
+
+            if (data.steps && data.steps.length > 0) {
+                html += '<h4 style="margin-top: 20px; margin-bottom: 10px;">Completed Steps Before Error:</h4>';
+                data.steps.forEach(step => {
+                    html += `<div style="padding: 10px; background: #f8f9fa; margin-bottom: 10px; border-radius: 6px;">
+                        <strong>${step.step_number}. ${step.step_name}</strong> - ${step.duration.toFixed(3)}s
+                    </div>`;
+                });
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            output.innerHTML = html;
+        }
+
+        function renderJSON(obj) {
+            const json = JSON.stringify(obj, null, 2);
+            const highlighted = syntaxHighlight(json);
+            return `<div class="code-block">${highlighted}</div>`;
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function toggleStep(index) {
+            const stepBody = document.getElementById(`step-${index}`);
+            stepBody.classList.toggle('expanded');
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = `
+                <div class="placeholder">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <p>Configure settings and click "Generate Post" to start analysis</p>
+                </div>
+            `;
+            document.getElementById('statusBanner').className = 'status-banner';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
+

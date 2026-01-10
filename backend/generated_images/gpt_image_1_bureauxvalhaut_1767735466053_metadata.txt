@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @bureauxvalhaut
+Generated: 2026-01-06 22:37:46
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image capturing the serene and professional essence of Bureaux Valhaut during Christmas. Imagine a modern office space in Vallauris, tastefully decorated with subtle holiday elements that reflect an entrepreneurial spirit. The scene is set in a photorealistic style, portraying a bright and airy office with large windows offering a view of the tranquil French landscape. Sunlight streams in, casting a warm, inviting glow.
+
+The office features sleek, minimalist furniture in neutral tones, exuding a sense of calm and efficiency. Subtle Christmas decorations adorn the space—a small, elegant Christmas tree with white and silver ornaments sits in a corner, while a wreath made of fresh greenery adds a touch of nature above the door. On a polished wooden desk, an open laptop and a few neatly arranged documents signal ongoing work, emphasizing practicality and readiness.
+
+The color palette includes soft whites, light greys, and natural wood tones, accented by the deep green of the decorations. The atmosphere is calm, confident, and welcoming, reflecting the agent's focus on simplicity and flexibility. Compose the image with a wide-angle view that captures the entire space, ensuring the easy access and all-inclusive nature of the office are evident. The overall feel is modern yet understated, embodying the clarity and directness that Bureaux Valhaut represents, creating an inviting environment for freelancers and small teams to thrive during the festive season.
+
+============================================================
+IMAGE FILE: gpt_image_1_bureauxvalhaut_1767735466053.png

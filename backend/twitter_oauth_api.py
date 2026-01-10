@@ -10,9 +10,9 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from twitter_oauth_service import get_twitter_oauth_service
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.twitter_oauth_service import get_twitter_oauth_service
 
 router = APIRouter(prefix="/twitter", tags=["twitter"])
 

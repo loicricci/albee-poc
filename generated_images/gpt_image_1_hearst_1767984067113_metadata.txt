@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 19:41:07
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+**Prompt for DALL-E 3 Image Generation:**
+
+Create a photorealistic scene depicting an industrial space station designed for mining Bitcoin in space, capturing the essence of Hearst Mining's forward-thinking and sustainable approach. The station should be a fusion of futuristic architecture and industrial strength, floating majestically against the backdrop of a star-filled cosmos. The architecture should be sleek and geometric, constructed from modular components that emphasize a sense of permanence and reliability.
+
+Incorporate the BRIGHT NEON LIME GREEN #A7FB90 as glowing accents along the edges of the station, illuminating the intricate network of mining hardware and solar panels. Use NEUTRAL MEDIUM GRAY #9EB3A8 and DEEP PURE BLACK #0E0F0F throughout the structure to create a stark, high-contrast aesthetic that highlights the station's technical prowess. The BRIGHT PURE WHITE #E6F1E7 should be used for any digital displays or interfaces, giving a clean, modern feel.
+
+The composition should focus on the balance between vast space and the concentrated activity of the station, with beams of light casting dramatic shadows that enhance the high-tech atmosphere. Add subtle floating particles to convey a sense of zero-gravity and emphasize the station's dynamic energy. The mood should be calm and professional, instilling a sense of trust and innovation.
+
+Ensure the image is engaging and suitable for social media, capturing the viewer’s attention with its striking color palette and detailed visuals. Avoid any copyrighted or trademarked elements, focusing instead on creative interpretations of futuristic technology and space exploration.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767984067113.png

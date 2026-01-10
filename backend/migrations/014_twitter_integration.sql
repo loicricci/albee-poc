@@ -62,3 +62,5 @@ COMMENT ON TABLE twitter_fetch_logs IS 'Logs Twitter fetch operations for debugg
 
 
 
+
+

@@ -11,9 +11,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text, func
 from pydantic import BaseModel
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id, get_current_user
-from models import (
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id, get_current_user
+from backend.models import (
     Profile,
     Avee,
     Document,

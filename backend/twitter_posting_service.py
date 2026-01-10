@@ -14,8 +14,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 import logging
 
-from models import Post, Avee, ProfileTwitterConfig
-from twitter_oauth_service import get_twitter_oauth_service
+from backend.models import Post, Avee, ProfileTwitterConfig
+from backend.twitter_oauth_service import get_twitter_oauth_service
 
 logger = logging.getLogger(__name__)
 

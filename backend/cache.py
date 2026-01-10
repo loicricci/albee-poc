@@ -97,6 +97,7 @@ profile_cache = SimpleCache(default_ttl_seconds=300)  # 5 minutes
 agent_cache = SimpleCache(default_ttl_seconds=120)    # 2 minutes  
 feed_cache = SimpleCache(default_ttl_seconds=30)      # 30 seconds
 config_cache = SimpleCache(default_ttl_seconds=600)   # 10 minutes
+network_cache = SimpleCache(default_ttl_seconds=60)   # 1 minute for network/following data
 
 
 def cached(cache_instance: SimpleCache, key_func: Callable = None, ttl: Optional[int] = None):
@@ -153,6 +154,10 @@ def invalidate_user_cache(user_id: str):
     
     # Delete feed cache
     feed_cache.delete(f"feed:{user_id}")
+    
+    # Delete network cache
+    network_cache.delete(f"following:{user_id}")
+    network_cache.delete_pattern(f"search:{user_id}:")
 
 
 def invalidate_agent_cache(agent_id: str):
@@ -174,6 +179,7 @@ def get_all_cache_stats() -> dict:
         "agent_cache": agent_cache.get_stats(),
         "feed_cache": feed_cache.get_stats(),
         "config_cache": config_cache.get_stats(),
+        "network_cache": network_cache.get_stats(),
     }
 
 
@@ -184,7 +190,16 @@ def cleanup_all_caches():
         "agent_cache_cleaned": agent_cache.cleanup_expired(),
         "feed_cache_cleaned": feed_cache.cleanup_expired(),
         "config_cache_cleaned": config_cache.cleanup_expired(),
+        "network_cache_cleaned": network_cache.cleanup_expired(),
     }
+
+
+def invalidate_network_cache_for_user(user_id: str):
+    """Invalidate network cache when user follows/unfollows an agent"""
+    network_cache.delete(f"following:{user_id}")
+    network_cache.delete_pattern(f"search:{user_id}:")
+
+
 
 
 

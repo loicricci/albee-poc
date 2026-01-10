@@ -87,6 +87,20 @@ async function apiPost(path: string, query: Record<string, string>, token: strin
   return txt ? JSON.parse(txt) : { ok: true };
 }
 
+async function apiDelete(path: string, query: Record<string, string>, token: string): Promise<any> {
+  const url = new URL(`${apiBase()}${path}`);
+  Object.entries(query).forEach(([k, v]) => url.searchParams.set(k, v));
+
+  const res = await fetch(url.toString(), {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : { ok: true };
+}
+
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "";
   const date = new Date(dateStr);
@@ -107,7 +121,7 @@ function ProfileContent() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [updates, setUpdates] = useState<AgentUpdate[]>([]);
   const [updatesLoading, setUpdatesLoading] = useState(true);
-  const [following, setFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -122,7 +136,6 @@ function ProfileContent() {
       const token = await getAccessToken();
       const data = await apiGet<ProfileData>(`/profiles/${handle}`, token);
       setProfileData(data);
-      setFollowing(data.is_following);
 
       // Load updates if there's an agent
       if (data.agent?.id) {
@@ -156,21 +169,34 @@ function ProfileContent() {
   }
 
   async function handleFollow() {
-    if (!profileData?.agent?.handle) return;
+    if (!profileData?.agent?.handle || !profileData?.agent?.id) return;
 
-    setFollowing(true);
+    setIsFollowLoading(true);
     try {
       const token = await getAccessToken();
-      await apiPost(
-        "/relationships/follow-agent-by-handle",
-        { handle: profileData.agent.handle },
-        token
-      );
-      // Reload to update follower count
-      loadProfile();
+      
+      if (profileData.is_following) {
+        // Unfollow
+        await apiDelete(
+          "/relationships/unfollow-agent",
+          { avee_id: profileData.agent.id },
+          token
+        );
+      } else {
+        // Follow
+        await apiPost(
+          "/relationships/follow-agent-by-handle",
+          { handle: profileData.agent.handle },
+          token
+        );
+      }
+      
+      // Reload to update follower count and follow status
+      await loadProfile();
     } catch (e: any) {
-      setError(e?.message || "Failed to follow");
-      setFollowing(profileData.is_following);
+      setError(e?.message || "Failed to update follow status");
+    } finally {
+      setIsFollowLoading(false);
     }
   }
 
@@ -240,14 +266,14 @@ function ProfileContent() {
 
             <button
               onClick={handleFollow}
-              disabled={following}
+              disabled={isFollowLoading}
               className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-md transition-all ${
                 profileData.is_following
                   ? "border-2 border-[#2E3A59] text-[#2E3A59] bg-white"
                   : "bg-[#2E3A59] text-white hover:bg-[#1a2236]"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              {following ? (
+              {isFollowLoading ? (
                 <>
                   <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -399,14 +425,14 @@ function ProfileContent() {
 
                 <button
                   onClick={handleFollow}
-                  disabled={following}
+                  disabled={isFollowLoading}
                   className={`flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-base font-bold shadow-lg transition-all hover:shadow-xl hover:scale-105 ${
                     profileData.is_following
                       ? "border-2 border-[#2E3A59] text-[#2E3A59] bg-white hover:bg-gray-50 ring-2 ring-[#2E3A59]/20"
                       : "bg-gradient-to-r from-[#2E3A59] to-[#1a2236] text-white ring-2 ring-[#2E3A59]/20"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {following ? (
+                  {isFollowLoading ? (
                     <>
                       <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

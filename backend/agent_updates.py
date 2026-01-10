@@ -11,12 +11,12 @@ from typing import Optional, List
 import uuid
 from datetime import datetime
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from models import AgentUpdate, Avee, Document, DocumentChunk, AgentFollower, Notification
-from rag_utils import chunk_text
-from openai_embed import embed_texts
-from notifications_api import create_notification
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.models import AgentUpdate, Avee, Document, DocumentChunk, AgentFollower, Notification
+from backend.rag_utils import chunk_text
+from backend.openai_embed import embed_texts
+from backend.notifications_api import create_notification
 
 router = APIRouter()
 

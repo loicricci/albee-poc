@@ -67,3 +67,5 @@ COMMENT ON TABLE notifications IS 'Stores user notifications for various activit
 COMMENT ON COLUMN notifications.notification_type IS 'Type of notification: agent_update, post_like, post_comment, post_repost, autopost_success, new_message';
 COMMENT ON COLUMN notifications.is_read IS 'Whether the notification has been read (stored as string for consistency)';
 
+
+

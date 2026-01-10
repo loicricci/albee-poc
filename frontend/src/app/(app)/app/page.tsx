@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 import { ChatButton } from "@/components/ChatButton";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { QuickUpdateComposer } from "@/components/QuickUpdateComposer";
 import { CommentSection } from "@/components/CommentSection";
 import Toast, { ToastType } from "@/components/Toast";
+import { useAppData } from "@/contexts/AppDataContext";
+import { followAgent as apiFollowAgent, markAgentRead as apiMarkAgentRead, toggleLikePost, repostPost as apiRepostPost } from "@/lib/apiClient";
 
 type Profile = {
   user_id: string;
@@ -140,28 +141,6 @@ type Recommendation = {
   bio?: string | null;
   owner_user_id: string;
 };
-
-async function getAccessToken(): Promise<string> {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw new Error(error.message);
-  const token = data.session?.access_token;
-  if (!token) throw new Error("Not logged in.");
-  return token;
-}
-
-function apiBase() {
-  const base = process.env.NEXT_PUBLIC_API_BASE;
-  if (!base) throw new Error("Missing NEXT_PUBLIC_API_BASE.");
-  return base;
-}
-
-async function apiGet<T>(path: string, token: string): Promise<T> {
-  const res = await fetch(`${apiBase()}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-  return (await res.json()) as T;
-}
 
 function formatFollowers(count: number): string {
   if (count >= 1000000) {
@@ -717,28 +696,23 @@ function isValidImageUrl(url: string | null | undefined): boolean {
   }
 }
 
-async function followAgent(aveeId: string): Promise<void> {
-  const token = await getAccessToken();
-  const res = await fetch(`${apiBase()}/relationships/follow-agent?avee_id=${aveeId}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-}
-
 function LeftSidebar({
   profile,
   avees,
   recommendations,
   onFollowAgent,
+  isLoadingFeed,
+  followingIds,
 }: {
   profile: Profile | null;
   avees: Avee[];
   recommendations: Recommendation[];
   onFollowAgent: (aveeId: string) => void;
+  isLoadingFeed: boolean;
+  followingIds: Set<string>;
 }) {
+  // Filter out already-followed agents from recommendations (with safety check)
+  const filteredRecommendations = (recommendations || []).filter(rec => !followingIds.has(rec.id));
   // Validate the avatar URL
   const hasValidAvatar = profile && isValidImageUrl(profile.avatar_url);
   
@@ -817,8 +791,25 @@ function LeftSidebar({
           <p className="mt-1 text-xs text-[#2E3A59]/70">Discover new Agents</p>
         </div>
         <div className="divide-y divide-[#E6E6E6] p-4 space-y-4">
-          {recommendations.length > 0 ? (
-            recommendations.map((rec) => {
+          {isLoadingFeed ? (
+            // Skeleton loader for recommendations
+            <>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="pt-4 first:pt-0 animate-pulse">
+                  <div className="flex items-start gap-3 mb-2">
+                    <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-200" />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-24" />
+                      <div className="h-3 bg-gray-200 rounded w-16" />
+                    </div>
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded w-full mb-3" />
+                  <div className="h-8 bg-gray-200 rounded w-full" />
+                </div>
+              ))}
+            </>
+          ) : filteredRecommendations.length > 0 ? (
+            filteredRecommendations.map((rec) => {
               const hasValidRecAvatar = isValidImageUrl(rec.avatar_url);
               return (
                 <div key={rec.id} className="pt-4 first:pt-0">
@@ -897,187 +888,51 @@ function FeedLoadingSkeleton() {
 }
 
 export default function AppHomePage() {
-  const [loading, setLoading] = useState(true); // Start with loading true to prevent empty state flash
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [avees, setAvees] = useState<Avee[]>([]);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  // Get shared app data from context (no redundant API calls!)
+  const { 
+    profile, 
+    avees, 
+    recommendations, 
+    feed: feedData, 
+    unifiedFeed: unifiedFeedData,
+    isLoading: loading,
+    isLoadingFeed,
+    refreshFeed 
+  } = useAppData();
+  
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
-  const [feedData, setFeedData] = useState<FeedResponse | null>(null);
-  const [unifiedFeedData, setUnifiedFeedData] = useState<UnifiedFeedResponse | null>(null);
-  const [feedLoading, setFeedLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      // First, check onboarding status
-      try {
-        const token = await getAccessToken();
-        const statusRes = await fetch(`${apiBase()}/onboarding/status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (statusRes.ok) {
-          const statusData = await statusRes.json();
-          if (!statusData.completed) {
-            // Redirect to onboarding if not completed
-            router.push("/onboarding");
-            return;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to check onboarding status:", e);
-        // Continue to load app - might be an API issue
-      }
-
-      // Load from cache immediately for instant UI
-      try {
-        const cachedProfile = localStorage.getItem('app_profile');
-        const cachedAvees = localStorage.getItem('app_avees');
-        const cachedRecs = localStorage.getItem('app_recommendations');
-        const cachedFeed = localStorage.getItem('app_feed');
-        const cachedUnifiedFeed = localStorage.getItem('app_unified_feed');
-        
-        if (cachedProfile) setProfile(JSON.parse(cachedProfile));
-        if (cachedAvees) setAvees(JSON.parse(cachedAvees));
-        if (cachedRecs) setRecommendations(JSON.parse(cachedRecs));
-        if (cachedFeed) setFeedData(JSON.parse(cachedFeed));
-        if (cachedUnifiedFeed) setUnifiedFeedData(JSON.parse(cachedUnifiedFeed));
-      } catch (e) {
-        console.warn("Failed to load from cache:", e);
-      }
-
-      try {
-        const token = await getAccessToken();
-
-        // Fetch critical data first (profile + avees)
-        const [p, a] = await Promise.all([
-          apiGet<Profile>("/me/profile", token).catch(() => null),
-          apiGet<Avee[]>("/me/avees", token).catch(() => []),
-        ]);
-
-        if (!alive) return;
-
-        // Update immediately with critical data
-        if (p) {
-          setProfile(p);
-          localStorage.setItem('app_profile', JSON.stringify(p));
-        }
-        if (Array.isArray(a)) {
-          setAvees(a);
-          localStorage.setItem('app_avees', JSON.stringify(a));
-        }
-
-        // Fetch non-critical data in background (recommendations + feed)
-        const [r, f, uf] = await Promise.all([
-          apiGet<Recommendation[]>("/avees?limit=5", token).catch(() => []),
-          apiGet<FeedResponse>("/feed?limit=10", token).catch((e) => {
-            console.error("[Feed] Failed to fetch feed:", e);
-            return null;
-          }),
-          apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token).catch((e) => {
-            console.error("[UnifiedFeed] Failed to fetch unified feed:", e);
-            return null;
-          }),
-        ]);
-
-        if (!alive) return;
-
-        if (Array.isArray(r)) {
-          setRecommendations(r);
-          localStorage.setItem('app_recommendations', JSON.stringify(r));
-        }
-        if (f) {
-          setFeedData(f);
-          localStorage.setItem('app_feed', JSON.stringify(f));
-        }
-        if (uf) {
-          setUnifiedFeedData(uf);
-          localStorage.setItem('app_unified_feed', JSON.stringify(uf));
-        }
-      } catch (e: any) {
-        if (!alive) return;
-        console.error("Failed to load data:", e);
-      } finally {
-        if (alive) {
-          setLoading(false);
-          setFeedLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   const handleFollowAgent = async (aveeId: string) => {
+    // OPTIMISTIC UPDATE: Show immediate feedback to user
+    setFollowingIds(prev => new Set(prev).add(aveeId));
+    setToast({ message: "Agent followed successfully!", type: "success" });
+    
+    // BACKGROUND: Fire API and refresh without blocking UI
     try {
-      await followAgent(aveeId);
-      // Remove from recommendations and add to following
-      setRecommendations(prev => prev.filter(r => r.id !== aveeId));
-      setFollowingIds(prev => new Set(prev).add(aveeId));
+      await apiFollowAgent(aveeId);
       
-      // Refresh feeds to include newly followed agent
-      const token = await getAccessToken();
-      const [f, uf] = await Promise.all([
-        apiGet<FeedResponse>("/feed?limit=10", token),
-        apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token),
-      ]);
-      setFeedData(f);
-      setUnifiedFeedData(uf);
-      localStorage.setItem('app_feed', JSON.stringify(f));
-      localStorage.setItem('app_unified_feed', JSON.stringify(uf));
+      // Refresh feeds in background to load new recommendations
+      refreshFeed();
     } catch (e: any) {
+      // ROLLBACK: Revert optimistic update on failure
       console.error("Failed to follow agent:", e);
+      setFollowingIds(prev => {
+        const next = new Set(prev);
+        next.delete(aveeId);
+        return next;
+      });
       setToast({ message: "Failed to follow agent. Please try again.", type: "error" });
     }
   };
 
   const handleMarkAgentRead = async (agentId: string) => {
     try {
-      const token = await getAccessToken();
-      const res = await fetch(`${apiBase()}/feed/agent/${agentId}/mark-all-read`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiMarkAgentRead(agentId);
       
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      
-      // Optimistically update UI for old feed
-      setFeedData(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          total_unread: Math.max(0, prev.total_unread - (prev.items.find(i => i.agent_id === agentId)?.unread_count || 0)),
-          items: prev.items.map(item => 
-            item.agent_id === agentId 
-              ? { ...item, unread_count: 0, latest_update: item.latest_update ? { ...item.latest_update, is_read: true } : null }
-              : item
-          )
-        };
-      });
-
-      // Optimistically update unified feed
-      setUnifiedFeedData(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          items: prev.items.map(item => {
-            if (item.type === "update" && item.agent_id === agentId) {
-              return { ...item, is_read: true } as FeedUpdateItem;
-            }
-            return item;
-          })
-        };
-      });
-      
-      // Refresh feeds in background
-      const uf = await apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token);
-      setUnifiedFeedData(uf);
-      localStorage.setItem('app_unified_feed', JSON.stringify(uf));
+      // Refresh feed (cache will be invalidated and reloaded)
+      await refreshFeed();
     } catch (e: any) {
       console.error("Failed to mark as read:", e);
       setToast({ message: "Failed to mark updates as read. Please try again.", type: "error" });
@@ -1085,58 +940,25 @@ export default function AppHomePage() {
   };
 
   const handleLikePost = async (postId: string) => {
+    if (!unifiedFeedData) return;
+    
     try {
-      const token = await getAccessToken();
-      
-      // Check current like status - need to handle both posts and reposts
-      const currentItem = unifiedFeedData?.items.find(item => {
-        if (item.type === "post") {
-          return item.id === postId;
-        } else if (item.type === "repost") {
-          // For reposts, check the original post_id
-          return item.post_id === postId;
-        }
+      // Check current like status
+      const currentItem = unifiedFeedData.items.find(item => {
+        if (item.type === "post") return item.id === postId;
+        if (item.type === "repost") return item.post_id === postId;
         return false;
       });
       
       if (!currentItem || currentItem.type === "update") return;
       
       const wasLiked = currentItem.user_has_liked;
-      const method = wasLiked ? "DELETE" : "POST";
       
-      const res = await fetch(`${apiBase()}/posts/${postId}/like`, {
-        method,
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // Call API (cache will be invalidated)
+      await toggleLikePost(postId, wasLiked);
       
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      
-      // Optimistically update UI - update all items with this post_id
-      setUnifiedFeedData(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          items: prev.items.map(item => {
-            // Update regular posts
-            if (item.type === "post" && item.id === postId) {
-              return {
-                ...item,
-                user_has_liked: !wasLiked,
-                like_count: wasLiked ? item.like_count - 1 : item.like_count + 1
-              } as FeedPostItem;
-            }
-            // Update reposts of the same post
-            if (item.type === "repost" && item.post_id === postId) {
-              return {
-                ...item,
-                user_has_liked: !wasLiked,
-                like_count: wasLiked ? (item.like_count || 0) - 1 : (item.like_count || 0) + 1
-              };
-            }
-            return item;
-          })
-        };
-      });
+      // Refresh feed to show updated counts
+      await refreshFeed();
     } catch (e: any) {
       console.error("Failed to like/unlike post:", e);
       // Silently fail - like actions shouldn't be intrusive
@@ -1150,44 +972,12 @@ export default function AppHomePage() {
 
   const handleRepostPost = async (postId: string, comment: string) => {
     try {
-      const token = await getAccessToken();
-      
-      console.log("[Repost] Attempting to repost:", postId, "with comment:", comment);
-      
-      // Build URL with query parameters
-      const url = new URL(`${apiBase()}/posts/${postId}/share`);
-      url.searchParams.set("share_type", "repost");
-      if (comment && comment.trim()) {
-        url.searchParams.set("comment", comment.trim());
-      }
-      
-      console.log("[Repost] Request URL:", url.toString());
-      
-      const res = await fetch(url.toString(), {
-        method: "POST",
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-      });
-      
-      console.log("[Repost] Response status:", res.status);
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("[Repost] Error response:", errorText);
-        throw new Error(`HTTP ${res.status}: ${errorText}`);
-      }
-      
-      const result = await res.json();
-      console.log("[Repost] Success:", result);
+      await apiRepostPost(postId, comment);
       
       setToast({ message: "Post reposted successfully!", type: "success" });
       
-      // Refresh unified feed
-      const uf = await apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token);
-      setUnifiedFeedData(uf);
-      localStorage.setItem('app_unified_feed', JSON.stringify(uf));
+      // Refresh feed to show new repost
+      await refreshFeed();
     } catch (e: any) {
       console.error("[Repost] Failed:", e);
       const errorMsg = e.message || "Please try again.";
@@ -1220,7 +1010,7 @@ export default function AppHomePage() {
           </div>
         ) : (
           <div className="hidden lg:block">
-            <LeftSidebar profile={profile} avees={avees} recommendations={recommendations} onFollowAgent={handleFollowAgent} />
+            <LeftSidebar profile={profile} avees={avees} recommendations={recommendations} onFollowAgent={handleFollowAgent} isLoadingFeed={isLoadingFeed} followingIds={followingIds} />
           </div>
         )}
 
@@ -1245,24 +1035,13 @@ export default function AppHomePage() {
           <div className="mb-6">
             <QuickUpdateComposer agents={avees} onUpdatePosted={async () => {
               // Refresh feeds after posting update
-              try {
-                const token = await getAccessToken();
-                const [f, uf] = await Promise.all([
-                  apiGet<FeedResponse>("/feed?limit=10", token),
-                  apiGet<UnifiedFeedResponse>("/feed/unified?limit=20", token),
-                ]);
-                setFeedData(f);
-                setUnifiedFeedData(uf);
-                localStorage.setItem('app_feed', JSON.stringify(f));
-                localStorage.setItem('app_unified_feed', JSON.stringify(uf));
-              } catch (e) {
-                console.error("Failed to refresh feeds:", e);
-              }
+              await refreshFeed();
             }} />
           </div>
 
           {/* Feed Content */}
-          {loading ? (
+          {/* Show skeleton if: general loading OR feed is still loading */}
+          {loading || isLoadingFeed ? (
             <FeedLoadingSkeleton />
           ) : unifiedFeedData && unifiedFeedData.items.length > 0 ? (
             <div className="space-y-6">

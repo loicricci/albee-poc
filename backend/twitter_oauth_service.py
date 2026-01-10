@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 import logging
 
-from models import ProfileTwitterConfig, TwitterOAuthState
-from db import SessionLocal
+from backend.models import ProfileTwitterConfig, TwitterOAuthState
+from backend.db import SessionLocal
 
 logger = logging.getLogger(__name__)
 

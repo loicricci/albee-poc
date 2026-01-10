@@ -9,9 +9,9 @@ from sqlalchemy import text, desc, and_, or_
 from pydantic import BaseModel
 import json
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from models import (
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.models import (
     Post,
     PostLike,
     PostComment,
@@ -21,8 +21,8 @@ from models import (
     Avee,
     Notification
 )
-from twitter_posting_service import get_twitter_posting_service
-from notifications_api import create_notification
+from backend.twitter_posting_service import get_twitter_posting_service
+from backend.notifications_api import create_notification
 
 router = APIRouter()
 

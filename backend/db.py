@@ -31,9 +31,9 @@ else:
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,        # Verify connections before using (prevents stale connections)
-    pool_size=10,               # Increased from 5 - allows more concurrent requests
-    max_overflow=15,            # Increased from 10 - better handling of load spikes
-    pool_recycle=180,           # Reduced from 300s - fresher connections, prevents timeouts
+    pool_size=20,               # Maintain 20 connections (increased for high performance)
+    max_overflow=10,            # Allow 10 additional connections during peak load
+    pool_recycle=3600,          # Recycle connections after 1 hour (prevents long-lived issues)
     pool_timeout=10,            # Wait max 10s for connection from pool
     connect_args={
         "connect_timeout": 10,  # PostgreSQL connection timeout
@@ -47,5 +47,35 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
+
+
+def warmup_connection_pool(num_connections: int = 5):
+    """
+    Pre-warm the database connection pool by establishing connections.
+    This eliminates cold-start latency for the first user requests.
+    
+    Call this during server startup (in main.py startup event).
+    """
+    import time
+    from sqlalchemy import text
+    
+    start = time.time()
+    connections = []
+    
+    try:
+        # Establish multiple connections in parallel to warm the pool
+        for i in range(num_connections):
+            conn = engine.connect()
+            # Execute a simple query to fully establish the connection
+            conn.execute(text("SELECT 1"))
+            connections.append(conn)
+        
+        elapsed = (time.time() - start) * 1000
+        logger.info(f"[DB] ✓ Warmed up {num_connections} connections in {elapsed:.0f}ms")
+        
+    finally:
+        # Return connections to the pool
+        for conn in connections:
+            conn.close()
 
 

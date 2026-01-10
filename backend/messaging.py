@@ -10,13 +10,13 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_, func, desc
+from sqlalchemy import or_, and_, func, desc, text
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from models import (
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.models import (
     DirectConversation,
     DirectMessage,
     Profile,
@@ -24,15 +24,43 @@ from models import (
     Conversation,
     Message,
     AgentFollower,
-    Notification
+    Notification,
+    EscalationQueue
 )
-from orchestrator import OrchestratorEngine
+from backend.orchestrator import OrchestratorEngine
 from openai import OpenAI
-from notifications_api import create_notification
+from backend.notifications_api import create_notification
 
 openai_client = OpenAI()
 
 router = APIRouter(prefix="/messaging", tags=["messaging"])
+
+# Simple in-memory cache with TTL for conversations list
+_conversations_cache = {}
+_cache_ttl = 30  # seconds
+
+def _get_cache_key(user_id: str) -> str:
+    """Generate cache key for user conversations."""
+    return f"conversations:{user_id}"
+
+def _get_cached_conversations(user_id: str):
+    """Get cached conversations if not expired."""
+    cache_key = _get_cache_key(user_id)
+    if cache_key in _conversations_cache:
+        cached_data, timestamp = _conversations_cache[cache_key]
+        if (datetime.now() - timestamp).seconds < _cache_ttl:
+            print(f"[CACHE HIT] Returning cached conversations for user {user_id}")
+            return cached_data
+        else:
+            # Expired, remove from cache
+            del _conversations_cache[cache_key]
+    return None
+
+def _set_cached_conversations(user_id: str, data: dict):
+    """Cache conversations data with timestamp."""
+    cache_key = _get_cache_key(user_id)
+    _conversations_cache[cache_key] = (data, datetime.now())
+    print(f"[CACHE SET] Cached conversations for user {user_id}")
 
 
 def get_db():
@@ -55,6 +83,7 @@ class StartConversationRequest(BaseModel):
 
 class SendMessageRequest(BaseModel):
     content: str
+    force_orchestrator: bool = False  # Admin toggle to force orchestrator routing
 
 
 class ConversationResponse(BaseModel):
@@ -184,6 +213,7 @@ def _get_avee_info(db: Session, avee_id: uuid.UUID) -> dict:
             "handle": "unknown",
             "display_name": "Unknown Agent",
             "avatar_url": None,
+            "owner_user_id": None,
         }
     
     return {
@@ -191,6 +221,7 @@ def _get_avee_info(db: Session, avee_id: uuid.UUID) -> dict:
         "handle": avee.handle,
         "display_name": avee.display_name or avee.handle,
         "avatar_url": avee.avatar_url,
+        "owner_user_id": str(avee.owner_user_id) if avee.owner_user_id else None,
     }
 
 
@@ -259,9 +290,15 @@ async def _handle_agent_response(
             response_content = _execute_path_d_message(decision)
         
         elif decision.path == "E":
-            # Path E: Queue for human - no agent response
-            # Return None so a system message can be added
+            # Path E: Queue for human - create escalation entry and notify owner
             print("[ORCHESTRATOR] Path E - Queuing for human response")
+            await _execute_path_e_create_escalation(
+                db=db,
+                conversation_id=conversation.id,
+                user_id=user_id,
+                avee_id=agent_id,
+                message=message
+            )
             return None
         
         elif decision.path == "F":
@@ -306,6 +343,77 @@ async def _handle_agent_response(
         import traceback
         traceback.print_exc()
         # Rollback the transaction to clean up any failed queries
+        db.rollback()
+        return None
+
+
+async def _execute_path_e_create_escalation(
+    db: Session,
+    conversation_id: uuid.UUID,
+    user_id: uuid.UUID,
+    avee_id: uuid.UUID,
+    message: str
+) -> Optional[str]:
+    """
+    Execute Path E: Create escalation queue entry and notify agent owner.
+    
+    This is called when the orchestrator decides there's not enough context
+    to auto-answer, so the question needs to be forwarded to the agent owner.
+    
+    Returns:
+        Escalation ID if created, None if failed
+    """
+    try:
+        # Generate context summary (simplified - just use message)
+        context_summary = f"User asked: {message}"
+        
+        # Create escalation queue entry
+        escalation = EscalationQueue(
+            id=uuid.uuid4(),
+            conversation_id=conversation_id,
+            user_id=user_id,
+            avee_id=avee_id,
+            original_message=message,
+            context_summary=context_summary,
+            escalation_reason="forwarded",  # Type for Path E
+            status="pending"
+        )
+        db.add(escalation)
+        db.flush()  # Get the escalation ID
+        
+        # Notify the agent owner
+        avee = db.query(Avee).filter(Avee.id == avee_id).first()
+        if avee and avee.owner_user_id:
+            # Get sender info
+            sender_profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+            sender_name = sender_profile.display_name if sender_profile else "Someone"
+            
+            # Create notification
+            try:
+                await create_notification(
+                    db=db,
+                    user_id=avee.owner_user_id,
+                    notification_type="question_forwarded",
+                    title="New Question for Your Agent",
+                    message=f"{sender_name} asked: \"{message[:100]}...\"" if len(message) > 100 else f"{sender_name} asked: \"{message}\"",
+                    link=f"/messages/escalations",
+                    related_user_id=user_id,
+                    related_agent_id=avee_id
+                )
+            except Exception as e:
+                print(f"[PATH_E] Failed to create notification: {e}")
+                # Continue even if notification fails
+        
+        db.commit()
+        db.refresh(escalation)
+        
+        print(f"[PATH_E] Created escalation {escalation.id} for agent {avee_id}")
+        return str(escalation.id)
+        
+    except Exception as e:
+        print(f"[PATH_E] Error creating escalation: {e}")
+        import traceback
+        traceback.print_exc()
         db.rollback()
         return None
 
@@ -547,13 +655,24 @@ def list_conversations(
     Performance optimized:
     - Single batch query for all profiles
     - Single batch query for all agents
-    - Single batch query for unread counts
+    - Batch query for unread counts
+    - 30-second TTL cache
     """
+    import time
+    start_time = time.time()
+    
+    # Check cache first
+    cached = _get_cached_conversations(user_id)
+    if cached:
+        print(f"[PERF] Conversations cache hit: {(time.time() - start_time)*1000:.2f}ms")
+        return cached
+    
     user_uuid = _parse_uuid(user_id, "user_id")
     
     result = []
     
     # Get NEW direct conversations
+    query_start = time.time()
     conversations = (
         db.query(DirectConversation)
         .filter(
@@ -567,6 +686,7 @@ def list_conversations(
         .offset(offset)
         .all()
     )
+    print(f"[PERF] Direct conversations query: {(time.time() - query_start)*1000:.2f}ms")
     
     if not conversations:
         # Skip all the batch loading if no conversations
@@ -587,6 +707,7 @@ def list_conversations(
             avee_ids.add(conv.target_avee_id)
     
     # Batch load all profiles in ONE query
+    batch_start = time.time()
     profiles_query = db.query(Profile).filter(Profile.user_id.in_(participant_ids)).all()
     profiles_map = {str(p.user_id): {
         "user_id": str(p.user_id),
@@ -594,8 +715,10 @@ def list_conversations(
         "display_name": p.display_name or p.handle,
         "avatar_url": p.avatar_url,
     } for p in profiles_query}
+    print(f"[PERF] Batch load profiles: {(time.time() - batch_start)*1000:.2f}ms ({len(profiles_map)} profiles)")
     
     # Batch load all agents in ONE query  
+    batch_start = time.time()
     avees_map = {}
     if avee_ids:
         avees_query = db.query(Avee).filter(Avee.id.in_(avee_ids)).all()
@@ -604,24 +727,55 @@ def list_conversations(
             "handle": a.handle,
             "display_name": a.display_name or a.handle,
             "avatar_url": a.avatar_url,
+            "owner_user_id": str(a.owner_user_id) if a.owner_user_id else None,
         } for a in avees_query}
+    print(f"[PERF] Batch load agents: {(time.time() - batch_start)*1000:.2f}ms ({len(avees_map)} agents)")
     
-    # Batch load unread counts in ONE query using subquery
+    # OPTIMIZED: Batch load unread counts in ONE query with CASE statement
     unread_counts_map = {}
-    for conv in conversations:
-        is_participant1 = conv.participant1_user_id == user_uuid
-        read_field = "read_by_participant1" if is_participant1 else "read_by_participant2"
+    if conversations:
+        # Build arrays for each participant type
+        participant1_conv_ids = [str(c.id) for c in conversations if c.participant1_user_id == user_uuid]
+        participant2_conv_ids = [str(c.id) for c in conversations if c.participant2_user_id == user_uuid]
         
-        unread_count = (
-            db.query(DirectMessage)
-            .filter(
-                DirectMessage.conversation_id == conv.id,
-                getattr(DirectMessage, read_field) == "false",
-                DirectMessage.sender_user_id != user_uuid,
-            )
-            .count()
-        )
-        unread_counts_map[str(conv.id)] = unread_count
+        unread_counts_data = []
+        
+        # Query for participant1 conversations
+        # Note: Using IN clause with individual UUIDs to avoid parameter binding issues with array casting
+        if participant1_conv_ids:
+            # Build a comma-separated list of quoted UUIDs for the IN clause
+            conv_ids_str = ",".join([f"'{cid}'" for cid in participant1_conv_ids])
+            result1 = db.execute(
+                text(f"""
+                    SELECT conversation_id, COUNT(*) as unread_count
+                    FROM direct_messages
+                    WHERE conversation_id IN ({conv_ids_str})
+                      AND read_by_participant1 = 'false'
+                      AND sender_user_id != :user_id
+                    GROUP BY conversation_id
+                """),
+                {"user_id": str(user_uuid)}
+            ).fetchall()
+            unread_counts_data.extend(result1)
+        
+        # Query for participant2 conversations
+        if participant2_conv_ids:
+            conv_ids_str = ",".join([f"'{cid}'" for cid in participant2_conv_ids])
+            result2 = db.execute(
+                text(f"""
+                    SELECT conversation_id, COUNT(*) as unread_count
+                    FROM direct_messages
+                    WHERE conversation_id IN ({conv_ids_str})
+                      AND read_by_participant2 = 'false'
+                      AND sender_user_id != :user_id
+                    GROUP BY conversation_id
+                """),
+                {"user_id": str(user_uuid)}
+            ).fetchall()
+            unread_counts_data.extend(result2)
+        
+        # Build map from results
+        unread_counts_map = {str(row[0]): row[1] for row in unread_counts_data}
     
     # Build results using cached data
     for conv in conversations:
@@ -641,8 +795,12 @@ def list_conversations(
         })
         
         target_avee = None
+        is_agent_owner = False
         if conv.chat_type == "agent" and conv.target_avee_id:
             target_avee = avees_map.get(str(conv.target_avee_id))
+            # Check if current user owns this agent
+            if target_avee and target_avee.get("owner_user_id") == str(user_uuid):
+                is_agent_owner = True
         
         unread_count = unread_counts_map.get(str(conv.id), 0)
         
@@ -655,52 +813,97 @@ def list_conversations(
             "last_message_preview": conv.last_message_preview,
             "unread_count": unread_count,
             "is_legacy": False,
+            "is_agent_owner": is_agent_owner,
         })
     
-    # Get LEGACY conversations from old system
+    # Get LEGACY conversations from old system - OPTIMIZED WITH BATCH QUERIES
+    legacy_start = time.time()
     legacy_conversations = (
         db.query(Conversation)
         .filter(Conversation.user_id == user_uuid)
         .order_by(desc(Conversation.created_at))
         .all()
     )
+    print(f"[PERF] Legacy conversations query: {(time.time() - legacy_start)*1000:.2f}ms ({len(legacy_conversations)} conversations)")
     
-    for legacy_conv in legacy_conversations:
-        # Get the agent info
-        if legacy_conv.avee_id:
-            avee = db.query(Avee).filter(Avee.id == legacy_conv.avee_id).first()
-            if avee:
-                # Get last message
-                last_msg = (
-                    db.query(Message)
-                    .filter(Message.conversation_id == legacy_conv.id)
-                    .order_by(desc(Message.created_at))
-                    .first()
-                )
-                
-                # Get owner profile
-                owner_profile = _get_profile_info(db, avee.owner_user_id)
-                
-                result.append({
-                    "id": str(legacy_conv.id),
-                    "chat_type": "agent",
-                    "other_participant": owner_profile,
-                    "target_avee": {
-                        "id": str(avee.id),
-                        "handle": avee.handle,
-                        "display_name": avee.display_name or avee.handle,
-                        "avatar_url": avee.avatar_url,
-                    },
-                    "last_message_at": last_msg.created_at.isoformat() if last_msg else legacy_conv.created_at.isoformat(),
-                    "last_message_preview": last_msg.content[:100] if last_msg else None,
-                    "unread_count": 0,  # Legacy system doesn't track read status
-                    "is_legacy": True,
-                })
+    if legacy_conversations:
+        # BATCH 1: Get all legacy avees in ONE query
+        legacy_avee_ids = [c.avee_id for c in legacy_conversations if c.avee_id]
+        legacy_avees_map = {}
+        if legacy_avee_ids:
+            legacy_avees = db.query(Avee).filter(Avee.id.in_(legacy_avee_ids)).all()
+            legacy_avees_map = {str(a.id): a for a in legacy_avees}
+        
+        # BATCH 2: Get last message for each conversation in ONE query
+        legacy_conv_ids = [c.id for c in legacy_conversations]
+        # Use IN clause with individual UUIDs to avoid parameter binding issues with array casting
+        conv_ids_str = ",".join([f"'{str(cid)}'" for cid in legacy_conv_ids])
+        last_messages_query = db.execute(
+            text(f"""
+                SELECT DISTINCT ON (conversation_id) 
+                    conversation_id, content, created_at
+                FROM messages
+                WHERE conversation_id IN ({conv_ids_str})
+                ORDER BY conversation_id, created_at DESC
+            """)
+        ).fetchall()
+        last_messages_map = {str(row[0]): row for row in last_messages_query}
+        
+        # BATCH 3: Get all owner profiles in ONE query
+        owner_user_ids = list(set([a.owner_user_id for a in legacy_avees_map.values()]))
+        owner_profiles_map = {}
+        if owner_user_ids:
+            owner_profiles = db.query(Profile).filter(Profile.user_id.in_(owner_user_ids)).all()
+            owner_profiles_map = {str(p.user_id): {
+                "user_id": str(p.user_id),
+                "handle": p.handle,
+                "display_name": p.display_name or p.handle,
+                "avatar_url": p.avatar_url,
+            } for p in owner_profiles}
+        
+        # Now build results WITHOUT additional queries
+        for legacy_conv in legacy_conversations:
+            if legacy_conv.avee_id:
+                avee = legacy_avees_map.get(str(legacy_conv.avee_id))
+                if avee:
+                    # Get last message from map
+                    last_msg_data = last_messages_map.get(str(legacy_conv.id))
+                    
+                    # Get owner profile from map
+                    owner_profile = owner_profiles_map.get(str(avee.owner_user_id), {
+                        "user_id": str(avee.owner_user_id),
+                        "handle": "unknown",
+                        "display_name": "Unknown User",
+                        "avatar_url": None,
+                    })
+                    
+                    result.append({
+                        "id": str(legacy_conv.id),
+                        "chat_type": "agent",
+                        "other_participant": owner_profile,
+                        "target_avee": {
+                            "id": str(avee.id),
+                            "handle": avee.handle,
+                            "display_name": avee.display_name or avee.handle,
+                            "avatar_url": avee.avatar_url,
+                        },
+                        "last_message_at": last_msg_data[2].isoformat() if last_msg_data else legacy_conv.created_at.isoformat(),
+                        "last_message_preview": last_msg_data[1][:100] if last_msg_data else None,
+                        "unread_count": 0,  # Legacy system doesn't track read status
+                        "is_legacy": True,
+                    })
     
     # Sort all conversations by last message time
     result.sort(key=lambda x: x["last_message_at"] or "", reverse=True)
     
-    return {"conversations": result}
+    # Cache the result
+    result_data = {"conversations": result}
+    _set_cached_conversations(user_id, result_data)
+    
+    total_time = (time.time() - start_time) * 1000
+    print(f"[PERF] TOTAL list_conversations time: {total_time:.2f}ms for {len(result)} conversations")
+    
+    return result_data
 
 
 @router.post("/conversations")
@@ -816,24 +1019,97 @@ def get_conversation_messages(
         # Reverse to show chronologically
         messages = list(reversed(messages))
         
-        # Mark messages as read
+        # Mark messages as read - OPTIMIZED: Use bulk update instead of ORM loop
         is_participant1 = conv.participant1_user_id == user_uuid
+        
+        # Collect IDs of messages that need to be marked as read
+        messages_to_mark = []
         for msg in messages:
             if msg.sender_user_id != user_uuid:
                 if is_participant1 and msg.read_by_participant1 == "false":
-                    msg.read_by_participant1 = "true"
+                    messages_to_mark.append(str(msg.id))
                 elif not is_participant1 and msg.read_by_participant2 == "false":
-                    msg.read_by_participant2 = "true"
-        db.commit()
+                    messages_to_mark.append(str(msg.id))
         
-        # Build response
+        # Use bulk update instead of ORM (much faster)
+        if messages_to_mark:
+            read_field = "read_by_participant1" if is_participant1 else "read_by_participant2"
+            msg_ids_str = ",".join([f"'{mid}'" for mid in messages_to_mark])
+            db.execute(
+                text(f"""
+                    UPDATE direct_messages 
+                    SET {read_field} = 'true' 
+                    WHERE id IN ({msg_ids_str})
+                """)
+            )
+            db.commit()
+        
+        # Build response - OPTIMIZED: Batch load all sender info using raw SQL (faster than ORM)
+        # Collect all unique sender IDs
+        user_ids = set()
+        avee_ids = set()
+        for msg in messages:
+            if msg.sender_type == "user" and msg.sender_user_id:
+                user_ids.add(str(msg.sender_user_id))
+            elif msg.sender_type == "agent" and msg.sender_avee_id:
+                avee_ids.add(str(msg.sender_avee_id))
+        
+        # Batch load all profiles using RAW SQL (much faster than ORM for simple lookups)
+        profiles_map = {}
+        if user_ids:
+            user_ids_str = ",".join([f"'{uid}'" for uid in user_ids])
+            profile_results = db.execute(
+                text(f"""
+                    SELECT user_id, handle, display_name, avatar_url 
+                    FROM profiles 
+                    WHERE user_id IN ({user_ids_str})
+                """)
+            ).fetchall()
+            profiles_map = {str(row[0]): {
+                "user_id": str(row[0]),
+                "handle": row[1],
+                "display_name": row[2] or row[1],
+                "avatar_url": row[3],
+            } for row in profile_results}
+        
+        # Batch load all avees using RAW SQL
+        avees_map = {}
+        if avee_ids:
+            avee_ids_str = ",".join([f"'{aid}'" for aid in avee_ids])
+            avee_results = db.execute(
+                text(f"""
+                    SELECT id, handle, display_name, avatar_url, owner_user_id
+                    FROM avees 
+                    WHERE id IN ({avee_ids_str})
+                """)
+            ).fetchall()
+            avees_map = {str(row[0]): {
+                "id": str(row[0]),
+                "handle": row[1],
+                "display_name": row[2] or row[1],
+                "avatar_url": row[3],
+                "owner_user_id": str(row[4]) if row[4] else None,
+            } for row in avee_results}
+        
+        # Build result using cached maps (no more individual queries!)
         result = []
         for msg in messages:
             sender_info = None
             if msg.sender_type == "user" and msg.sender_user_id:
-                sender_info = _get_profile_info(db, msg.sender_user_id)
+                sender_info = profiles_map.get(str(msg.sender_user_id), {
+                    "user_id": str(msg.sender_user_id),
+                    "handle": "unknown",
+                    "display_name": "Unknown User",
+                    "avatar_url": None,
+                })
             elif msg.sender_type == "agent" and msg.sender_avee_id:
-                sender_info = _get_avee_info(db, msg.sender_avee_id)
+                sender_info = avees_map.get(str(msg.sender_avee_id), {
+                    "id": str(msg.sender_avee_id),
+                    "handle": "unknown",
+                    "display_name": "Unknown Agent",
+                    "avatar_url": None,
+                    "owner_user_id": None,
+                })
             
             result.append({
                 "id": str(msg.id),
@@ -865,11 +1141,14 @@ def get_conversation_messages(
         .all()
     )
     
-    # Build response for legacy messages
+    # Build response for legacy messages - OPTIMIZED: Cache profile info
     result = []
     avee = None
     if legacy_conv.avee_id:
         avee = db.query(Avee).filter(Avee.id == legacy_conv.avee_id).first()
+    
+    # Pre-fetch user profile once (instead of in loop)
+    user_profile_info = _get_profile_info(db, user_uuid)
     
     for msg in messages:
         sender_info = None
@@ -884,7 +1163,7 @@ def get_conversation_messages(
                 "avatar_url": avee.avatar_url,
             }
         elif msg.role == "user":
-            sender_info = _get_profile_info(db, user_uuid)
+            sender_info = user_profile_info  # Use cached profile
         
         result.append({
             "id": str(msg.id),
@@ -1069,6 +1348,7 @@ def list_agent_conversations(
     """
     List all conversations where users are chatting with this user's agents.
     This allows profile owners to see all conversations with their agents.
+    Returns anonymized user info (just initials) for privacy.
     """
     user_uuid = _parse_uuid(user_id, "user_id")
     
@@ -1077,7 +1357,7 @@ def list_agent_conversations(
     avee_ids = [avee.id for avee in my_avees]
     
     if not avee_ids:
-        return {"conversations": []}
+        return {"conversations": [], "agents": []}
     
     # Get all conversations where someone is chatting with these agents
     conversations = (
@@ -1090,6 +1370,50 @@ def list_agent_conversations(
         .all()
     )
     
+    # PERFORMANCE FIX: Batch load all data instead of N+1 queries
+    if not conversations:
+        return {"conversations": [], "agents": [{
+            "id": str(avee.id),
+            "handle": avee.handle,
+            "display_name": avee.display_name or avee.handle,
+            "avatar_url": avee.avatar_url,
+        } for avee in my_avees]}
+    
+    # Collect all user IDs and conversation IDs for batch queries
+    other_user_ids = set()
+    conversation_ids = []
+    for conv in conversations:
+        other_user_id = (
+            conv.participant1_user_id
+            if conv.participant1_user_id != user_uuid
+            else conv.participant2_user_id
+        )
+        other_user_ids.add(other_user_id)
+        conversation_ids.append(conv.id)
+    
+    # Batch 1: Load all profiles in one query
+    profiles_query = db.query(Profile).filter(Profile.user_id.in_(other_user_ids)).all()
+    profiles_map = {p.user_id: p for p in profiles_query}
+    
+    # Batch 2: Build avees map from already-loaded my_avees
+    avees_map = {avee.id: {
+        "id": str(avee.id),
+        "handle": avee.handle,
+        "display_name": avee.display_name or avee.handle,
+        "avatar_url": avee.avatar_url,
+        "owner_user_id": str(avee.owner_user_id) if avee.owner_user_id else None,
+    } for avee in my_avees}
+    
+    # Batch 3: Get message counts in one query using GROUP BY
+    msg_counts_query = db.query(
+        DirectMessage.conversation_id,
+        func.count(DirectMessage.id).label('count')
+    ).filter(
+        DirectMessage.conversation_id.in_(conversation_ids)
+    ).group_by(DirectMessage.conversation_id).all()
+    msg_counts_map = {row[0]: row[1] for row in msg_counts_query}
+    
+    # Build results from cached maps (no more N+1!)
     result = []
     for conv in conversations:
         # Get the other participant (not the owner)
@@ -1099,30 +1423,168 @@ def list_agent_conversations(
             else conv.participant2_user_id
         )
         
-        # Get info
-        other_profile = _get_profile_info(db, other_user_id)
-        target_avee = _get_avee_info(db, conv.target_avee_id)
+        # Get anonymized user info from batch-loaded profiles
+        other_profile = profiles_map.get(other_user_id)
+        anonymized_user = {
+            "initials": (other_profile.display_name[:2].upper() if other_profile and other_profile.display_name else "??"),
+            "avatar_color": f"#{hash(str(other_user_id)) % 0xFFFFFF:06x}",  # Consistent color based on user ID
+        }
         
-        # Get last few messages for context
-        recent_messages = (
-            db.query(DirectMessage)
-            .filter(DirectMessage.conversation_id == conv.id)
-            .order_by(desc(DirectMessage.created_at))
-            .limit(1)
-            .all()
-        )
+        # Get avee info from batch-loaded map
+        target_avee = avees_map.get(conv.target_avee_id, {
+            "id": str(conv.target_avee_id),
+            "handle": "unknown",
+            "display_name": "Unknown Agent",
+            "avatar_url": None,
+            "owner_user_id": None,
+        })
+        
+        # Get message count from batch-loaded map
+        message_count = msg_counts_map.get(conv.id, 0)
         
         result.append({
             "id": str(conv.id),
             "chat_type": conv.chat_type,
-            "other_participant": other_profile,
+            "anonymized_user": anonymized_user,
             "target_avee": target_avee,
             "last_message_at": conv.last_message_at.isoformat() if conv.last_message_at else None,
             "last_message_preview": conv.last_message_preview,
-            "message_count": db.query(DirectMessage).filter(DirectMessage.conversation_id == conv.id).count(),
+            "message_count": message_count,
         })
     
-    return {"conversations": result}
+    # Return agent info for filtering
+    agents = [{
+        "id": str(avee.id),
+        "handle": avee.handle,
+        "display_name": avee.display_name or avee.handle,
+        "avatar_url": avee.avatar_url,
+    } for avee in my_avees]
+    
+    return {"conversations": result, "agents": agents}
+
+
+@router.get("/agent-insights")
+def get_agent_insights(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Get insights about conversations with the user's agents.
+    Includes popular topics, question frequency, and engagement stats.
+    """
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Get all agents owned by this user
+    my_avees = db.query(Avee).filter(Avee.owner_user_id == user_uuid).all()
+    avee_ids = [avee.id for avee in my_avees]
+    
+    if not avee_ids:
+        return {
+            "total_conversations": 0,
+            "total_messages": 0,
+            "pending_escalations": 0,
+            "answered_escalations": 0,
+            "recent_questions": [],
+            "agents": []
+        }
+    
+    # Get conversation stats
+    total_conversations = db.query(DirectConversation).filter(
+        DirectConversation.chat_type == "agent",
+        DirectConversation.target_avee_id.in_(avee_ids),
+    ).count()
+    
+    # Get message stats (last 30 days)
+    from datetime import datetime, timedelta
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    total_messages = db.query(DirectMessage).join(
+        DirectConversation,
+        DirectMessage.conversation_id == DirectConversation.id
+    ).filter(
+        DirectConversation.target_avee_id.in_(avee_ids),
+        DirectMessage.created_at >= thirty_days_ago
+    ).count()
+    
+    # Get escalation stats
+    pending_escalations = db.query(EscalationQueue).filter(
+        EscalationQueue.avee_id.in_(avee_ids),
+        EscalationQueue.status == "pending"
+    ).count()
+    
+    answered_escalations = db.query(EscalationQueue).filter(
+        EscalationQueue.avee_id.in_(avee_ids),
+        EscalationQueue.status == "answered"
+    ).count()
+    
+    # Get recent questions (last 10 user messages to agents)
+    recent_user_messages = db.query(DirectMessage).join(
+        DirectConversation,
+        DirectMessage.conversation_id == DirectConversation.id
+    ).filter(
+        DirectConversation.target_avee_id.in_(avee_ids),
+        DirectMessage.sender_type == "user"
+    ).order_by(desc(DirectMessage.created_at)).limit(10).all()
+    
+    recent_questions = [{
+        "content": msg.content[:150] + ("..." if len(msg.content) > 150 else ""),
+        "created_at": msg.created_at.isoformat() if msg.created_at else None,
+    } for msg in recent_user_messages]
+    
+    # PERFORMANCE FIX: Batch all per-agent stats in 3 queries instead of 3*N queries
+    # 1. Batch conversation counts per agent
+    conv_counts_query = db.query(
+        DirectConversation.target_avee_id,
+        func.count(DirectConversation.id).label('count')
+    ).filter(
+        DirectConversation.target_avee_id.in_(avee_ids)
+    ).group_by(DirectConversation.target_avee_id).all()
+    conv_counts_map = {str(row[0]): row[1] for row in conv_counts_query}
+    
+    # 2. Batch message counts per agent (last 30 days)
+    msg_counts_query = db.query(
+        DirectConversation.target_avee_id,
+        func.count(DirectMessage.id).label('count')
+    ).join(
+        DirectConversation,
+        DirectMessage.conversation_id == DirectConversation.id
+    ).filter(
+        DirectConversation.target_avee_id.in_(avee_ids),
+        DirectMessage.created_at >= thirty_days_ago
+    ).group_by(DirectConversation.target_avee_id).all()
+    msg_counts_map = {str(row[0]): row[1] for row in msg_counts_query}
+    
+    # 3. Batch pending escalation counts per agent
+    pending_counts_query = db.query(
+        EscalationQueue.avee_id,
+        func.count(EscalationQueue.id).label('count')
+    ).filter(
+        EscalationQueue.avee_id.in_(avee_ids),
+        EscalationQueue.status == "pending"
+    ).group_by(EscalationQueue.avee_id).all()
+    pending_counts_map = {str(row[0]): row[1] for row in pending_counts_query}
+    
+    # Build agent stats from cached maps (no more N+1!)
+    agent_stats = []
+    for avee in my_avees:
+        agent_stats.append({
+            "id": str(avee.id),
+            "handle": avee.handle,
+            "display_name": avee.display_name or avee.handle,
+            "avatar_url": avee.avatar_url,
+            "conversation_count": conv_counts_map.get(str(avee.id), 0),
+            "message_count_30d": msg_counts_map.get(str(avee.id), 0),
+            "pending_escalations": pending_counts_map.get(str(avee.id), 0),
+        })
+    
+    return {
+        "total_conversations": total_conversations,
+        "total_messages": total_messages,
+        "pending_escalations": pending_escalations,
+        "answered_escalations": answered_escalations,
+        "recent_questions": recent_questions,
+        "agents": agent_stats
+    }
 
 
 @router.post("/conversations/{conversation_id}/stream")
@@ -1208,7 +1670,8 @@ async def stream_message(
         )
     
     # ADMIN AGENT MODE: Direct response without orchestrator (for admin-owned agents)
-    if is_admin_agent:
+    # Unless force_orchestrator is set (admin toggle for testing)
+    if is_admin_agent and not payload.force_orchestrator:
         print(f"[STREAM] Admin agent mode activated for agent {recipient_agent.id} - bypassing orchestrator")
         async def admin_agent_stream():
             import json
@@ -1323,7 +1786,8 @@ async def stream_message(
         )
     
     # OWNER MODE: Direct response without orchestrator (when user owns the agent)
-    if is_owner:
+    # Unless force_orchestrator is set (admin toggle for testing)
+    if is_owner and not payload.force_orchestrator:
         print(f"[STREAM] Owner mode activated for agent {recipient_agent.id}")
         async def owner_stream():
             import json
@@ -1438,7 +1902,9 @@ async def stream_message(
         )
     
     # USER MODE: Route through orchestrator
-    print(f"[STREAM] User mode - routing through orchestrator")
+    # Also activated when force_orchestrator=True (admin toggle)
+    mode_reason = "force_orchestrator=True" if payload.force_orchestrator else "user mode"
+    print(f"[STREAM] Routing through orchestrator ({mode_reason})")
     async def agent_stream():
         import json
         
@@ -1511,11 +1977,20 @@ async def stream_message(
                 yield f"data: {json.dumps({'event': 'escalation_offered', 'escalation_data': decision.action_data})}\n\n"
             
             elif decision.path == "E":
-                # Path E: Queue for human - no agent response
+                # Path E: Queue for human - create escalation and notify owner
                 system_msg_content = "💭 The AI doesn't have enough context to answer this. The person will reply when they're available."
                 for token in system_msg_content.split():
                     yield f"data: {json.dumps({'token': token + ' '})}\n\n"
                     await asyncio.sleep(0.01)
+                
+                # Create escalation queue entry and notify agent owner
+                escalation_id = await _execute_path_e_create_escalation(
+                    db=db,
+                    conversation_id=conv_uuid,
+                    user_id=user_uuid,
+                    avee_id=recipient_agent.id,
+                    message=payload.content
+                )
                 
                 # Store system message
                 system_msg = DirectMessage(
@@ -1531,7 +2006,7 @@ async def stream_message(
                 db.commit()
                 db.refresh(system_msg)
                 
-                yield f"data: {json.dumps({'event': 'complete', 'message_id': str(system_msg.id), 'decision_path': 'E', 'queued_for_human': True})}\n\n"
+                yield f"data: {json.dumps({'event': 'complete', 'message_id': str(system_msg.id), 'decision_path': 'E', 'queued_for_human': True, 'escalation_id': escalation_id})}\n\n"
                 return
             
             elif decision.path == "F":

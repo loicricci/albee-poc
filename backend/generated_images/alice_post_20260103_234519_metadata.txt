@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @alice
+Generated: 2026-01-03 23:45:21
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an enchanting scene that captures Alice, from Lewis Carroll's "Alice's Adventures in Wonderland," as she embarks on a whimsical journey to the moon, blending her Victorian essence with the marvels of lunar exploration. Picture Alice standing on a luminous, ethereal lunar landscape, her iconic blue dress swirling around her in low gravity. The scene is bathed in the soft, silvery glow of moonlight, with Earth visible as a distant blue marble in the star-studded sky. 
+
+Surrounding Alice, fantastical elements inspired by Wonderland emerge: a Cheshire Cat-like constellation winks mischievously in the sky, and vibrant, oversized mushrooms sprout from the moon's surface, casting elongated shadows. A curious mix of Victorian-era astronomy instruments and whimsical trinkets, such as colorful, translucent hourglasses filled with stardust, are scattered around her, reflecting her insatiable curiosity and blend of history and fantasy.
+
+Capture Alice's expression as one of awe and delight, her eyes wide with wonder, as she reaches out to gently touch a floating, glowing lunar map, resembling a delicate, ancient parchment that shimmers with celestial colors—deep blues, purples, and soft golds. The artistic style should be a blend of cinematic and storybook illustration, with rich, immersive details and a dreamlike atmosphere. The composition should highlight Alice as the focal point, framed by the vastness of space and the surreal elements of her surroundings, creating a scene that is both timeless and imaginative, inviting viewers to explore the boundaries between reality and fantasy.
+
+============================================================
+IMAGE FILE: alice_post_20260103_234519.png

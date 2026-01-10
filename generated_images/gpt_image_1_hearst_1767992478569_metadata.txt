@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 22:01:18
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image that embodies the essence of Hearst Mining, an industrial Bitcoin mining company, with a focus on their innovative and sustainable approach. Capture the persona's energy by depicting a futuristic industrial scene featuring a vast, high-tech Bitcoin mining facility. The facility is designed with sleek, geometric architecture and grid-based layouts, all bathed in a dominant palette of colors: vibrant neon lime green (#A7FB90) illuminating the scene like a digital aurora, contrasting with deep pure black (#0E0F0F) structures, and highlighted by the brightness of pure whites (#E6F1E7, #F2F2F2) creating a sense of cutting-edge technology.
+
+Incorporate the theme of "Satoshi Nakamoto white" by featuring abstract elements symbolizing the mysterious and foundational nature of Bitcoin. Imagine white, ethereal figures or code-like patterns floating through the space, representing the enigmatic creator and the technology's origins. The atmosphere is calm yet charged with energy, reflecting a professional and trustworthy mood. The scene is lit with a combination of natural and synthetic lighting, casting high-contrast shadows and highlights throughout.
+
+The composition should be wide and cinematic, allowing viewers to immerse themselves in the technological marvel and industrious spirit. Include subtle references to music, art, and science through abstract murals or installations that blend seamlessly with the industrial background. Ensure the use of FK Grotesk font is visible through informational displays, maintaining the clean and technical aesthetic. The image should be high-detail and suitable for social media, capturing the viewer's attention with its professional and engaging quality.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767992478569.png

@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import Column, Text, String, ForeignKey, DateTime, func, Numeric, Boolean
 from sqlalchemy.dialects.postgresql import UUID
-from db import Base
+from backend.db import Base
 from sqlalchemy import Enum
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 from sqlalchemy import Integer
@@ -92,6 +92,15 @@ class Avee(Base):
     reference_image_url = Column(Text)  # URL to reference image for OpenAI Image Edits
     reference_image_mask_url = Column(Text)  # URL to optional mask image (if null, entire image is edited)
     image_edit_instructions = Column(Text)  # Optional default instructions for image editing prompts
+
+    # NEW (Phase 9): Branding guidelines for coherent image generation
+    branding_guidelines = Column(Text)  # Colors, fonts, visual style preferences for image generation
+
+    # NEW (Phase 10): Logo watermark for autopost images
+    logo_enabled = Column(Boolean, default=False)  # Toggle to enable/disable logo on autoposts
+    logo_url = Column(Text)  # URL to the uploaded PNG logo in Supabase storage
+    logo_position = Column(String, default="bottom-right")  # Corner: bottom-right, bottom-left, top-right, top-left
+    logo_size = Column(String, default="10")  # Size percentage: 5-100 (legacy: small, medium, large)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -432,7 +441,7 @@ class OrchestratorConfig(Base):
     escalation_enabled = Column(String, nullable=False, default="true")  # Store as string for consistency
     
     # Auto-answer settings
-    auto_answer_confidence_threshold = Column(Integer, nullable=False, default=75)  # Store as int 0-100
+    auto_answer_confidence_threshold = Column(Numeric(3, 2), nullable=False, default=0.75)  # Store as decimal 0.00-1.00
     clarification_enabled = Column(String, nullable=False, default="true")
     
     # Access control (JSON stored as Text)

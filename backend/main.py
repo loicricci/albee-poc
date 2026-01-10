@@ -10,23 +10,23 @@ import io
 
 from pydantic import BaseModel  # ✅ added
 
-from models import Document, DocumentChunk
-from rag_utils import chunk_text
-from openai_embed import embed_texts
-import voice_service
-from performance import log_performance, track_query, metrics
-from cache import (
-    profile_cache, agent_cache, config_cache,
-    invalidate_user_cache, invalidate_agent_cache,
+from backend.models import Document, DocumentChunk
+from backend.rag_utils import chunk_text
+from backend.openai_embed import embed_texts
+import backend.voice_service as voice_service
+from backend.performance import log_performance, track_query, metrics
+from backend.cache import (
+    profile_cache, agent_cache, config_cache, network_cache,
+    invalidate_user_cache, invalidate_agent_cache, invalidate_network_cache_for_user,
     get_all_cache_stats, cleanup_all_caches
 )
 
 from openai import OpenAI
 client = OpenAI()
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id, get_current_user
-from models import (
+from backend.db import SessionLocal, warmup_connection_pool
+from backend.auth_supabase import get_current_user_id, get_current_user
+from backend.models import (
     Conversation,
     Message,
     Profile,
@@ -41,10 +41,25 @@ from models import (
     PostComment,
     CommentLike,
     PostShare,
-    Notification
+    Notification,
+    AgentUpdate
 )
 
 app = FastAPI()
+
+
+# Startup event: warm up database connection pool
+@app.on_event("startup")
+async def startup_event():
+    """
+    Pre-warm database connections on server start.
+    This eliminates 5-7 second cold-start delay for first user requests.
+    """
+    import asyncio
+    # Run in thread pool to not block startup
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, warmup_connection_pool, 3)
+
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -81,63 +96,109 @@ app.add_middleware(
     expose_headers=["Content-Type"],
 )
 
-# Add GZip compression middleware for API responses
-# Compresses responses > 1KB, reduces data transfer by 60-80%
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+# Custom GZip middleware that excludes streaming responses
+# Standard GZipMiddleware buffers responses, which breaks SSE streaming
+class SelectiveGZipMiddleware:
+    """
+    GZip middleware that excludes streaming (text/event-stream) responses.
+    Streaming responses need to be sent immediately without buffering.
+    """
+    def __init__(self, app):
+        self.app = app
+        self.gzip = GZipMiddleware(app, minimum_size=1000)
+    
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            # Check if this is a streaming endpoint
+            path = scope.get("path", "")
+            if "/stream" in path:
+                # Skip GZip for streaming endpoints - go directly to app
+                await self.app(scope, receive, send)
+                return
+        
+        # Use GZip for all other requests
+        await self.gzip(scope, receive, send)
+
+app.add_middleware(SelectiveGZipMiddleware)
+
+# Add HTTP cache headers middleware for performance
+# This allows browsers to cache static/semi-static data and reduces API load
+@app.middleware("http")
+async def add_cache_headers(request, call_next):
+    response = await call_next(request)
+    
+    # Cache static config for 5 minutes
+    if request.url.path == "/config":
+        response.headers["Cache-Control"] = "public, max-age=300"
+    
+    # CRITICAL: Do NOT cache user-specific profile data in browser
+    # This was causing data from one user to appear for another user on the same browser
+    elif request.url.path == "/me/profile":
+        response.headers["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
+    
+    # CRITICAL: Do NOT cache user-specific onboarding status in browser
+    elif request.url.path == "/onboarding/status":
+        response.headers["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
+    
+    return response
 
 from dotenv import load_dotenv
 load_dotenv("backend/.env")
 
 # Import enhanced chat router
-from chat_enhanced import router as chat_enhanced_router
+from backend.chat_enhanced import router as chat_enhanced_router
 app.include_router(chat_enhanced_router, tags=["chat-enhanced"])
 
 # Import admin router
-from admin import router as admin_router, require_admin, ALLOWED_ADMIN_EMAILS
+from backend.admin import router as admin_router, require_admin, ALLOWED_ADMIN_EMAILS
 app.include_router(admin_router, tags=["admin"])
 
 # Import agent updates router
-from agent_updates import router as agent_updates_router
+from backend.agent_updates import router as agent_updates_router
 app.include_router(agent_updates_router, tags=["agent-updates"])
 
 # Import feed router
-from feed import router as feed_router
+from backend.feed import router as feed_router
 app.include_router(feed_router, tags=["feed"])
 
 # Import Twitter router
-from twitter_api import router as twitter_router
+from backend.twitter_api import router as twitter_router
 app.include_router(twitter_router, tags=["twitter"])
 
 # Import Twitter OAuth router
-from twitter_oauth_api import router as twitter_oauth_router
+from backend.twitter_oauth_api import router as twitter_oauth_router
 app.include_router(twitter_oauth_router, tags=["twitter-oauth"])
 
 # Import Auto Post API router
-from auto_post_api import router as auto_post_router
+from backend.auto_post_api import router as auto_post_router
 app.include_router(auto_post_router, tags=["auto-post"])
 
+# Import AutoPost Diagnostic API router
+from backend.autopost_diagnostic_api import router as autopost_diagnostic_router
+app.include_router(autopost_diagnostic_router, tags=["autopost-diagnostic"])
+
 # Import Native Agents router
-from native_agents_api import router as native_agents_router
+from backend.native_agents_api import router as native_agents_router
 app.include_router(native_agents_router, tags=["native-agents"])
 
 # Import Messaging router
-from messaging import router as messaging_router
+from backend.messaging import router as messaging_router
 app.include_router(messaging_router, tags=["messaging"])
 
 # Import Orchestrator router
-from orchestrator_api import router as orchestrator_router
+from backend.orchestrator_api import router as orchestrator_router
 app.include_router(orchestrator_router, tags=["orchestrator"])
 
 # Import Onboarding router
-from onboarding import router as onboarding_router
+from backend.onboarding import router as onboarding_router
 app.include_router(onboarding_router, tags=["onboarding"])
 
 # Import Posts router
-from posts_api import router as posts_router
+from backend.posts_api import router as posts_router
 app.include_router(posts_router, tags=["posts"])
 
 # Import Notifications router
-from notifications_api import router as notifications_router
+from backend.notifications_api import router as notifications_router
 app.include_router(notifications_router, tags=["notifications"])
 
 
@@ -152,6 +213,12 @@ class AveeUpdateIn(BaseModel):
     bio: str | None = None
     avatar_url: str | None = None
     persona: str | None = None
+    branding_guidelines: str | None = None  # Colors, fonts, visual style for image generation
+    # Logo watermark settings for autopost images
+    logo_enabled: bool | None = None
+    logo_url: str | None = None
+    logo_position: str | None = None  # bottom-right, bottom-left, top-right, top-left
+    logo_size: str | None = None  # 5-100 percentage (or legacy: small, medium, large)
 
 class ProfileUpsertIn(BaseModel):
     handle: str
@@ -412,9 +479,9 @@ def list_my_conversations(
 @app.get("/me/profile")
 def get_my_profile(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
     user: dict = Depends(get_current_user),
 ):
+    user_id = user["id"]
     user_uuid = _parse_uuid(user_id, "user_id")
     is_admin = _is_admin(user)
     
@@ -480,9 +547,9 @@ def get_my_profile(
 def upsert_my_profile(
     payload: ProfileUpsertIn,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
     user: dict = Depends(get_current_user),
 ):
+    user_id = user["id"]
     user_uuid = _parse_uuid(user_id, "user_id")
     is_admin = _is_admin(user)
 
@@ -665,7 +732,6 @@ async def create_avee(
     research_max_sources: int = 5,
     research_layer: str = "public",
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
     user: dict = Depends(get_current_user),
 ):
     """
@@ -681,6 +747,7 @@ async def create_avee(
         research_max_sources: Maximum number of web sources to scrape (default: 5)
         research_layer: Layer to store researched documents (default: "public")
     """
+    user_id = user["id"]
     user_uuid = _parse_uuid(user_id, "user_id")
 
     if not handle or not handle.strip():
@@ -854,142 +921,139 @@ def get_avee_by_handle(
         "bio": a.bio,
         "persona": a.persona,  # Include persona field
         "owner_user_id": str(a.owner_user_id),
+        "branding_guidelines": a.branding_guidelines,
+        # Logo watermark settings
+        "logo_enabled": a.logo_enabled or False,
+        "logo_url": a.logo_url,
+        "logo_position": a.logo_position or "bottom-right",
+        "logo_size": a.logo_size or "10",
     }
 
 
 @app.get("/me/agent-limit-status")
 async def get_agent_limit_status(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
     user: dict = Depends(get_current_user),
 ):
     """
     Get information about the current user's agent limit status.
     Returns how many agents they have and how many they can create.
     """
-    # #region agent log
-    import json
-    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
-        f.write(json.dumps({
-            'location': 'main.py:811',
-            'message': 'agent-limit-status endpoint called',
-            'data': {'user_id': user_id, 'user_email': user.get('email')},
-            'timestamp': __import__('time').time() * 1000,
-            'sessionId': 'debug-session',
-            'hypothesisId': 'A,D'
-        }) + '\n')
-    # #endregion
-    
+    user_id = user["id"]
     user_uuid = _parse_uuid(user_id, "user_id")
-    
-    # #region agent log
-    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
-        f.write(json.dumps({
-            'location': 'main.py:829',
-            'message': 'Before _is_admin check',
-            'data': {'user': user, 'user_email': user.get('email', '').lower(), 'ALLOWED_ADMIN_EMAILS': list(ALLOWED_ADMIN_EMAILS)},
-            'timestamp': __import__('time').time() * 1000,
-            'sessionId': 'debug-session',
-            'hypothesisId': 'A'
-        }) + '\n')
-    # #endregion
-    
     is_admin = _is_admin(user)
-    
-    # #region agent log
-    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
-        f.write(json.dumps({
-            'location': 'main.py:844',
-            'message': 'After _is_admin check',
-            'data': {'is_admin': is_admin},
-            'timestamp': __import__('time').time() * 1000,
-            'sessionId': 'debug-session',
-            'hypothesisId': 'A'
-        }) + '\n')
-    # #endregion
     
     current_count = db.query(func.count(Avee.id)).filter(
         Avee.owner_user_id == user_uuid
     ).scalar()
     
-    # #region agent log
-    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
-        f.write(json.dumps({
-            'location': 'main.py:860',
-            'message': 'After DB query',
-            'data': {'current_count': current_count, 'is_admin': is_admin},
-            'timestamp': __import__('time').time() * 1000,
-            'sessionId': 'debug-session',
-            'hypothesisId': 'E'
-        }) + '\n')
-    # #endregion
-    
     max_agents = -1 if is_admin else 1  # -1 means unlimited
     can_create_more = is_admin or current_count < 1
     
-    response_data = {
+    return {
         "is_admin": is_admin,
         "current_agent_count": current_count or 0,
         "max_agents": max_agents,
         "can_create_more": can_create_more,
         "remaining": -1 if is_admin else max(0, 1 - (current_count or 0))
     }
-    
-    # #region agent log
-    with open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a') as f:
-        f.write(json.dumps({
-            'location': 'main.py:881',
-            'message': 'Returning response',
-            'data': {'response': response_data},
-            'timestamp': __import__('time').time() * 1000,
-            'sessionId': 'debug-session',
-            'hypothesisId': 'A,B'
-        }) + '\n')
-    # #endregion
-    
-    return response_data
 
 
 @app.get("/me/avees")
 def list_my_avees(
     limit: int = 100,  # Added pagination (default 100)
     offset: int = 0,    # Added offset
+    lite: bool = False, # Lite mode for faster initial load (less data)
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
+    """
+    Get user's agents. OPTIMIZED for performance with 69+ agents.
+    Uses query optimization and caching.
+    
+    lite=True returns minimal data for faster initial load:
+    - id, handle, display_name, avatar_url only
+    """
+    import time
+    start_time = time.time()
+    
     user_uuid = _parse_uuid(user_id, "user_id")
     
     # Try cache first (only for first page)
+    cache_suffix = "_lite" if lite else ""
     if offset == 0 and limit == 100:
-        cache_key = f"agents:{user_id}"
+        cache_key = f"agents:{user_id}{cache_suffix}"
         cached_result = agent_cache.get(cache_key)
         if cached_result is not None:
+            print(f"[/me/avees] Cache HIT - returned {len(cached_result)} agents in <1ms")
             return cached_result
 
     # Enforce maximum limit
     limit = min(limit, 500)  # Most users won't have >500 agents
-
-    rows = (
-        db.query(Avee)
-        .filter(Avee.owner_user_id == user_uuid)
-        .order_by(Avee.created_at.desc())
-        .limit(limit)
-        .offset(offset)
-        .all()
-    )
-
-    result = [{
-        "id": str(a.id),
-        "handle": a.handle,
-        "display_name": a.display_name,
-        "avatar_url": a.avatar_url,
-        "bio": a.bio,
-        "created_at": a.created_at,
-    } for a in rows]
     
-    # Cache the first page for 2 minutes
+    query_start = time.time()
+
+    # OPTIMIZATION: Use select_from with specific columns instead of loading full ORM objects
+    # This reduces data transfer and serialization overhead significantly
+    if lite:
+        # Lite mode: Only essential display fields
+        rows = (
+            db.query(
+                Avee.id,
+                Avee.handle,
+                Avee.display_name,
+                Avee.avatar_url
+            )
+            .filter(Avee.owner_user_id == user_uuid)
+            .order_by(Avee.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+        
+        query_elapsed = (time.time() - query_start) * 1000
+        
+        result = [{
+            "id": str(a.id),
+            "handle": a.handle,
+            "display_name": a.display_name,
+            "avatar_url": a.avatar_url,
+        } for a in rows]
+    else:
+        # Full mode: All display fields
+        rows = (
+            db.query(
+                Avee.id,
+                Avee.handle,
+                Avee.display_name,
+                Avee.avatar_url,
+                Avee.bio,
+                Avee.created_at
+            )
+            .filter(Avee.owner_user_id == user_uuid)
+            .order_by(Avee.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+        
+        query_elapsed = (time.time() - query_start) * 1000
+        
+        result = [{
+            "id": str(a.id),
+            "handle": a.handle,
+            "display_name": a.display_name,
+            "avatar_url": a.avatar_url,
+            "bio": a.bio,
+            "created_at": a.created_at,
+        } for a in rows]
+    
+    elapsed = (time.time() - start_time) * 1000
+    print(f"[/me/avees] Returned {len(result)} agents in {elapsed:.0f}ms (query: {query_elapsed:.0f}ms)")
+    
+    # Cache the first page for 5 minutes (increased from 2)
     if offset == 0 and limit == 100:
-        agent_cache.set(cache_key, result, ttl=120)
+        agent_cache.set(cache_key, result, ttl=300)
     
     return result
 
@@ -1082,6 +1146,10 @@ def follow_agent(
     follow = AgentFollower(follower_user_id=follower_uuid, avee_id=avee_uuid)
     db.add(follow)
     db.commit()
+    
+    # Invalidate network cache for this user
+    invalidate_network_cache_for_user(user_id)
+    
     return {"ok": True, "message": "Successfully followed agent"}
 
 
@@ -1112,6 +1180,10 @@ def follow_agent_by_handle(
     follow = AgentFollower(follower_user_id=follower_uuid, avee_id=a.id)
     db.add(follow)
     db.commit()
+    
+    # Invalidate network cache for this user
+    invalidate_network_cache_for_user(user_id)
+    
     return {"ok": True, "message": "Successfully followed agent"}
 
 
@@ -1135,6 +1207,10 @@ def unfollow_agent(
 
     db.delete(follow)
     db.commit()
+    
+    # Invalidate network cache for this user
+    invalidate_network_cache_for_user(user_id)
+    
     return {"ok": True, "message": "Successfully unfollowed agent"}
 
 
@@ -2188,6 +2264,41 @@ def update_avee(
             raise HTTPException(status_code=400, detail="Persona too long (max 40k chars)")
         a.persona = p if p else None
 
+    # Update branding_guidelines if provided
+    if payload.branding_guidelines is not None:
+        bg = payload.branding_guidelines.strip()
+        if bg and len(bg) > 5000:
+            raise HTTPException(status_code=400, detail="Branding guidelines too long (max 5k chars)")
+        a.branding_guidelines = bg if bg else None
+
+    # Update logo watermark settings if provided
+    if payload.logo_enabled is not None:
+        a.logo_enabled = payload.logo_enabled
+    
+    if payload.logo_url is not None:
+        a.logo_url = payload.logo_url.strip() if payload.logo_url.strip() else None
+    
+    if payload.logo_position is not None:
+        valid_positions = ["bottom-right", "bottom-left", "top-right", "top-left"]
+        if payload.logo_position not in valid_positions:
+            raise HTTPException(status_code=400, detail=f"Invalid logo position. Must be one of: {', '.join(valid_positions)}")
+        a.logo_position = payload.logo_position
+    
+    if payload.logo_size is not None:
+        # Support both legacy string values and new numeric percentages (5-100)
+        if payload.logo_size in ["small", "medium", "large"]:
+            # Convert legacy values to percentages for backwards compatibility
+            legacy_map = {"small": "5", "medium": "10", "large": "15"}
+            a.logo_size = legacy_map[payload.logo_size]
+        else:
+            try:
+                size_int = int(payload.logo_size)
+                if size_int < 5 or size_int > 100:
+                    raise HTTPException(status_code=400, detail="Logo size must be between 5 and 100")
+                a.logo_size = str(size_int)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid logo size. Must be a number between 5 and 100")
+
     db.commit()
 
     return {"ok": True, "avee_id": str(a.id)}
@@ -2575,39 +2686,66 @@ def follow_by_handle(
 def search_agents(
     query: str = "",
     limit: int = 10,
+    offset: int = 0,  # Support pagination
     include_followed: bool = True,  # NEW: Allow showing followed agents
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
     """Search for agents by handle or display name. Can include or exclude agents already followed."""
+    import time
+    start_total = time.time()
+    
     me = _parse_uuid(user_id, "user_id")
+    
+    # Check cache first
+    cache_key = f"search:{user_id}:{query}:{limit}:{offset}:{include_followed}"
+    cached_result = network_cache.get(cache_key)
+    if cached_result is not None:
+        print(f"[PERF] search-agents CACHE HIT in {(time.time()-start_total)*1000:.0f}ms")
+        return cached_result
+    
+    print(f"[PERF] search-agents CACHE MISS - querying DB...")
+    start_query = time.time()
     
     search_term = f"%{query.strip().lower()}%"
     
-    # Get IDs of agents already followed by the user
-    followed_ids = (
-        db.query(AgentFollower.avee_id)
-        .filter(AgentFollower.follower_user_id == me)
-        .all()
-    )
-    followed_ids = [fid[0] for fid in followed_ids]
+    # Build base query with LEFT JOIN to get follow status in single query
+    # This avoids the expensive separate query for followed_ids
+    from sqlalchemy import case, exists, select
+    from sqlalchemy.orm import aliased
     
-    # Search for agents matching the query
+    # Subquery to check if user is following each agent
+    follow_subquery = (
+        select(AgentFollower.avee_id)
+        .where(AgentFollower.follower_user_id == me)
+        .correlate(Avee)
+    )
+    
+    # Single optimized query with follow status
     query_obj = (
-        db.query(Avee, Profile)
+        db.query(
+            Avee, 
+            Profile,
+            exists(follow_subquery.where(AgentFollower.avee_id == Avee.id)).label('is_followed')
+        )
         .join(Profile, Profile.user_id == Avee.owner_user_id)
         .filter(
             (Avee.handle.ilike(search_term)) | (Avee.display_name.ilike(search_term))
         )
     )
     
-    # Optionally exclude followed agents
-    if not include_followed and followed_ids:
-        query_obj = query_obj.filter(~Avee.id.in_(followed_ids))
+    # Optionally exclude followed agents using subquery
+    if not include_followed:
+        query_obj = query_obj.filter(
+            ~exists(follow_subquery.where(AgentFollower.avee_id == Avee.id))
+        )
     
-    rows = query_obj.order_by(Avee.handle).limit(limit).all()
+    rows = query_obj.order_by(Avee.handle).offset(offset).limit(limit).all()
     
-    return [
+    search_query_time = (time.time() - start_query) * 1000
+    print(f"[PERF] search-agents SINGLE query took {search_query_time:.0f}ms, found {len(rows)} rows")
+    
+    result = [
         {
             "avee_id": str(a.id),
             "avee_handle": a.handle,
@@ -2617,10 +2755,15 @@ def search_agents(
             "owner_user_id": str(a.owner_user_id),
             "owner_handle": p.handle,
             "owner_display_name": p.display_name,
-            "is_followed": a.id in followed_ids,  # NEW: Indicate if already following
+            "is_followed": is_followed,  # From the EXISTS subquery
         }
-        for (a, p) in rows
+        for (a, p, is_followed) in rows
     ]
+    
+    # Cache the result
+    network_cache.set(cache_key, result, ttl=60)  # Cache for 1 minute
+    
+    return result
 
 
 @app.get("/network/following-agents")
@@ -2629,8 +2772,21 @@ def list_following_agents(
     user_id: str = Depends(get_current_user_id),
 ):
     """List all agents the current user is following"""
+    import time
+    start_total = time.time()
+    
     me = _parse_uuid(user_id, "user_id")
 
+    # Check cache first
+    cache_key = f"following:{user_id}"
+    cached_result = network_cache.get(cache_key)
+    if cached_result is not None:
+        print(f"[PERF] following-agents CACHE HIT in {(time.time()-start_total)*1000:.0f}ms")
+        return cached_result
+
+    print(f"[PERF] following-agents CACHE MISS - querying DB...")
+    start_query = time.time()
+    
     rows = (
         db.query(Avee, Profile)
         .join(AgentFollower, AgentFollower.avee_id == Avee.id)
@@ -2639,8 +2795,11 @@ def list_following_agents(
         .order_by(AgentFollower.created_at.desc())
         .all()
     )
+    
+    query_time = (time.time() - start_query) * 1000
+    print(f"[PERF] following-agents DB query took {query_time:.0f}ms, found {len(rows)} rows")
 
-    return [
+    result = [
         {
             "avee_id": str(a.id),
             "avee_handle": a.handle,
@@ -2653,6 +2812,11 @@ def list_following_agents(
         }
         for (a, p) in rows
     ]
+    
+    # Cache the result
+    network_cache.set(cache_key, result, ttl=60)  # Cache for 1 minute
+    
+    return result
 
 
 @app.get("/profiles/{handle}")
@@ -2773,8 +2937,6 @@ def get_profile_updates(
     user_id: str = Depends(get_current_user_id),
 ):
     """Get public updates for a profile/agent by handle."""
-    from models import AgentUpdate
-    
     me = _parse_uuid(user_id, "user_id")
     handle = handle.strip().lower()
     

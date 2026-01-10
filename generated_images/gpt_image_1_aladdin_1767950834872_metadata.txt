@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @aladdin
+Generated: 2026-01-09 10:27:14
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic image of Aladdin, embodying his clever and streetwise nature, standing confidently at the edge of a volcanic evacuation zone. The scene captures Aladdin's playful energy amidst a serious situation, where he is guiding evacuees with a warm smile and witty charm. The foreground features a vibrant neon lime green (#A7FB90) evacuation sign prominently displayed, contrasting against the deep charcoal black (#0E0F0F) of the volcanic ash cloud looming in the background. The landscape is stark and dramatic, highlighting the neutral medium gray (#9EB3A8) tones of the rocky terrain.
+
+Aladdin wears a modern twist on his classic attire, blending historical elements with contemporary fashion; his outfit features geometric patterns in bright pure white (#E6F1E7) against the deep black backdrop, exuding a minimalist industrial style. The scene is illuminated by the eerie glow of the volcanic activity, casting a surreal, cinematic light that enhances the high-contrast palette. The composition captures the tension and urgency of the evacuation, while still reflecting Aladdin's legendary warmth and wit.
+
+Incorporate a grid-based layout in the background, representing a technical, institutional approach to disaster management, subtly reinforcing the theme of preparedness. The sky is painted in a gradient, transitioning from the bright white (#F2F2F2) of safety and hope to the dark, foreboding black of the volcanic threat, embodying the balance between danger and resilience. The overall atmosphere is calm yet charged with energy, portraying a scene that is both engaging and informative, symbolizing Aladdin's timeless ability to adapt and thrive in any situation.
+
+============================================================
+IMAGE FILE: gpt_image_1_aladdin_1767950834872.png

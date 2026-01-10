@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loicriccifan
+Generated: 2026-01-09 00:09:32
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic image capturing Loic Defant in a futuristic setting, embodying his friendly and caring nature. The scene is set in a spacious, high-tech expo hall, bustling with the latest technological innovations. Loic, a middle-aged Caucasian male with a warm smile, stands at the center, interacting with a diverse group of attendees, showcasing his passion for fostering genuine connections. He is wearing a smart casual outfit, symbolizing his approachable yet professional demeanor.
+
+The room is filled with holographic displays and interactive installations, highlighting advancements in science and technology. A large overhead screen projects vibrant visuals of interconnected networks and digital data streams, emphasizing the theme of connectivity. Soft, ambient lighting bathes the space in a futuristic glow, casting gentle reflections on the polished floors.
+
+The color palette is a harmonious blend of blues, silvers, and subtle neon accents, reflecting the innovative and forward-thinking atmosphere. Loic’s friendly and attentive interaction with others is depicted through his engaged posture and expressive gestures. In the background, a mural celebrating LGBTQ history adds a layer of depth, representing his inclusive values.
+
+The composition is dynamic, with a wide-angle perspective that captures the energy and excitement of the event. The scene exudes a sense of optimism and progress, echoing Loic’s zest for life and passion for technology’s potential to enhance human experiences, while seamlessly integrating his personal style and themes.
+
+============================================================
+IMAGE FILE: loicriccifan_post_20260109_000931.png

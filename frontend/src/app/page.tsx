@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getAppConfig, type AppConfig } from "@/lib/config";
+import dynamic from "next/dynamic";
+
+// Dynamically import ParticleSphere to avoid SSR issues with Three.js
+const ParticleSphere = dynamic(() => import("@/components/ParticleSphere"), {
+  ssr: false,
+});
 
 export default function Home() {
   const [appConfig, setAppConfig] = useState<AppConfig>({});
@@ -75,13 +81,13 @@ export default function Home() {
         <div className="relative overflow-hidden">
           {/* Background Video Container */}
           <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/60 to-white dark:via-[#0B0B0C]/80 dark:to-[#0B0B0C] z-10" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-white dark:via-[#0B0B0C]/60 dark:to-[#0B0B0C] z-10" />
             <video
               autoPlay
               loop
               muted
               playsInline
-              className="w-full h-full object-cover opacity-25 dark:opacity-15"
+              className="w-full h-full object-cover opacity-50 dark:opacity-35"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
@@ -98,6 +104,13 @@ export default function Home() {
             </video>
           </div>
 
+          {/* Particle Sphere Animation */}
+          <div className="absolute inset-0 z-0 flex items-center justify-center">
+            <div className="w-[600px] h-[600px] max-w-full">
+              <ParticleSphere />
+            </div>
+          </div>
+
           {/* Hero Content */}
           <div className="relative z-20 mx-auto max-w-7xl px-6 lg:px-8 pt-24 pb-32">
             <div className="max-w-6xl mx-auto text-center">
@@ -106,17 +119,15 @@ export default function Home() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E3A59] opacity-75 dark:bg-white"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2E3A59] dark:bg-white"></span>
                 </span>
-                The future of knowledge monetization
+                AI native social platform
               </div>
               
               <h1 className="text-6xl md:text-7xl lg:text-[5.5rem] leading-[1.05] font-bold tracking-tight text-[#0B0B0C] dark:text-white drop-shadow-sm">
-                Build and Share your AI
+                Avee set you free
               </h1>
               
               <h2 className="mt-8 text-4xl md:text-5xl lg:text-6xl leading-[1.1] font-bold tracking-tight text-[#2E3A59] dark:text-zinc-400 drop-shadow-sm">
-                Get paid for depth,
-                <br />
-                not attention.
+                The future of social interaction is here
               </h2>
 
               <div className="mt-12 flex flex-col gap-5 sm:flex-row sm:justify-center sm:items-center">
@@ -147,13 +158,13 @@ export default function Home() {
                   <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  No subscriptions for creators
+                  Automatised messaging
                 </div>
                 <div className="flex items-center gap-2 backdrop-blur-sm bg-white/30 dark:bg-[#0B0B0C]/30 px-4 py-2 rounded-full">
                   <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  Transparent revenue sharing
+                  AI boosted content creation
                 </div>
               </div>
             </div>
@@ -192,24 +203,12 @@ export default function Home() {
               <div className="text-center space-y-6">
                 <p className="text-3xl lg:text-4xl xl:text-5xl font-bold leading-[1.2] tracking-tight">
                   <span className="bg-gradient-to-r from-[#0B0B0C] to-[#2E3A59] dark:from-white dark:to-zinc-300 bg-clip-text text-transparent">
-                    Create an AI that embodies
-                  </span>
-                  <br />
-                  <span className="bg-gradient-to-r from-[#0B0B0C] to-[#2E3A59] dark:from-white dark:to-zinc-300 bg-clip-text text-transparent">
-                    your expertise.
+                    Create your AI, boost your online presence
                   </span>
                 </p>
                 
-                <p className="text-2xl lg:text-3xl xl:text-4xl font-semibold leading-[1.3]">
-                  <span className="bg-gradient-to-r from-[#2E3A59] via-[#3d4d7a] to-[#2E3A59] dark:from-zinc-400 dark:via-zinc-300 dark:to-zinc-400 bg-clip-text text-transparent">
-                    Share knowledge at scale.
-                  </span>
-                </p>
-                
-                <p className="text-2xl lg:text-3xl xl:text-4xl font-semibold leading-[1.3]">
-                  <span className="bg-gradient-to-r from-[#C8A24A] via-[#d4ae5c] to-[#C8A24A] dark:from-[#C8A24A] dark:via-[#d4ae5c] dark:to-[#C8A24A] bg-clip-text text-transparent drop-shadow-sm">
-                    Monetize your insights without losing time.
-                  </span>
+                <p className="text-xl lg:text-2xl xl:text-3xl leading-[1.4] text-[#2E3A59]/80 dark:text-zinc-400 max-w-4xl mx-auto">
+                  AI-powered content creation, smart messaging, and social connectivity
                 </p>
               </div>
               
@@ -230,7 +229,7 @@ export default function Home() {
               </div>
 
               {/* Premium feature cards with enhanced design */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-10">
                 {/* Feature 1 */}
                 <div className="group relative">
                   <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#2E3A59]/30 to-transparent opacity-0 blur-xl 
@@ -248,15 +247,15 @@ export default function Home() {
                                       dark:from-white dark:to-zinc-200
                                       group-hover:scale-110 transition-transform duration-500">
                         <svg className="h-8 w-8 text-white dark:text-[#0B0B0C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-[#0B0B0C] dark:text-white mb-3 tracking-tight">
-                      Instant Setup
+                      Automated content
                     </h3>
                     <p className="text-base leading-relaxed text-[#2E3A59]/80 dark:text-zinc-400">
-                      Upload your knowledge and go live in minutes
+                      Generate engaging posts and content automatically with AI
                     </p>
                   </div>
                 </div>
@@ -278,20 +277,50 @@ export default function Home() {
                                       dark:from-white dark:to-zinc-200
                                       group-hover:scale-110 transition-transform duration-500">
                         <svg className="h-8 w-8 text-white dark:text-[#0B0B0C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-[#0B0B0C] dark:text-white mb-3 tracking-tight">
-                      Scale Infinitely
+                      Assisted messaging
                     </h3>
                     <p className="text-base leading-relaxed text-[#2E3A59]/80 dark:text-zinc-400">
-                      Answer thousands without burnout
+                      Smart AI support to help you engage with your audience
                     </p>
                   </div>
                 </div>
 
                 {/* Feature 3 */}
+                <div className="group relative">
+                  <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#2E3A59]/30 to-transparent opacity-0 blur-xl 
+                                  transition-all duration-500 group-hover:opacity-100" />
+                  <div className="relative bg-gradient-to-br from-[#f8f9fa] to-white dark:from-zinc-900 dark:to-zinc-950
+                                  border-2 border-[#E6E6E6]/60 dark:border-white/[.08]
+                                  rounded-3xl p-8 h-full
+                                  transition-all duration-500 
+                                  group-hover:border-[#2E3A59]/40 dark:group-hover:border-white/[.20]
+                                  group-hover:shadow-2xl group-hover:-translate-y-2">
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#2E3A59] to-[#1a2236] opacity-10 blur-md group-hover:opacity-20 transition-opacity" />
+                      <div className="relative inline-flex items-center justify-center h-16 w-16 rounded-2xl 
+                                      bg-gradient-to-br from-[#2E3A59] to-[#1a2236] shadow-lg
+                                      dark:from-white dark:to-zinc-200
+                                      group-hover:scale-110 transition-transform duration-500">
+                        <svg className="h-8 w-8 text-white dark:text-[#0B0B0C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-[#0B0B0C] dark:text-white mb-3 tracking-tight">
+                      Best in class AI models
+                    </h3>
+                    <p className="text-base leading-relaxed text-[#2E3A59]/80 dark:text-zinc-400">
+                      Powered by cutting-edge AI technology and models
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 4 */}
                 <div className="group relative">
                   <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#C8A24A]/30 to-transparent opacity-0 blur-xl 
                                   transition-all duration-500 group-hover:opacity-100" />
@@ -308,16 +337,42 @@ export default function Home() {
                                       dark:from-[#C8A24A] dark:to-[#d4ae5c]
                                       group-hover:scale-110 transition-transform duration-500">
                         <svg className="h-8 w-8 text-white dark:text-[#0B0B0C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                         </svg>
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-[#0B0B0C] dark:text-white mb-3 tracking-tight">
-                      Earn Passively
+                      Social platform connected
                     </h3>
-                    <p className="text-base leading-relaxed text-[#2E3A59]/80 dark:text-zinc-400">
-                      Turn expertise into recurring revenue
+                    <p className="text-base leading-relaxed text-[#2E3A59]/80 dark:text-zinc-400 mb-4">
+                      Seamlessly integrate with major social networks
                     </p>
+                    <div className="flex items-center justify-center gap-3 mt-auto pt-2">
+                      {/* X (Twitter) */}
+                      <div className="h-8 w-8 rounded-lg bg-black dark:bg-white flex items-center justify-center transition-transform hover:scale-110">
+                        <svg className="h-4 w-4 text-white dark:text-black" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                      </div>
+                      {/* Facebook */}
+                      <div className="h-8 w-8 rounded-lg bg-[#1877F2] flex items-center justify-center transition-transform hover:scale-110">
+                        <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                      </div>
+                      {/* Instagram */}
+                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center transition-transform hover:scale-110">
+                        <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                      </div>
+                      {/* LinkedIn */}
+                      <div className="h-8 w-8 rounded-lg bg-[#0A66C2] flex items-center justify-center transition-transform hover:scale-110">
+                        <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

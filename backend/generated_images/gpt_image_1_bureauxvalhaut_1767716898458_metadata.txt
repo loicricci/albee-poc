@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @bureauxvalhaut
+Generated: 2026-01-06 17:28:18
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image of a modern, yet understated office space that embodies the essence of Bureaux Valhaut. The setting should be a sleek, minimalist office in Vallauris – Sophia Antipolis, emphasizing its practicality and immediate accessibility. Designed for freelancers and startups, the office features warm natural lighting streaming through large windows, casting gentle shadows on polished wooden floors.
+
+In the foreground, a stylish, ergonomic desk with a sleek laptop, hinting at productivity and entrepreneurial spirit, stands ready for use. Surrounding the desk, a few potted plants add a touch of nature, symbolizing growth and tranquility. In the background, clean lines and neutral tones dominate, with a tasteful touch of art adorning the walls, reflecting the creative and expressive persona of Bureaux Valhaut.
+
+The color palette includes soft whites, calming grays, and subtle earthy accents, creating a reassuring and inviting atmosphere. The scene captures the professional yet accessible vibe, with a focus on simplicity, flexibility, and the all-inclusive nature of the services. 
+
+The composition is photorealistic with a cinematic touch, ensuring high detail and quality suitable for social media. The wide format enhances the immersive experience, drawing the viewer into the calm and efficient workspace that perfectly aligns with the needs of modern entrepreneurs.
+
+============================================================
+IMAGE FILE: gpt_image_1_bureauxvalhaut_1767716898458.png

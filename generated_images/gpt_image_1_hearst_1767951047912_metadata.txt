@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 10:30:47
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image featuring a futuristic industrial scene that captures the essence of Hearst Mining's dedication to sustainability and technological advancement. The setting is a vast, high-tech Bitcoin mining facility, illuminated with vibrant neon lime green lighting that forms a striking contrast against deep, pure black shadows. The lime green (#A7FB90) highlights the intricate grid-based architecture of the facility, giving an impression of energy flowing through its veins.
+
+In the foreground, a holographic tribute to Satoshi Nakamoto stands as a symbol of gratitude. This digital monument, constructed with sleek geometric lines and minimalist design, glows with bright pure white light (#E6F1E7), symbolizing innovation and transparency. The neutral medium gray (#9EB3A8) walls of the facility provide a calm, professional backdrop, enhancing the luminescent elements.
+
+The atmosphere is serene and professional, with a cinematic quality achieved through high contrast lighting and sharp focus on technical details. A sense of institutional trustworthiness permeates the scene, reflecting Hearst's commitment to energy efficiency and long-term sustainability.
+
+Embed the FK Grotesk font into the environment subtly, perhaps as digital displays or informational panels, maintaining the clean, technical aesthetic. The overall composition should be wide, suitable for social media, drawing viewers in with its engaging and eye-catching design, while the brand's color palette remains dominant and instantly recognizable.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767951047912.png

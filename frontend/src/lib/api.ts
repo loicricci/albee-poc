@@ -205,6 +205,12 @@ export async function updateAgent(params: {
   bio?: string;
   avatar_url?: string;
   persona?: string;
+  branding_guidelines?: string;
+  // Logo watermark settings
+  logo_enabled?: boolean;
+  logo_url?: string;
+  logo_position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
+  logo_size?: string; // 5-100 percentage as string
 }) {
   return apiFetch(`/avees/${params.agentId}`, {
     method: "PATCH",
@@ -214,6 +220,12 @@ export async function updateAgent(params: {
       bio: params.bio !== undefined ? params.bio : undefined,
       avatar_url: params.avatar_url !== undefined ? params.avatar_url : undefined,
       persona: params.persona !== undefined ? params.persona : undefined,
+      branding_guidelines: params.branding_guidelines !== undefined ? params.branding_guidelines : undefined,
+      // Logo watermark settings
+      logo_enabled: params.logo_enabled !== undefined ? params.logo_enabled : undefined,
+      logo_url: params.logo_url !== undefined ? params.logo_url : undefined,
+      logo_position: params.logo_position !== undefined ? params.logo_position : undefined,
+      logo_size: params.logo_size !== undefined ? params.logo_size : undefined,
     }),
   });
 }
@@ -312,7 +324,8 @@ export async function getNotifications(params?: {
   if (params?.notification_type) query.set("notification_type", params.notification_type);
   
   const queryString = query.toString();
-  return apiFetch(`/notifications${queryString ? `?${queryString}` : ""}`, {
+  // Use trailing slash to avoid 307 redirect
+  return apiFetch(`/notifications/${queryString ? `?${queryString}` : ""}`, {
     method: "GET",
   });
 }
@@ -634,4 +647,69 @@ export async function getUnifiedFeed(limit = 20, offset = 0): Promise<UnifiedFee
   
   return api.get(`/feed/unified?${params.toString()}`);
 }
+
+// =====================================
+// DIAGNOSTIC / AUTO-POST API
+// =====================================
+
+export type DiagnosticGenerateRequest = {
+  avee_id: string;
+  topic?: string | null;
+  category?: string | null;
+  image_engine?: string;
+};
+
+export type DiagnosticResult = {
+  status: string;
+  logs: Array<{
+    step?: number;
+    message: string;
+    timestamp: string;
+    level?: string;
+  }>;
+  result?: any;
+  error?: string;
+};
+
+/**
+ * Generate a post via the diagnostic endpoint with extended timeout (90 seconds)
+ * This is needed because post generation involves multiple AI API calls:
+ * - Topic fetching (~5s)
+ * - Image generation (~50-60s)
+ * - Description generation (~5s)
+ */
+export async function diagnosticGeneratePost(
+  request: DiagnosticGenerateRequest
+): Promise<DiagnosticResult> {
+  if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE is not set");
+
+  const token = await getToken();
+
+  // Use 90 second timeout for post generation
+  const res = await fetchWithTimeout(
+    `${API_BASE}/auto-post/diagnostic/generate`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    },
+    90000 // 90 seconds
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const err: any = new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) return res.json();
+  throw new Error("Expected JSON response from diagnostic endpoint");
+}
+
 

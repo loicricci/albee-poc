@@ -69,25 +69,31 @@ function MyAgentsContent() {
   const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  async function load() {
+  async function load(forceRefresh: boolean = false) {
     setLoading(true);
     setError(null);
     try {
-      // PERFORMANCE: Check cache first
-      const cachedAgents = localStorage.getItem('my_agents_list');
-      const cachedLimit = localStorage.getItem('my_agents_limit');
-      
-      if (cachedAgents && cachedLimit) {
-        try {
-          setAgents(JSON.parse(cachedAgents));
-          setLimitStatus(JSON.parse(cachedLimit));
-          setLoading(false); // UI ready with cache!
-        } catch (e) {
-          console.warn('Failed to parse cached agents data');
+      // PERFORMANCE: Check cache first (skip if forceRefresh)
+      if (!forceRefresh) {
+        const cachedAgents = localStorage.getItem('my_agents_list');
+        const cachedLimit = localStorage.getItem('my_agents_limit');
+        
+        if (cachedAgents && cachedLimit) {
+          try {
+            setAgents(JSON.parse(cachedAgents));
+            setLimitStatus(JSON.parse(cachedLimit));
+            setLoading(false); // UI ready with cache!
+          } catch (e) {
+            console.warn('Failed to parse cached agents data');
+          }
         }
+      } else {
+        // Clear stale cache when force refreshing
+        localStorage.removeItem('my_agents_list');
+        localStorage.removeItem('my_agents_limit');
       }
       
-      // Fetch fresh data in background
+      // Fetch fresh data from API
       const [agentsData, limitData] = await Promise.all([
         getMyAgents(),
         getAgentLimitStatus()
@@ -141,6 +147,38 @@ function MyAgentsContent() {
         research_layer: "public",
       });
       
+      // OPTIMISTIC UPDATE: Immediately add the new agent to state
+      // This fixes the backend eventual consistency issue where getMyAgents()
+      // doesn't immediately return the newly created agent
+      const newAgent: Agent = {
+        id: result?.id,
+        handle: result?.handle || handle,
+        display_name: result?.display_name || display_name || undefined,
+        avatar_url: result?.avatar_url,
+        created_at: result?.created_at || new Date().toISOString(),
+      };
+      setAgents(prevAgents => {
+        // Check if agent already exists to avoid duplicates
+        if (prevAgents.some(a => a.handle === newAgent.handle)) {
+          return prevAgents;
+        }
+        return [newAgent, ...prevAgents];
+      });
+      
+      // Update limit status optimistically
+      if (limitStatus) {
+        setLimitStatus({
+          ...limitStatus,
+          current_agent_count: limitStatus.current_agent_count + 1,
+          remaining: limitStatus.remaining === -1 ? -1 : limitStatus.remaining - 1,
+          can_create_more: limitStatus.is_admin || (limitStatus.remaining === -1 || limitStatus.remaining > 1),
+        });
+      }
+      
+      // Update cache with the new agent
+      const updatedAgents = [newAgent, ...agents.filter(a => a.handle !== newAgent.handle)];
+      localStorage.setItem('my_agents_list', JSON.stringify(updatedAgents));
+      
       setCreationResult(result);
       setNewHandle("");
       setNewName("");
@@ -154,7 +192,8 @@ function MyAgentsContent() {
         setCreationResult(null);
       }, 3000);
       
-      await load();
+      // No background refresh - optimistic update is sufficient
+      // User can manually refresh if needed, avoiding stale data overwrite
     } catch (e: any) {
       setError(e.message || "Create failed");
     } finally {
@@ -179,9 +218,32 @@ function MyAgentsContent() {
     setError(null);
 
     try {
+      const deletedHandle = agentToDelete.handle;
       await deleteAgent(agentToDelete.id);
-      await load();
+      
+      // OPTIMISTIC UPDATE: Immediately remove the agent from state
+      // This fixes the backend eventual consistency issue where getMyAgents()
+      // doesn't immediately reflect the deletion
+      setAgents(prevAgents => prevAgents.filter(a => a.handle !== deletedHandle));
+      
+      // Update limit status optimistically
+      if (limitStatus) {
+        setLimitStatus({
+          ...limitStatus,
+          current_agent_count: Math.max(0, limitStatus.current_agent_count - 1),
+          remaining: limitStatus.remaining === -1 ? -1 : limitStatus.remaining + 1,
+          can_create_more: true,
+        });
+      }
+      
+      // Update cache with the agent removed
+      const updatedAgents = agents.filter(a => a.handle !== deletedHandle);
+      localStorage.setItem('my_agents_list', JSON.stringify(updatedAgents));
+      
       closeDeleteConfirm();
+      
+      // No background refresh - optimistic update is sufficient
+      // User can manually refresh if needed, avoiding stale data overwrite
     } catch (e: any) {
       setError(e.message || "Delete failed");
     } finally {
@@ -450,7 +512,7 @@ function MyAgentsContent() {
             </p>
           </div>
           <button
-            onClick={load}
+            onClick={() => load(true)}
             disabled={loading}
             className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-all hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
           >

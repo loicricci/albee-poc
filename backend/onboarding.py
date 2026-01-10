@@ -14,9 +14,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from openai import OpenAI
 
-from db import SessionLocal
-from models import Profile, Avee
-from auth_supabase import get_current_user_id
+from backend.db import SessionLocal
+from backend.models import Profile, Avee
+from backend.auth_supabase import get_current_user_id
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 

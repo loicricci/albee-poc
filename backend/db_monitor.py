@@ -5,7 +5,7 @@ Tracks connection pool health and query performance.
 """
 import time
 from sqlalchemy import event, text
-from db import engine
+from backend.db import engine
 
 
 class ConnectionMonitor:
@@ -85,6 +85,8 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("Monitor ready for use. Import with: from db_monitor import monitor")
     print("=" * 80)
+
+
 
 
 

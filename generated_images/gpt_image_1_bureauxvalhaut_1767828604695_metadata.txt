@@ -1,0 +1,26 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @bureauxvalhaut
+Generated: 2026-01-08 00:30:04
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+**Prompt:**
+
+Create an image of a stunning, modern office space set within the scenic beauty of Vallauris, reflecting the entrepreneurial spirit and accessible professionalism of Bureaux Valhaut. The office should appear inviting and flexible, with sleek, minimalist furniture in a space of 10 to 20 m². Sunlight streams through large, panoramic windows, casting a warm, calming glow across the room, enhancing the feeling of openness and freedom.
+
+The color palette should be elegant and restrained, with soft whites, gentle grays, and accents of deep navy blue, symbolizing reliability and modernity. Add vibrant green plants for a touch of nature and freshness, subtly emphasizing sustainability and local business orientation.
+
+Capture the serene, yet dynamic energy of the space by incorporating artistic elements inspired by the artistic themes of Vallauris—perhaps a subtle sculpture or a tasteful painting in the background, paying homage to local art without overpowering the simplicity of the scene.
+
+The setting should convey a sense of calm and practicality, with clear signage and flexible workstations that suggest both productivity and ease. The composition should be photorealistic, with a focus on clarity and a direct, calming atmosphere that aligns with the agent's persona.
+
+Lighting should be natural, indirect, and flattering, contributing to a serene yet focused ambiance. Ensure that the image is wide format, capturing the full expanse of the space, suitable for an engaging, professional social media post, reflecting Bureaux Valhaut's promise of beauty, functionality, and local connection without any marketing jargon.
+
+============================================================
+IMAGE FILE: gpt_image_1_bureauxvalhaut_1767828604695.png

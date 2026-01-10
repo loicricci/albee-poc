@@ -26,7 +26,7 @@ export default function Toast({
   }, [duration, onClose]);
 
   const bgColor = {
-    success: 'bg-gradient-to-r from-green-500 to-emerald-600',
+    success: 'bg-gradient-to-r from-[#2E3A59] to-[#1a2236]',
     error: 'bg-gradient-to-r from-red-500 to-rose-600',
     info: 'bg-gradient-to-r from-blue-500 to-indigo-600',
     warning: 'bg-gradient-to-r from-yellow-500 to-orange-600',
@@ -75,4 +75,6 @@ export default function Toast({
     </div>
   );
 }
+
+
 

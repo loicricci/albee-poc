@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @bureauxvalhaut
+Generated: 2026-01-08 00:25:21
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/af19e613-9ce5-4845-87ce-a164149264dc/reference_1767735335650.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+Transform the background into a cozy Christmas-themed living room, adorned with a decorated pine tree with twinkling lights and colorful ornaments. Add a warm fireplace with stockings hanging above, casting a gentle glow across the room. Scatter wrapped gifts in vibrant red and green under the tree. Incorporate snow gently falling outside a frosted window, enhancing the festive atmosphere. Introduce subtle, artistic touches like holly and mistletoe around the room to align with Bureaux Valhaut's creative style. Keep the person prominent, maintaining their pose and appearance.
+
+============================================================
+IMAGE FILE: gpt_image_1_bureauxvalhaut_1767828321668.png

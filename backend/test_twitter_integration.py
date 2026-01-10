@@ -17,7 +17,7 @@ if not env_file.exists():
 
 load_dotenv(env_file)
 
-from twitter_service import get_twitter_service
+from backend.twitter_service import get_twitter_service
 
 
 def test_twitter_api():

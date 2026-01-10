@@ -19,8 +19,8 @@ import io
 # Add backend to path for imports
 sys.path.insert(0, 'backend')
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
 
 router = APIRouter(prefix="/auto-post", tags=["auto-post"])
 
@@ -137,7 +137,9 @@ def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
     
     avees = []
     for row in rows:
-        # Get reference images for this avee
+        avee_id = str(row.avee_id)
+        
+        # Fetch reference images for this agent
         ref_images_query = text("""
             SELECT 
                 id,
@@ -148,21 +150,20 @@ def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
             WHERE avee_id = :avee_id
             ORDER BY is_primary DESC, created_at DESC
         """)
-        ref_result = db.execute(ref_images_query, {"avee_id": str(row.avee_id)})
+        ref_result = db.execute(ref_images_query, {"avee_id": avee_id})
         ref_rows = ref_result.fetchall()
         
-        reference_images = [
-            {
+        reference_images = []
+        for ref_row in ref_rows:
+            reference_images.append({
                 "id": str(ref_row[0]),
                 "reference_image_url": ref_row[1],
                 "mask_image_url": ref_row[2],
                 "is_primary": ref_row[3]
-            }
-            for ref_row in ref_rows
-        ]
+            })
         
         avees.append({
-            "avee_id": str(row.avee_id),
+            "avee_id": avee_id,
             "handle": row.handle,
             "display_name": row.display_name,
             "avatar_url": row.avatar_url,
@@ -863,11 +864,18 @@ async def generate_posts(
             db=db
         )
         
+        # If generation failed, return error status
+        if not result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("error", "Post generation failed")
+            )
+        
         return {
             "status": "completed",
             "results": [result],
             "total": 1,
-            "successful": 1 if result["success"] else 0
+            "successful": 1
         }
     
     # Multiple agents - run in background

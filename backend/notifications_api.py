@@ -11,9 +11,9 @@ from sqlalchemy import desc, and_, or_
 from pydantic import BaseModel
 from datetime import datetime
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from models import Notification, Profile, Avee, Post
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.models import Notification, Profile, Avee, Post
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -99,8 +99,94 @@ def create_notification(
     return notification
 
 
+def _format_notification_simple(notification: Notification, users_map: dict, agents_map: dict, posts_map: dict) -> dict:
+    """Format a notification with pre-loaded related entity info (no DB queries)"""
+    result = {
+        "id": str(notification.id),
+        "notification_type": notification.notification_type,
+        "title": notification.title,
+        "message": notification.message,
+        "link": notification.link,
+        "is_read": notification.is_read == "true",
+        "created_at": notification.created_at.isoformat() if notification.created_at else None,
+        "related_user": None,
+        "related_agent": None,
+        "related_post": None,
+    }
+    
+    # Get related user info from pre-loaded map
+    if notification.related_user_id:
+        user = users_map.get(str(notification.related_user_id))
+        if user:
+            result["related_user"] = {
+                "user_id": str(user.user_id),
+                "handle": user.handle,
+                "display_name": user.display_name or user.handle,
+                "avatar_url": user.avatar_url,
+            }
+    
+    # Get related agent info from pre-loaded map
+    if notification.related_agent_id:
+        agent = agents_map.get(str(notification.related_agent_id))
+        if agent:
+            result["related_agent"] = {
+                "id": str(agent.id),
+                "handle": agent.handle,
+                "display_name": agent.display_name or agent.handle,
+                "avatar_url": agent.avatar_url,
+            }
+    
+    # Get related post info from pre-loaded map
+    if notification.related_post_id:
+        post = posts_map.get(str(notification.related_post_id))
+        if post:
+            result["related_post"] = {
+                "id": str(post.id),
+                "image_url": post.image_url,
+                "description": post.description,
+            }
+    
+    return result
+
+
+def _batch_load_related_entities(db: Session, notifications: list) -> tuple:
+    """Batch load all related entities for notifications in 3 queries instead of N*3"""
+    # Collect unique IDs
+    user_ids = set()
+    agent_ids = set()
+    post_ids = set()
+    
+    for n in notifications:
+        if n.related_user_id:
+            user_ids.add(n.related_user_id)
+        if n.related_agent_id:
+            agent_ids.add(n.related_agent_id)
+        if n.related_post_id:
+            post_ids.add(n.related_post_id)
+    
+    # Batch load profiles
+    users_map = {}
+    if user_ids:
+        users = db.query(Profile).filter(Profile.user_id.in_(user_ids)).all()
+        users_map = {str(u.user_id): u for u in users}
+    
+    # Batch load agents
+    agents_map = {}
+    if agent_ids:
+        agents = db.query(Avee).filter(Avee.id.in_(agent_ids)).all()
+        agents_map = {str(a.id): a for a in agents}
+    
+    # Batch load posts
+    posts_map = {}
+    if post_ids:
+        posts = db.query(Post).filter(Post.id.in_(post_ids)).all()
+        posts_map = {str(p.id): p for p in posts}
+    
+    return users_map, agents_map, posts_map
+
+
 def _format_notification(db: Session, notification: Notification) -> dict:
-    """Format a notification with related entity info"""
+    """Format a notification with related entity info (legacy single-notification version)"""
     result = {
         "id": str(notification.id),
         "notification_type": notification.notification_type,
@@ -178,6 +264,7 @@ def get_notifications(
     
     # Get total count
     total = query.count()
+    
     unread_count = db.query(Notification).filter(
         Notification.user_id == user_uuid,
         Notification.is_read == "false"
@@ -186,8 +273,11 @@ def get_notifications(
     # Get paginated results
     notifications = query.order_by(desc(Notification.created_at)).limit(limit).offset(offset).all()
     
-    # Format notifications
-    results = [_format_notification(db, n) for n in notifications]
+    # Batch load related entities (3 queries instead of N*3)
+    users_map, agents_map, posts_map = _batch_load_related_entities(db, notifications)
+    
+    # Format notifications using pre-loaded data (no DB queries)
+    results = [_format_notification_simple(n, users_map, agents_map, posts_map) for n in notifications]
     
     return {
         "notifications": results,
@@ -285,4 +375,6 @@ def delete_notification(
     db.commit()
     
     return {"message": "Notification deleted"}
+
+
 

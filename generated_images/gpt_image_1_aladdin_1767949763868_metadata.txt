@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @aladdin
+Generated: 2026-01-09 10:09:23
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic scene of Aladdin, depicted as a modern-day hero amidst a bustling evacuation effort due to volcanic activity. Aladdin, dressed in contemporary, stylish attire with hints of traditional Arabian influence, stands atop a sturdy platform, directing people with a confident and reassuring presence. His outfit reflects his clever and streetwise nature, incorporating sleek modern fashion with earthy tones, highlighted by the primary green #A7FB90 from his branding.
+
+The scene is set against a dramatic volcanic backdrop, with a smoldering volcano releasing plumes of ash into a twilight sky, tinged in hues of orange and purple. The landscape is both awe-inspiring and formidable, capturing the essence of natural power. In the foreground, a diverse crowd of evacuees, guided by Aladdin's gestures, moves orderly and calmly, reflecting the warm and trustworthy energy he exudes.
+
+Lighting is high contrast, with the fiery glow of the volcano casting dynamic shadows, enhancing the geometric and grid-based composition of the image. Use the secondary sage #9EB3A8 and light background green #E6F1E7 to subtly tint the scene, ensuring the colors remain in harmony with the calm, professional mood.
+
+Incorporate FK Grotesk font elements subtly into technical signage and evacuation maps visible in the scene, reinforcing the minimalist and industrial style. The overall atmosphere is one of organized urgency with a sense of hope, emphasizing Aladdin’s role as a beacon of guidance and safety. This image captures the intersection of history, modernity, and resilience, making it both engaging and memorable.
+
+============================================================
+IMAGE FILE: gpt_image_1_aladdin_1767949763868.png

@@ -60,3 +60,5 @@ except Exception as e:
 print("\n🎉 Done! The notifications table is ready.")
 print("   Restart your backend server to start receiving notifications.")
 
+
+

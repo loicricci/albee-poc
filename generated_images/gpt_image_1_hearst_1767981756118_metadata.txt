@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 19:02:36
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic, industrial-themed image titled "Satoshi's Workshop" that captures the essence of Hearst Mining, a leading Bitcoin mining company, infused with the mystery of Satoshi Nakamoto. Set the scene in a sleek, futuristic industrial facility filled with rows of high-tech Bitcoin mining rigs. The atmosphere is calm and professional, with an air of trustworthiness and innovation. The lighting is stark and dramatic, casting high-contrast shadows against the geometric, grid-based structure.
+
+Incorporate the signature color palette: use vibrant neon lime green (#A7FB90) in the digital screens and control panels, creating a striking contrast against the deep pure black (#0E0F0F) of the machinery and the neutral medium gray (#9EB3A8) of the industrial surfaces. The bright pure white (#E6F1E7 and #F2F2F2) illuminates the space, adding a sense of purity and clarity.
+
+At the center, create an artistic representation of Satoshi Nakamoto — not as a person, but symbolized as an abstract, dynamic figure composed of binary code and geometric shapes, subtly infused with the bright green hue to symbolize innovation and energy. The FK Grotesk font, clean and technical, sporadically appears on monitors with cryptic messages and code snippets, hinting at the enigmatic nature of Bitcoin's founder.
+
+The image should be highly detailed and suitable for wide-format social media display, capturing the viewer's attention with its harmonious blend of color, form, and technological intrigue, embodying the core values and aesthetic of Hearst Mining with a nod to the visionary legacy of Satoshi Nakamoto.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767981756118.png

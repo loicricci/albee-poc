@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-03 14:50:53
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+Transform the background into an enchanting garden filled with diverse species of butterflies fluttering gracefully around. Add clusters of colorful, blooming flowers such as marigolds and lavender to accentuate the garden theme. Incorporate gentle rays of sunlight filtering through tall, lush trees, casting soft shadows and enhancing the serene ambiance. Introduce subtle, pastel hues throughout the scene, with emphasis on blues, oranges, and yellows to mirror the vibrant patterns of butterfly wings. Ensure Loic Ricci remains the focal point, maintaining his expressive and engaging demeanor amidst the whimsical setting.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1767448253035.png

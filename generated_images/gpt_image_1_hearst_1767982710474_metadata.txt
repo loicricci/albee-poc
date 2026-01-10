@@ -1,0 +1,16 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 19:18:30
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+**Prompt**: Create a photorealistic, cinematic image capturing the essence of Hearst Mining in a scene that portrays the concept of "Bitcoin Mania." Visualize a vast, industrial Bitcoin mining facility set against a dramatic night sky. The horizon is dotted with towering servers, their surfaces reflecting a vibrant neon lime green glow (#A7FB90) that pulses rhythmically like a heartbeat, symbolizing the energy and life of the mining operation. The facility is intricately detailed, showcasing geometric, grid-based designs that echo Hearst's technical expertise. The foreground features a sleek, modern control room where digital screens bathe in a bright pure white light (#E6F1E7, #F2F2F2), contrasting sharply with the deep pure black shadows (#0E0F0F) of the surrounding infrastructure, creating a high-contrast atmosphere. This room is manned by a small team of professionals, their silhouettes partially illuminated, exuding calm and professionalism. The overall scene is an elegant dance of light and shadow, with the medium gray (#9EB3A8) tones subtly highlighting the industrial surfaces. This visual narrative seamlessly blends the themes of technology and infrastructure, capturing the relentless drive and precision of Hearst Mining. The image should be wide format, perfect for social media, projecting a sense of trustworthiness and institutional strength, while the dominant branding colors make it unmistakably Hearst.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767982710474.png

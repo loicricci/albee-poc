@@ -66,6 +66,7 @@ function NetworkContent() {
   const [items, setItems] = useState<FollowingAgent[]>([]);
   const [handleInput, setHandleInput] = useState("");
   const [followingAgentIds, setFollowingAgentIds] = useState<Set<string>>(new Set());
+  const [unfollowingAgentIds, setUnfollowingAgentIds] = useState<Set<string>>(new Set());
   
   // Search suggestions state
   const [searchResults, setSearchResults] = useState<FollowingAgent[]>([]);
@@ -77,31 +78,89 @@ function NetworkContent() {
   // Suggested agents state
   const [suggestedAgents, setSuggestedAgents] = useState<FollowingAgent[]>([]);
   const [loadingSuggested, setLoadingSuggested] = useState(true);
+  const [suggestedPage, setSuggestedPage] = useState(0);
+  const [hasMoreSuggested, setHasMoreSuggested] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const SUGGESTED_LIMIT = 6;
+
+  // Guard against duplicate initial loads (React StrictMode double-mount)
+  const hasInitializedRef = useRef(false);
+  const loadingRef = useRef(false);
+  const suggestedLoadingRef = useRef(false);
 
   const normalizedHandle = useMemo(() => handleInput.trim().toLowerCase(), [handleInput]);
 
-  const load = async () => {
+  const load = async (force: boolean = false) => {
+    // Guard against duplicate concurrent loads
+    if (loadingRef.current && !force) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:load',message:'load() SKIPPED - already loading',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      return;
+    }
+    loadingRef.current = true;
+    // #region agent log
+    const loadStart = Date.now();
+    fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:load',message:'load() START',data:{},timestamp:loadStart,sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     setPhase("loading");
     setErrorMsg("");
 
     try {
+      // #region agent log
+      const tokenStart = Date.now();
+      // #endregion
       const token = await getAccessToken();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:load',message:'getAccessToken done',data:{tokenDurationMs:Date.now()-tokenStart},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      const apiStart = Date.now();
+      // #endregion
       const data = await apiGet<FollowingAgent[]>("/network/following-agents", token);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:load',message:'load() COMPLETE',data:{apiDurationMs:Date.now()-apiStart,totalDurationMs:Date.now()-loadStart,itemCount:Array.isArray(data)?data.length:0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       setItems(Array.isArray(data) ? data : []);
       setPhase("ready");
     } catch (e: any) {
       setPhase("error");
       setErrorMsg(e?.message || "Failed to load network.");
+    } finally {
+      loadingRef.current = false;
     }
   };
 
-  const loadSuggestedAgents = async () => {
+  const loadSuggestedAgents = async (page: number = 0, withTransition: boolean = false, force: boolean = false) => {
+    // Guard against duplicate concurrent loads (unless it's a page change or forced)
+    if (suggestedLoadingRef.current && !withTransition && !force) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:loadSuggestedAgents',message:'loadSuggestedAgents() SKIPPED - already loading',data:{page},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      return;
+    }
+    suggestedLoadingRef.current = true;
+    // #region agent log
+    const suggestedStart = Date.now();
+    fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:loadSuggestedAgents',message:'loadSuggestedAgents() START',data:{page,withTransition},timestamp:suggestedStart,sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    if (withTransition) {
+      setIsTransitioning(true);
+      // Short delay for exit animation
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
     setLoadingSuggested(true);
     try {
+      // #region agent log
+      const tokenStart = Date.now();
+      // #endregion
       const token = await getAccessToken();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:loadSuggestedAgents',message:'getAccessToken done',data:{tokenDurationMs:Date.now()-tokenStart},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      const apiStart = Date.now();
+      // #endregion
       const url = new URL(`${apiBase()}/network/search-agents`);
       url.searchParams.set("query", "");
-      url.searchParams.set("limit", "6");
+      url.searchParams.set("limit", String(SUGGESTED_LIMIT));
+      url.searchParams.set("offset", String(page * SUGGESTED_LIMIT));
       url.searchParams.set("include_followed", "false"); // Exclude agents already followed
 
       const res = await fetch(url.toString(), {
@@ -110,17 +169,28 @@ function NetworkContent() {
 
       if (res.ok) {
         const data = await res.json();
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:loadSuggestedAgents',message:'loadSuggestedAgents() COMPLETE',data:{apiDurationMs:Date.now()-apiStart,totalDurationMs:Date.now()-suggestedStart,agentCount:Array.isArray(data)?data.length:0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         // Double-check on client side: filter out any agents marked as followed
         const unfollowedAgents = Array.isArray(data) 
           ? data.filter((agent: FollowingAgent) => !agent.is_followed)
           : [];
         setSuggestedAgents(unfollowedAgents);
+        // If we got fewer results than the limit, we've reached the end
+        setHasMoreSuggested(unfollowedAgents.length >= SUGGESTED_LIMIT);
+        setSuggestedPage(page);
       }
     } catch (e: any) {
       console.error("Failed to load suggested agents:", e);
       setSuggestedAgents([]);
     } finally {
       setLoadingSuggested(false);
+      suggestedLoadingRef.current = false;
+      if (withTransition) {
+        // Allow enter animation to play
+        setTimeout(() => setIsTransitioning(false), 50);
+      }
     }
   };
 
@@ -194,6 +264,17 @@ function NetworkContent() {
   }, []);
 
   useEffect(() => {
+    // Guard against duplicate initial loads (React StrictMode double-mount)
+    if (hasInitializedRef.current) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:useEffect',message:'Network page mount SKIPPED - already initialized',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      return;
+    }
+    hasInitializedRef.current = true;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'network/page.tsx:useEffect',message:'Network page mount - starting data load',data:{apiBase:process.env.NEXT_PUBLIC_API_BASE},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,E'})}).catch(()=>{});
+    // #endregion
     console.log("API_BASE:", process.env.NEXT_PUBLIC_API_BASE);
     load();
     loadSuggestedAgents();
@@ -237,6 +318,54 @@ function NetworkContent() {
     follow(agent.avee_handle, agent.avee_id);
   };
 
+  const unfollow = async (agentId: string) => {
+    setUnfollowingAgentIds(prev => new Set(prev).add(agentId));
+    setErrorMsg("");
+
+    try {
+      const token = await getAccessToken();
+      const url = new URL(`${apiBase()}/relationships/unfollow-agent`);
+      url.searchParams.set("avee_id", agentId);
+
+      const res = await fetch(url.toString(), {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+
+      await load();
+      await loadSuggestedAgents(); // Refresh suggested agents
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Failed to unfollow agent.");
+    } finally {
+      setUnfollowingAgentIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(agentId);
+        return newSet;
+      });
+    }
+  };
+
+  const handlePreviousSuggested = () => {
+    if (suggestedPage > 0 && !loadingSuggested) {
+      loadSuggestedAgents(suggestedPage - 1, true);
+    }
+  };
+
+  const handleNextSuggested = () => {
+    if (hasMoreSuggested && !loadingSuggested) {
+      loadSuggestedAgents(suggestedPage + 1, true);
+    }
+  };
+
+  const handleRefreshSuggested = () => {
+    if (!loadingSuggested) {
+      setSuggestedPage(0);
+      loadSuggestedAgents(0, true);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl">
       {/* Header */}
@@ -265,14 +394,79 @@ function NetworkContent() {
       ) : null}
 
       {/* Suggested Agents */}
-      {!loadingSuggested && suggestedAgents.length > 0 && (
+      {(suggestedAgents.length > 0 || suggestedPage > 0) && (
         <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
           <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 sm:px-6 py-3 sm:py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Suggested Agents</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Discover agents you might like to follow</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Suggested Agents</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Discover agents you might like to follow</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Refresh button */}
+                <button
+                  onClick={handleRefreshSuggested}
+                  disabled={loadingSuggested}
+                  className="flex items-center justify-center rounded-lg p-2 text-[#2E3A59]/70 transition-colors hover:bg-[#2E3A59]/10 hover:text-[#2E3A59] disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Shuffle suggestions"
+                >
+                  <svg className={`h-4 w-4 ${loadingSuggested ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+                {/* Previous button */}
+                <button
+                  onClick={handlePreviousSuggested}
+                  disabled={suggestedPage === 0 || loadingSuggested}
+                  className="flex items-center justify-center rounded-lg p-2 text-[#2E3A59]/70 transition-colors hover:bg-[#2E3A59]/10 hover:text-[#2E3A59] disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Previous suggestions"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                {/* Next button */}
+                <button
+                  onClick={handleNextSuggested}
+                  disabled={!hasMoreSuggested || loadingSuggested}
+                  className="flex items-center justify-center rounded-lg p-2 text-[#2E3A59]/70 transition-colors hover:bg-[#2E3A59]/10 hover:text-[#2E3A59] disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Next suggestions"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="p-4 sm:p-5">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="p-4 sm:p-5 relative min-h-[200px]">
+            {loadingSuggested ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex items-center gap-3 text-gray-600">
+                  <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span className="text-sm font-medium">Loading suggestions...</span>
+                </div>
+              </div>
+            ) : suggestedAgents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <svg className="h-12 w-12 text-[#2E3A59]/30 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <p className="text-sm text-[#2E3A59]/70 mb-2">No more suggestions available</p>
+                {suggestedPage > 0 && (
+                  <button
+                    onClick={handlePreviousSuggested}
+                    className="text-sm text-[#2E3A59] hover:underline"
+                  >
+                    ← Go back to previous suggestions
+                  </button>
+                )}
+              </div>
+            ) : (
+            <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 transition-all duration-300 ${isTransitioning ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0'}`}>
               {suggestedAgents.map((agent) => (
                 <div
                   key={agent.avee_id}
@@ -339,6 +533,7 @@ function NetworkContent() {
                 </div>
               ))}
             </div>
+            )}
           </div>
         </div>
       )}
@@ -466,7 +661,7 @@ function NetworkContent() {
             <button
               className="flex items-center justify-center gap-2 rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
               disabled={phase === "loading"}
-              onClick={load}
+              onClick={() => load(true)}
               title="Refresh"
             >
               <svg className={`h-4 w-4 ${phase === "loading" ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -502,7 +697,7 @@ function NetworkContent() {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to load network</h3>
             <p className="text-sm text-gray-600 mb-4">Check that the backend is running and endpoints exist</p>
             <button
-              onClick={load}
+              onClick={() => load(true)}
               className="inline-flex items-center gap-2 rounded-lg bg-[#001f98] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -593,6 +788,30 @@ function NetworkContent() {
                       </svg>
                       Profile
                     </Link>
+
+                    <button
+                      onClick={() => unfollow(x.avee_id)}
+                      disabled={unfollowingAgentIds.has(x.avee_id)}
+                      className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:border-red-400 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Unfollow agent"
+                    >
+                      {unfollowingAgentIds.has(x.avee_id) ? (
+                        <>
+                          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Unfollowing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                          </svg>
+                          Unfollow
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   {/* Mobile: Icon-only buttons */}
@@ -616,6 +835,24 @@ function NetworkContent() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </Link>
+
+                    <button
+                      onClick={() => unfollow(x.avee_id)}
+                      disabled={unfollowingAgentIds.has(x.avee_id)}
+                      className="flex items-center justify-center rounded-lg border border-red-200 p-2.5 text-red-600 transition-colors hover:border-red-400 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Unfollow agent"
+                    >
+                      {unfollowingAgentIds.has(x.avee_id) ? (
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                      ) : (
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                        </svg>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>

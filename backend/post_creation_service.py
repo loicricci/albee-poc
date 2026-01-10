@@ -15,10 +15,10 @@ from typing import Dict, Any, Optional
 from sqlalchemy import text
 
 # Import shared database session
-from db import SessionLocal
+from backend.db import SessionLocal
 
 # Import caching
-from cache import agent_cache
+from backend.cache import agent_cache
 
 
 def create_autopost_notification(db_session, user_id: str, agent_handle: str, post_id: str):

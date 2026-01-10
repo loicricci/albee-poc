@@ -12,9 +12,9 @@ import uuid
 from datetime import datetime
 import asyncio
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from models import Avee, AgentUpdate, AgentFollower, UpdateReadStatus, Profile, Post, PostLike, PostShare
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.models import Avee, AgentUpdate, AgentFollower, UpdateReadStatus, Profile, Post, PostLike, PostShare
 
 router = APIRouter()
 
@@ -198,10 +198,12 @@ async def get_feed(
         )
         
         # Fetch all updates for all agents at once (optimize N+1 query)
+        # OPTIMIZATION: Limit total updates fetched
         all_updates = (
             db.query(AgentUpdate)
             .filter(AgentUpdate.avee_id.in_(all_agent_ids))
-            .order_by(AgentUpdate.avee_id, AgentUpdate.created_at.desc())
+            .order_by(AgentUpdate.created_at.desc())
+            .limit(min(len(all_agent_ids) * 5, 200))  # Max 200 updates total
             .all()
         )
         
@@ -556,7 +558,14 @@ async def get_unified_feed(
     4. All updates from own agents
     
     Returns chronologically sorted (newest first).
+    
+    OPTIMIZED: Instead of fetching ALL data and sorting in Python,
+    we fetch only the top N items directly from the database.
     """
+    
+    import time
+    total_start = time.time()
+    timings = {}
     
     try:
         # Rollback any previous failed transaction
@@ -571,6 +580,8 @@ async def get_unified_feed(
         print(f"[UnifiedFeed] Fetching unified feed for user: {user_id}")
         
         # Step 1: Get all agent IDs that should be in the feed
+        step1_start = time.time()
+        
         # 1a. Agents followed by user
         followed_agent_ids = (
             db.query(AgentFollower.avee_id)
@@ -588,24 +599,36 @@ async def get_unified_feed(
         )
         own_ids = [aid[0] for aid in own_agent_ids]
         print(f"[UnifiedFeed] Owned agents: {len(own_ids)}")
+        timings['step1_agent_ids'] = (time.time() - step1_start) * 1000
         
         # Combine (unique)
         all_agent_ids = list(set(followed_ids + own_ids))
         print(f"[UnifiedFeed] Total agents in feed: {len(all_agent_ids)}")
         
-        # Step 2: Fetch updates from these agents
+        # OPTIMIZATION: Instead of fetching ALL updates and posts, fetch only latest N items
+        # This dramatically reduces query time for users with many agents
+        
+        # Calculate how many items to fetch from database (with buffer for sorting)
+        fetch_limit = max(limit + offset + 50, 100)  # Fetch extra for proper pagination
+        
+        # Step 2: Fetch ONLY the latest updates (limited!)
+        step2_start = time.time()
         updates = []
         if all_agent_ids:
+            # Use LIMIT directly in database query!
             updates = (
                 db.query(AgentUpdate, Avee, Profile)
                 .join(Avee, AgentUpdate.avee_id == Avee.id)
                 .join(Profile, Avee.owner_user_id == Profile.user_id)
                 .filter(AgentUpdate.avee_id.in_(all_agent_ids))
+                .order_by(AgentUpdate.created_at.desc())
+                .limit(fetch_limit)  # CRITICAL: Limit at database level!
                 .all()
             )
+        timings['step2_updates'] = (time.time() - step2_start) * 1000
         print(f"[UnifiedFeed] Found {len(updates)} updates")
         
-        # Get read status for updates
+        # Get read status for ONLY these updates (not all!)
         update_ids = [u[0].id for u in updates]
         read_update_ids = set()
         if update_ids:
@@ -623,9 +646,11 @@ async def get_unified_feed(
                 db.rollback()
                 pass
         
-        # Step 3: Fetch posts from these agents
+        # Step 3: Fetch ONLY the latest posts (limited!)
+        step3_start = time.time()
         agent_posts = []
         if all_agent_ids:
+            # Use LIMIT directly in database query!
             agent_posts = (
                 db.query(Post, Avee, Profile)
                 .join(Avee, Post.agent_id == Avee.id)
@@ -634,11 +659,14 @@ async def get_unified_feed(
                     Post.agent_id.in_(all_agent_ids),
                     Post.visibility == "public"
                 )
+                .order_by(Post.created_at.desc())
+                .limit(fetch_limit)  # CRITICAL: Limit at database level!
                 .all()
             )
+        timings['step3_posts'] = (time.time() - step3_start) * 1000
         print(f"[UnifiedFeed] Found {len(agent_posts)} agent posts")
         
-        # Step 4: Fetch user's own posts (where agent_id is NULL)
+        # Step 4: Fetch user's own posts (limited!)
         user_posts = (
             db.query(Post, Profile)
             .join(Profile, Post.owner_user_id == Profile.user_id)
@@ -646,13 +674,30 @@ async def get_unified_feed(
                 Post.owner_user_id == user_id,
                 Post.agent_id.is_(None)
             )
+            .order_by(Post.created_at.desc())
+            .limit(fetch_limit)  # CRITICAL: Limit at database level!
             .all()
         )
         print(f"[UnifiedFeed] Found {len(user_posts)} user posts")
         
-        # Step 4.5: Fetch reposts by current user and followed users
+        # Step 4.5: Preload post owner profiles (only for fetched posts)
+        all_post_owner_ids = list(set(
+            [p[0].owner_user_id for p in agent_posts] + 
+            [p[0].owner_user_id for p in user_posts]
+        ))
+        
+        post_owners_map = {}
+        if all_post_owner_ids:
+            post_owners = (
+                db.query(Profile)
+                .filter(Profile.user_id.in_(all_post_owner_ids))
+                .all()
+            )
+            post_owners_map = {p.user_id: p for p in post_owners}
+            print(f"[UnifiedFeed] Preloaded {len(post_owners_map)} post owner profiles")
+        
+        # Step 4.6: Fetch reposts (limited!)
         reposts = []
-        # Get all user IDs to include (current user + owners of followed agents)
         followed_owner_ids = []
         if all_agent_ids:
             followed_owners = (
@@ -663,10 +708,10 @@ async def get_unified_feed(
             )
             followed_owner_ids = [owner[0] for owner in followed_owners]
         
-        # Always include current user's reposts
         user_ids_for_reposts = [user_id] + followed_owner_ids if followed_owner_ids else [user_id]
         
-        # Fetch reposts
+        # Use LIMIT for reposts too!
+        step4_start = time.time()
         reposts = (
             db.query(PostShare, Post, Profile, Avee)
             .join(Post, PostShare.post_id == Post.id)
@@ -674,13 +719,16 @@ async def get_unified_feed(
             .outerjoin(Avee, Post.agent_id == Avee.id)
             .filter(
                 PostShare.user_id.in_(user_ids_for_reposts),
-                Post.visibility == "public"  # Only public posts can be seen when reposted
+                Post.visibility == "public"
             )
+            .order_by(PostShare.created_at.desc())
+            .limit(fetch_limit)  # CRITICAL: Limit at database level!
             .all()
         )
+        timings['step4_reposts'] = (time.time() - step4_start) * 1000
         print(f"[UnifiedFeed] Found {len(reposts)} reposts")
         
-        # Check for post likes
+        # Check for post likes (only for fetched posts)
         post_ids = [p[0].id for p in agent_posts] + [p[0].id for p in user_posts] + [r[1].id for r in reposts]
         liked_post_ids = set()
         if post_ids:
@@ -766,17 +814,19 @@ async def get_unified_feed(
         
         # Add reposts
         for share, post, sharer_profile, post_agent in reposts:
-            # Get original post owner
-            post_owner = db.query(Profile).filter(Profile.user_id == post.owner_user_id).first()
+            # Get original post owner from preloaded map
+            post_owner = post_owners_map.get(post.owner_user_id)
             
             if not post_owner:
-                continue
+                # Fallback: query if somehow not in map
+                post_owner = db.query(Profile).filter(Profile.user_id == post.owner_user_id).first()
+                if not post_owner:
+                    continue
             
-            # Check if user liked the original post
             user_liked = post.id in liked_post_ids
             
             feed_items.append({
-                "id": f"repost-{str(share.id)}",  # Unique ID for repost
+                "id": f"repost-{str(share.id)}",
                 "type": "repost",
                 "repost_id": str(share.id),
                 "repost_comment": share.comment,
@@ -785,7 +835,6 @@ async def get_unified_feed(
                 "reposted_by_display_name": sharer_profile.display_name,
                 "reposted_by_avatar_url": sharer_profile.avatar_url,
                 "reposted_at": share.created_at.isoformat(),
-                # Original post data (flattened for easier frontend consumption)
                 "post_id": str(post.id),
                 "agent_id": str(post_agent.id) if post_agent else None,
                 "agent_handle": post_agent.handle if post_agent else post_owner.handle,
@@ -802,7 +851,7 @@ async def get_unified_feed(
                 "comment_count": post.comment_count,
                 "share_count": post.share_count,
                 "user_has_liked": user_liked,
-                "created_at": share.created_at.isoformat(),  # Use repost time for chronological sorting
+                "created_at": share.created_at.isoformat(),
             })
         
         # Step 6: Sort by created_at (chronological, newest first)
@@ -813,7 +862,9 @@ async def get_unified_feed(
         has_more = (offset + limit) < total_items
         paginated_items = feed_items[offset:offset + limit] if limit > 0 else feed_items
         
+        total_time = (time.time() - total_start) * 1000
         print(f"[UnifiedFeed] Returning {len(paginated_items)}/{total_items} items, has_more={has_more}")
+        print(f"[UnifiedFeed] Timing: total={total_time:.0f}ms | agent_ids={timings.get('step1_agent_ids', 0):.0f}ms, updates={timings.get('step2_updates', 0):.0f}ms, posts={timings.get('step3_posts', 0):.0f}ms, reposts={timings.get('step4_reposts', 0):.0f}ms")
         
         return UnifiedFeedResponse(
             items=paginated_items,

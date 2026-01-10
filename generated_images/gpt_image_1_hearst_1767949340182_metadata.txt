@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 10:02:20
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic, high-contrast illustration celebrating the legacy of Satoshi Nakamoto through the lens of Hearst Mining's industrial persona. The scene depicts a massive, futuristic Bitcoin mining facility, seamlessly blending nature and technology. The structure is minimalist and geometric, with sleek lines and a grid-based design, reflecting Hearst's technical essence. The color palette incorporates Hearst's branding: primary green (#A7FB90) and secondary sage (#9EB3A8) as accents against a backdrop of light background green (#E6F1E7) and neutral light grey (#F2F2F2). The entire composition is anchored by sharp contrasts with primary black (#0E0F0F). 
+
+In the foreground, a large, transparent digital screen displays a stylized tribute to Satoshi Nakamoto, using FK Grotesk font for the message, embodying a calm yet powerful acknowledgment of the Bitcoin visionary. The scene is illuminated by soft, ambient lighting, casting subtle reflections on the metallic surfaces, enhancing the professional and institutional mood. 
+
+Incorporate elements of music, fashion, art, history, science, and technology subtly within the scene, such as digital representations of musical notes or abstract art flowing from the Bitcoin symbols, hinting at the multi-dimensional impact of Nakamoto’s creation. The atmosphere is calm and trustworthy, with a focus on energy and infrastructure, capturing the essence of sustainable growth and innovation. This image should be in a wide format, perfect for social media, with high detail and a professional finish, ensuring it is both engaging and eye-catching.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767949340182.png

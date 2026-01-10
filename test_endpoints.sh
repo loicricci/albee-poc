@@ -42,3 +42,5 @@ echo "3. Test share endpoint:"
 echo "   curl -X POST 'http://localhost:8000/posts/POST_ID/share?share_type=repost&comment=Test' \\"
 echo "     -H 'Authorization: Bearer YOUR_TOKEN'"
 
+
+

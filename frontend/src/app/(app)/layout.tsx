@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { ChatProvider } from "@/components/ChatContext";
 import dynamic from "next/dynamic";
 import { AgentCacheProvider } from "@/components/AgentCache";
+import { useAppData } from "@/contexts/AppDataContext";
 
 // PERFORMANCE: Lazy load ChatModal (reduces initial bundle by ~50KB)
 const ChatModalContainer = dynamic(() => import("@/components/ChatModal").then(mod => ({ default: mod.ChatModalContainer })), {
@@ -42,124 +43,89 @@ function pageTitle(pathname: string) {
   return "App";
 }
 
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Skeleton navigation bar */}
+      <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-xl shadow-sm">
+        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+          {/* Logo skeleton */}
+          <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+          
+          {/* Navigation items skeleton */}
+          <div className="flex gap-6">
+            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+          </div>
+          
+          {/* User menu skeleton */}
+          <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse" />
+        </div>
+      </div>
+      
+      {/* Skeleton content */}
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="space-y-6">
+          {/* Title skeleton */}
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+          
+          {/* Composer skeleton */}
+          <div className="h-32 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse" />
+          
+          {/* Feed items skeleton */}
+          <div className="space-y-4">
+            <div className="h-64 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse" />
+            <div className="h-64 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse" />
+            <div className="h-64 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:39',message:'AppLayout rendering',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   const router = useRouter();
   const pathname = usePathname();
-
-  const [ready, setReady] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  
+  // Use AppDataContext for auth state - no redundant session checks!
+  const { profile, isLoadingCritical } = useAppData();
 
   const title = useMemo(() => pageTitle(pathname), [pathname]);
   
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:52',message:'Layout path check',data:{pathname:pathname,usesNewLayout:pathname === "/app" || pathname === "/onboarding" || pathname === "/profile" || pathname === "/account" || pathname === "/agent" || pathname === "/my-agents" || pathname === "/my-avees" || pathname === "/network" || pathname === "/notifications" || pathname === "/messages" || pathname === "/backoffice" || pathname.startsWith("/app/") || pathname.startsWith("/onboarding/") || pathname.startsWith("/profile/") || pathname.startsWith("/account/") || pathname.startsWith("/agent/") || pathname.startsWith("/my-agents/") || pathname.startsWith("/my-avees/") || pathname.startsWith("/network/") || pathname.startsWith("/notifications/") || pathname.startsWith("/messages/") || pathname.startsWith("/backoffice/") || pathname.startsWith("/u/") || pathname.startsWith("/feed")},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   // Check if we're on pages that use the new layout - if so, render without the sidebar layout
   const usesNewLayout = pathname === "/app" || pathname === "/onboarding" || pathname === "/profile" || pathname === "/account" || pathname === "/agent" || pathname === "/my-agents" || pathname === "/my-avees" || pathname === "/network" || pathname === "/notifications" || pathname === "/messages" || pathname === "/backoffice" || pathname.startsWith("/app/") || pathname.startsWith("/onboarding/") || pathname.startsWith("/profile/") || pathname.startsWith("/account/") || pathname.startsWith("/agent/") || pathname.startsWith("/my-agents/") || pathname.startsWith("/my-avees/") || pathname.startsWith("/network/") || pathname.startsWith("/notifications/") || pathname.startsWith("/messages/") || pathname.startsWith("/backoffice/") || pathname.startsWith("/u/") || pathname.startsWith("/feed");
 
+  // Handle auth redirect in useEffect to avoid render-time side effects
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:51',message:'Layout useEffect triggered',data:{pathname:pathname,actualURL:typeof window !== 'undefined' ? window.location.href : 'SSR'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F,G,H'})}).catch(()=>{});
-    // #endregion
-    let alive = true;
-
-    async function syncSession() {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:58',message:'syncSession started',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
-      // #endregion
-      const { data, error } = await supabase.auth.getSession();
-
-      // Debug (remove later)
-      // eslint-disable-next-line no-console
-      console.log("getSession error:", error);
-      // eslint-disable-next-line no-console
-      console.log("session exists:", !!data.session);
-      // eslint-disable-next-line no-console
-      console.log("email:", data.session?.user?.email);
-      // eslint-disable-next-line no-console
-      console.log("token prefix:", data.session?.access_token?.slice(0, 20));
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:76',message:'After getSession',data:{hasError:!!error,hasSession:!!data.session,email:data.session?.user?.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
-      // #endregion
-
-      if (!alive) return;
-
-      if (!data.session) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:84',message:'No session - will redirect to login',data:{pathname:pathname,willRedirect:!pathname.startsWith("/onboarding")},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
-        // #endregion
-        setUserEmail(null);
-        setReady(true); // ready so we can redirect cleanly
-        // Don't redirect to login if we're on onboarding - let onboarding page handle it
-        if (!pathname.startsWith("/onboarding")) {
-          router.push("/login");
-        }
-        return;
-      }
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:97',message:'Session valid - setting ready',data:{email:data.session.user?.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
-      // #endregion
-      setUserEmail(data.session.user?.email ?? null);
-      setReady(true);
+    if (!isLoadingCritical && !profile && !pathname.startsWith("/onboarding")) {
+      router.push("/login");
     }
-
-    // Initial sync
-    syncSession();
-
-    // Listen to login/logout changes
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Debug (remove later)
-      // eslint-disable-next-line no-console
-      console.log("auth event:", _event, "session:", !!session);
-
-      if (!alive) return;
-
-      if (!session) {
-        setUserEmail(null);
-        setReady(true);
-        // Don't redirect to login if we're on onboarding
-        if (!pathname.startsWith("/onboarding")) {
-          router.push("/login");
-        }
-        return;
-      }
-
-      setUserEmail(session.user?.email ?? null);
-      setReady(true);
-    });
-
-    return () => {
-      alive = false;
-      sub.subscription.unsubscribe();
-    };
-  }, [router, pathname]);
+  }, [isLoadingCritical, profile, pathname, router]);
 
   async function logout() {
     await supabase.auth.signOut();
+    // Auth state change will be handled by AppDataContext
     router.push("/login");
   }
 
-  if (!ready) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:133',message:'Layout not ready - showing loading',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
-    // #endregion
-    return <div className="p-6 text-sm text-gray-600">Loading…</div>;
+  // Show skeleton loading state while AppDataContext loads auth data
+  if (isLoadingCritical) {
+    return <LoadingSkeleton />;
   }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:141',message:'Layout ready - checking usesNewLayout',data:{usesNewLayout:usesNewLayout,pathname:pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
+  // If not authenticated and not on onboarding, show skeleton while redirect happens
+  if (!profile && !pathname.startsWith("/onboarding")) {
+    return <LoadingSkeleton />;
+  }
+
+  // Get user email from profile (loaded by AppDataContext)
+  const userEmail = profile?.user_id ? `${profile.handle}@app` : null;
 
   // If it uses the new layout, render without the sidebar layout
   if (usesNewLayout) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:148',message:'Rendering with new layout (no sidebar)',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     return (
       <AgentCacheProvider>
         <ChatProvider>

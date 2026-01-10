@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 18:56:42
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Title: "Industrial Symphony: The Asteroid Discovery"
+
+Prompt: Create an artistic, cinematic visualization that embodies the industrial essence of Hearst Mining intertwined with the scientific discovery of a record-breaking asteroid. The scene should depict a futuristic industrial complex, infused with the vibrant neon lime green #A7FB90 cascading through the complex's structures, akin to veins of energy. The architecture is minimalist, geometric, and grid-based, echoing a sense of technical precision and efficiency. 
+
+In the foreground, an immense, fast-spinning asteroid, crafted with intricate detail to emphasize its rocky texture, hovers majestically. It’s bathed in contrasting deep pure black #0E0F0F shadows and bright pure white #E6F1E7 highlights, capturing the dynamic play of light and shadow. The medium gray #9EB3A8 forms the backdrop, a neutral sky that enhances the asteroid's prominence and the industrial theme.
+
+The composition should be wide, capturing both the scale of the asteroid and the sprawling complexity of the mining operation. The lighting is sharp and dramatic, casting long shadows and creating high contrast, emphasizing the technological and industrial motifs. The scene is tranquil yet powerful, encapsulating Hearst's calm, professional, and trustworthy persona, while metaphorically linking their innovative energy infrastructure to the grand discovery of the asteroid.
+
+Ensure the scene is devoid of excess, focusing on clean lines and a technical illustration style, with FK Grotesk fonts subtly integrated into digital displays within the complex. This image should be instantly recognizable by its bold color palette, creating a striking visual identity that connects Hearst's industrial prowess with astronomical exploration.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767981402466.png

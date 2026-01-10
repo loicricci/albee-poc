@@ -122,12 +122,24 @@ class DailyPostGenerator:
                 })
             
             # Steps 3 & 4: Generate image prompt and title IN PARALLEL
-            # Use different prompt generator based on image engine
+            # Use different prompt generator based on image engine and reference image availability
+            
+            # Determine if we have a reference image
+            reference_image_url = reference_image_url_override or agent_context.get("reference_image_url")
+            has_reference_image = bool(reference_image_url)
+            
+            # For GPT-Image-1 with reference: use edit prompt
+            # For GPT-Image-1 without reference OR DALL-E 3: use standard generation prompt
+            use_edit_prompt = (image_engine == "gpt-image-1" and has_reference_image)
+            
             if self.tracker:
-                prompt_type = "edit prompt" if image_engine == "gpt-image-1" else "image prompt"
+                if use_edit_prompt:
+                    prompt_type = "edit prompt (with reference)"
+                else:
+                    prompt_type = "image prompt (pure generation)"
                 self.tracker.start_step("Steps 3 & 4 (Parallel)", f"Generate {prompt_type} + title")
             
-            if image_engine == "gpt-image-1":
+            if use_edit_prompt:
                 # Generate EDIT prompt specifically for semantic image editing
                 self._log_step(3, "Generating image EDIT prompt and title in parallel...")
                 edit_instructions = agent_context.get("image_edit_instructions", "")
@@ -136,7 +148,7 @@ class DailyPostGenerator:
                 )
                 self._log_success(f"Edit prompt: {image_prompt[:80]}...")
             else:
-                # Generate DALL-E 3 prompt for creating new images
+                # Generate standard prompt for creating new images (DALL-E 3 or GPT-Image-1 without reference)
                 self._log_step(3, "Generating image prompt and title in parallel...")
                 image_prompt, title = await generate_image_prompt_and_title_parallel(agent_context, topic)
                 self._log_success(f"Image prompt: {image_prompt[:80]}...")
@@ -160,7 +172,10 @@ class DailyPostGenerator:
             # Step 6: Generate image (using selected engine)
             if self.tracker:
                 if image_engine == "gpt-image-1":
-                    engine_label = "GPT-Image-1 (Image Editing)"
+                    if has_reference_image:
+                        engine_label = "GPT-Image-1 (Semantic Editing with Reference)"
+                    else:
+                        engine_label = "GPT-Image-1 (Pure Generation)"
                 else:
                     engine_label = "DALL-E 3 (Generation)"
                 self.tracker.start_step("Step 6", f"Generate image ({engine_label})")
@@ -168,13 +183,22 @@ class DailyPostGenerator:
             self._log_step(6, f"Generating image with {image_engine}...")
             
             if image_engine == "gpt-image-1":
-                # Use GPT-Image-1 for semantic image editing (no mask required)
-                image_path = await self._generate_with_gpt_image(
-                    agent_handle,
-                    image_prompt,
-                    agent_context,
-                    reference_image_url_override
-                )
+                if has_reference_image:
+                    # Use GPT-Image-1 for semantic image editing with reference
+                    self._log_success(f"Using reference image for semantic editing")
+                    image_path = await self._generate_with_gpt_image(
+                        agent_handle,
+                        image_prompt,
+                        agent_context,
+                        reference_image_url_override
+                    )
+                else:
+                    # Use GPT-Image-1 for pure text-to-image generation (no reference needed)
+                    self._log_success(f"Generating from text prompt (no reference image)")
+                    image_path = await self._generate_with_gpt_image_simple(
+                        agent_handle,
+                        image_prompt
+                    )
             else:
                 # Use DALL-E 3 (default generation model)
                 image_path = generate_post_image(image_prompt, agent_handle)
@@ -186,6 +210,39 @@ class DailyPostGenerator:
                     "image_file": os.path.basename(image_path),
                     "image_size_kb": os.path.getsize(image_path) / 1024
                 })
+            
+            # Step 6.5: Apply logo overlay if enabled
+            logo_enabled = agent_context.get("logo_enabled", False)
+            logo_url = agent_context.get("logo_url")
+            
+            if logo_enabled and logo_url:
+                if self.tracker:
+                    self.tracker.start_step("Step 6.5", "Apply logo watermark")
+                
+                self._log_step(6, "Applying logo watermark...")
+                
+                from backend.image_generator import ImageGenerator
+                generator = ImageGenerator(output_dir="generated_images")
+                
+                logo_position = agent_context.get("logo_position", "bottom-right")
+                logo_size = agent_context.get("logo_size", "medium")
+                
+                image_path = generator.overlay_logo(
+                    image_path=image_path,
+                    logo_url=logo_url,
+                    position=logo_position,
+                    size=logo_size
+                )
+                
+                self._log_success(f"Logo applied at {logo_position} ({logo_size})")
+                
+                if self.tracker:
+                    self.tracker.stop_step({
+                        "logo_position": logo_position,
+                        "logo_size": logo_size
+                    })
+            elif logo_enabled and not logo_url:
+                self._log_success("Logo enabled but no logo URL configured - skipping")
             
             # Step 7: Upload and create post
             if self.tracker:
@@ -328,6 +385,38 @@ class DailyPostGenerator:
         return generator.generate_with_gpt_image(
             reference_image_url=reference_image_url,
             prompt=edit_prompt,
+            agent_handle=agent_handle
+        )
+    
+    
+    async def _generate_with_gpt_image_simple(
+        self,
+        agent_handle: str,
+        prompt: str
+    ) -> str:
+        """
+        Generate image using GPT-Image-1 for pure text-to-image generation.
+        
+        This uses GPT-Image-1 without any reference images - just generates
+        new images from text prompts, similar to DALL-E 3 but with OpenAI's
+        newest image model.
+        
+        Args:
+            agent_handle: Agent handle
+            prompt: Image generation prompt
+        
+        Returns:
+            Local filepath to generated image
+        """
+        self._log_success(f"Generating with GPT-Image-1 (text-to-image)")
+        self._log_success(f"Prompt preview: {prompt[:100]}...")
+        
+        # Use ImageGenerator to perform pure text-to-image generation
+        from backend.image_generator import ImageGenerator
+        generator = ImageGenerator(output_dir="generated_images")
+        
+        return generator.generate_with_gpt_image_simple(
+            prompt=prompt,
             agent_handle=agent_handle
         )
     

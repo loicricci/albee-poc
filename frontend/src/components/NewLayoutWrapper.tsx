@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, useEffect, useState, useRef, useCallback } from "react";
+import { ReactNode, useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
-import { getAppConfig, type AppConfig } from "@/lib/config";
+import { useAppData } from "@/contexts/AppDataContext";
 
 export function NewLayoutWrapper({ children }: { children: ReactNode }) {
   return (
@@ -40,10 +40,10 @@ type SearchResult = {
 
 function TopNavigation() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  // Start with null to avoid hydration mismatch
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [appConfig, setAppConfig] = useState<AppConfig>({});
+  
+  // Get shared app data from context
+  const { profile, appConfig } = useAppData();
+  const userEmail = profile?.user_id ? `${profile.handle}@app` : null;
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,134 +56,6 @@ function TopNavigation() {
   // Profile dropdown state
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    // Load app config from cache immediately, then fetch fresh
-    const cachedConfig = localStorage.getItem('app_config');
-    if (cachedConfig) {
-      try {
-        setAppConfig(JSON.parse(cachedConfig));
-      } catch (e) {
-        console.warn("Failed to parse cached app config");
-      }
-    }
-
-    // Fetch app configuration (logo, app name, etc.)
-    getAppConfig()
-      .then((config) => {
-        console.log("[AppConfig] Loaded:", config);
-        setAppConfig(config);
-        localStorage.setItem('app_config', JSON.stringify(config));
-      })
-      .catch((error) => {
-        // Gracefully handle missing config (table not created yet)
-        console.warn("App config not available:", error);
-        const defaultConfig = { app_name: "AGENT" };
-        setAppConfig(defaultConfig);
-        localStorage.setItem('app_config', JSON.stringify(defaultConfig));
-      });
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    let profileFetched = false;
-
-    // Load profile from cache immediately
-    const cachedProfile = localStorage.getItem('user_profile');
-    if (cachedProfile) {
-      try {
-        const parsed = JSON.parse(cachedProfile);
-        setProfile(parsed);
-        profileFetched = true;
-      } catch (e) {
-        console.warn("Failed to parse cached profile");
-      }
-    }
-
-    // Also check app_profile cache (shared with app page)
-    if (!profileFetched) {
-      const appProfile = localStorage.getItem('app_profile');
-      if (appProfile) {
-        try {
-          const parsed = JSON.parse(appProfile);
-          setProfile(parsed);
-          localStorage.setItem('user_profile', appProfile);
-          profileFetched = true;
-        } catch (e) {
-          console.warn("Failed to parse app profile cache");
-        }
-      }
-    }
-
-    async function syncSession() {
-      const { data } = await supabase.auth.getSession();
-      if (!alive) return;
-      setUserEmail(data.session?.user?.email ?? null);
-      
-      // Only fetch profile if not already cached and session exists
-      if (data.session?.access_token && !profileFetched) {
-        try {
-          const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-          const res = await fetch(`${apiBase}/me/profile`, {
-            headers: { Authorization: `Bearer ${data.session.access_token}` },
-          });
-          if (res.ok) {
-            const profileData = await res.json();
-            if (alive) {
-              setProfile(profileData);
-              localStorage.setItem('user_profile', JSON.stringify(profileData));
-              localStorage.setItem('app_profile', JSON.stringify(profileData));
-            }
-          }
-        } catch (error) {
-          console.error("Failed to fetch profile:", error);
-        }
-      }
-    }
-
-    syncSession();
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!alive) return;
-      setUserEmail(session?.user?.email ?? null);
-      
-      // Fetch profile on auth change
-      if (session?.access_token) {
-        (async () => {
-          try {
-            const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-            const res = await fetch(`${apiBase}/me/profile`, {
-              headers: { Authorization: `Bearer ${session.access_token}` },
-            });
-            if (res.ok) {
-              const profileData = await res.json();
-              if (alive) {
-                setProfile(profileData);
-                localStorage.setItem('user_profile', JSON.stringify(profileData));
-                localStorage.setItem('app_profile', JSON.stringify(profileData));
-              }
-            }
-          } catch (error) {
-            console.error("Failed to fetch profile:", error);
-          }
-        })();
-      } else {
-        // Clear all caches on logout
-        setProfile(null);
-        localStorage.removeItem('user_profile');
-        localStorage.removeItem('app_profile');
-        localStorage.removeItem('app_avees');
-        localStorage.removeItem('app_recommendations');
-        localStorage.removeItem('app_feed');
-        localStorage.removeItem('app_config');
-      }
-    });
-
-    return () => {
-      alive = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
 
   // Perform search function
   const performSearch = useCallback(async (query: string) => {
@@ -270,6 +142,7 @@ function TopNavigation() {
 
   async function logout() {
     await supabase.auth.signOut();
+    // Cache will be cleared by the auth state change listener in AppDataContext
     router.push("/login");
   }
 
@@ -651,7 +524,7 @@ function TopNavigation() {
                 </Link>
               )}
               {/* Only show Backoffice for admin users */}
-              {userEmail === "loic.ricci@gmail.com" && (
+              {profile?.is_admin && (
                 <Link
                   href="/backoffice"
                   className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"

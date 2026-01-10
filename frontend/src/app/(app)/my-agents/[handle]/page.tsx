@@ -114,6 +114,23 @@ export default function AgentEditorPage() {
   const [imageEditInstructions, setImageEditInstructions] = useState<string | null>(null);
   const [showReferenceSection, setShowReferenceSection] = useState(false);
 
+  // Branding Guidelines for image generation
+  const [brandingGuidelines, setBrandingGuidelines] = useState("");
+  const [brandingSaving, setBrandingSaving] = useState(false);
+  const [brandingMsg, setBrandingMsg] = useState<string | null>(null);
+  const [showBrandingSection, setShowBrandingSection] = useState(false);
+
+  // Logo Watermark Settings for autopost images
+  const [logoEnabled, setLogoEnabled] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoPosition, setLogoPosition] = useState<"bottom-right" | "bottom-left" | "top-right" | "top-left">("bottom-right");
+  const [logoSize, setLogoSize] = useState<number>(10); // 5-100 percentage
+  const [logoSaving, setLogoSaving] = useState(false);
+  const [logoMsg, setLogoMsg] = useState<string | null>(null);
+  const [showLogoSection, setShowLogoSection] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+
   const personaMeta = useMemo(() => {
     const lines = persona ? persona.split("\n").length : 0;
     return { chars: persona.length, lines };
@@ -143,6 +160,24 @@ export default function AgentEditorPage() {
       setReferenceImageUrl(data?.reference_image_url || null);
       setReferenceMaskUrl(data?.reference_image_mask_url || null);
       setImageEditInstructions(data?.image_edit_instructions || null);
+      
+      // Load branding guidelines
+      setBrandingGuidelines(data?.branding_guidelines || "");
+      
+      // Load logo watermark settings
+      setLogoEnabled(data?.logo_enabled === true);
+      setLogoUrl(data?.logo_url || null);
+      setLogoPosition((data?.logo_position as typeof logoPosition) || "bottom-right");
+      // Parse logo size - support both legacy strings and numeric values
+      const rawSize = data?.logo_size;
+      if (rawSize) {
+        if (rawSize === "small") setLogoSize(5);
+        else if (rawSize === "medium") setLogoSize(10);
+        else if (rawSize === "large") setLogoSize(15);
+        else setLogoSize(parseInt(rawSize) || 10);
+      } else {
+        setLogoSize(10);
+      }
     } catch (e: any) {
       setError(e.message || "Failed to load Agent");
       setAgent(null);
@@ -344,6 +379,98 @@ export default function AgentEditorPage() {
     } finally {
       setSavingTwitterSettings(false);
     }
+  }
+
+  async function onSaveBrandingGuidelines() {
+    if (!agent?.id) return;
+
+    setBrandingSaving(true);
+    setError(null);
+    setOkMsg(null);
+    setBrandingMsg(null);
+
+    try {
+      const bg = brandingGuidelines.trim();
+
+      if (bg.length > 5000) {
+        throw new Error("Branding guidelines too long (max 5,000 characters)");
+      }
+
+      await updateAgent({ agentId: agent.id, branding_guidelines: bg });
+      setBrandingMsg("Branding guidelines saved successfully.");
+    } catch (e: any) {
+      setBrandingMsg(e.message || "Failed to save branding guidelines");
+    } finally {
+      setBrandingSaving(false);
+    }
+  }
+
+  async function onSaveLogoSettings() {
+    if (!agent?.id) return;
+
+    setLogoSaving(true);
+    setError(null);
+    setOkMsg(null);
+    setLogoMsg(null);
+
+    try {
+      await updateAgent({
+        agentId: agent.id,
+        logo_enabled: logoEnabled,
+        logo_url: logoUrl || undefined,
+        logo_position: logoPosition,
+        logo_size: String(logoSize),
+      });
+      setLogoMsg("Logo settings saved successfully.");
+    } catch (e: any) {
+      setLogoMsg(e.message || "Failed to save logo settings");
+    } finally {
+      setLogoSaving(false);
+    }
+  }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !agent?.id) return;
+
+    // Validate file type (PNG only for transparency support)
+    const validTypes = ["image/png"];
+    if (!validTypes.includes(file.type)) {
+      setLogoMsg("Please upload a PNG file (supports transparency)");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoMsg("Logo file too large (max 5MB)");
+      return;
+    }
+
+    setUploadingLogo(true);
+    setLogoMsg(null);
+
+    try {
+      const { publicUrl } = await uploadImageToBucket({
+        bucket: "app-images",
+        folder: `agent-logos/${agent.id}`,
+        file
+      });
+      setLogoUrl(publicUrl);
+      setLogoMsg("Logo uploaded! Don't forget to save settings.");
+    } catch (err: any) {
+      setLogoMsg(err.message || "Failed to upload logo");
+    } finally {
+      setUploadingLogo(false);
+      // Reset file input
+      if (logoFileInputRef.current) {
+        logoFileInputRef.current.value = "";
+      }
+    }
+  }
+
+  function removeLogo() {
+    setLogoUrl(null);
+    setLogoMsg("Logo removed. Don't forget to save settings.");
   }
 
   async function onAddDoc() {
@@ -1167,6 +1294,378 @@ export default function AgentEditorPage() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Branding Guidelines Card */}
+        <div className="overflow-hidden rounded-2xl border border-[#C8A24A]/30 bg-white shadow-sm">
+          <div className="flex items-start sm:items-center justify-between border-b border-[#C8A24A]/20 bg-gradient-to-r from-[#C8A24A]/10 to-amber-50 px-4 sm:px-6 py-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#C8A24A] to-amber-600 shrink-0">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">🎨 Branding Guidelines</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
+                  Colors, fonts, and visual style for AI-generated images
+                  {brandingGuidelines && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Configured
+                  </span>}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowBrandingSection(!showBrandingSection)}
+              className="rounded-lg p-2 transition-colors hover:bg-amber-100 shrink-0 ml-2"
+            >
+              <svg
+                className={`h-5 w-5 text-[#2E3A59] transition-transform ${showBrandingSection ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          {showBrandingSection && (
+            <div className="p-4 sm:p-6">
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 text-xs sm:text-sm">
+                <div className="flex items-start gap-3">
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z" />
+                  </svg>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-amber-900 mb-1">How it works:</div>
+                    <p className="text-amber-800 mb-2">
+                      These guidelines will be used when generating AI images during autopost to ensure visual consistency with your brand.
+                    </p>
+                    <div className="font-medium text-amber-900 mb-1">Example format:</div>
+                    <div className="rounded bg-amber-100/50 p-2 font-mono text-xs text-amber-800">
+                      Colors: #1DA1F2 (primary blue), #FF6B6B (accent coral)<br/>
+                      Fonts: Modern sans-serif, bold impactful headlines<br/>
+                      Style: Clean minimalist, high contrast, vintage-modern fusion<br/>
+                      Mood: Energetic, vibrant, professional
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                  Visual Guidelines
+                  <span className="ml-2 text-xs font-normal text-[#2E3A59]/70">(max 5,000 chars)</span>
+                </label>
+                <textarea
+                  className="h-40 w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#C8A24A] focus:outline-none focus:ring-2 focus:ring-[#C8A24A]/20 font-mono"
+                  value={brandingGuidelines}
+                  onChange={(e) => {
+                    setBrandingGuidelines(e.target.value);
+                    setBrandingMsg(null);
+                  }}
+                  placeholder="Colors: #hexcode (description)&#10;Fonts: Font style preferences&#10;Style: Visual style keywords&#10;Mood: Emotional tone of images"
+                  maxLength={5000}
+                />
+                <p className="mt-1 text-xs text-[#2E3A59]/70">{brandingGuidelines.length}/5,000 characters</p>
+              </div>
+
+              {brandingMsg && (
+                <div className={`mt-3 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm ${
+                  brandingMsg.includes("success") || brandingMsg.includes("saved")
+                    ? "bg-green-50 text-green-800 border border-green-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}>
+                  {brandingMsg}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-xs text-[#2E3A59]/70">
+                  Used in DALL-E 3 and GPT-Image-1 prompts for autopost images.
+                </div>
+                <button
+                  onClick={onSaveBrandingGuidelines}
+                  disabled={brandingSaving}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#C8A24A] to-amber-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {brandingSaving ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save Branding
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Logo Watermark Settings Card */}
+        <div className="overflow-hidden rounded-2xl border border-purple-200/50 bg-white shadow-sm">
+          <div className="flex items-start sm:items-center justify-between border-b border-purple-200/30 bg-gradient-to-r from-purple-50 to-violet-50 px-4 sm:px-6 py-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-violet-600 shrink-0">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Logo Watermark</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
+                  Add your logo to autopost images
+                  {logoEnabled && logoUrl && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Active
+                  </span>}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowLogoSection(!showLogoSection)}
+              className="rounded-lg p-2 transition-colors hover:bg-purple-100 shrink-0 ml-2"
+            >
+              <svg
+                className={`h-5 w-5 text-[#2E3A59] transition-transform ${showLogoSection ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          {showLogoSection && (
+            <div className="p-4 sm:p-6">
+              {/* Enable Toggle */}
+              <div className="mb-6 rounded-lg border border-purple-200 bg-purple-50/50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={logoEnabled}
+                          onChange={(e) => {
+                            setLogoEnabled(e.target.checked);
+                            setLogoMsg(null);
+                          }}
+                          className="sr-only"
+                        />
+                        <div className={`w-11 h-6 rounded-full transition-colors ${logoEnabled ? "bg-purple-600" : "bg-gray-300"}`}>
+                          <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${logoEnabled ? "translate-x-5" : ""}`} />
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm font-semibold text-gray-900">Add logo to posts</span>
+                        <p className="text-xs text-gray-600 mt-0.5">
+                          {logoEnabled ? "Logo will be added to autopost images" : "Logo disabled - posts will be generated without watermark"}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Logo Upload Section */}
+              <div className={`space-y-4 ${!logoEnabled ? "opacity-50 pointer-events-none" : ""}`}>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                    Logo Image
+                    <span className="ml-2 text-xs font-normal text-[#2E3A59]/70">(PNG with transparency)</span>
+                  </label>
+                  
+                  {logoUrl ? (
+                    <div className="flex items-center gap-4 rounded-lg border border-purple-200 bg-purple-50/30 p-4">
+                      <div className="relative">
+                        <img
+                          src={logoUrl}
+                          alt="Agent Logo"
+                          className="h-16 w-16 rounded-lg border border-purple-200 bg-white object-contain p-2"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Logo uploaded</p>
+                        <p className="text-xs text-gray-600 mt-0.5">Will appear on generated images</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => logoFileInputRef.current?.click()}
+                          disabled={uploadingLogo}
+                          className="rounded-lg border border-purple-300 bg-white px-3 py-1.5 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-50"
+                        >
+                          Replace
+                        </button>
+                        <button
+                          onClick={removeLogo}
+                          className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-50"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border-2 border-dashed border-purple-300 bg-purple-50/30 p-6 text-center">
+                      <input
+                        ref={logoFileInputRef}
+                        type="file"
+                        onChange={handleLogoUpload}
+                        accept="image/png"
+                        className="hidden"
+                        disabled={uploadingLogo}
+                      />
+                      <svg className="mx-auto h-12 w-12 text-purple-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <button
+                        type="button"
+                        onClick={() => logoFileInputRef.current?.click()}
+                        disabled={uploadingLogo}
+                        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-violet-600 px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {uploadingLogo ? (
+                          <>
+                            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            Upload Logo
+                          </>
+                        )}
+                      </button>
+                      <p className="mt-2 text-xs text-gray-500">PNG format only (supports transparency)</p>
+                      <p className="mt-1 text-xs text-gray-400">Max file size: 5MB</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Position & Size Settings */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Position</label>
+                    <select
+                      value={logoPosition}
+                      onChange={(e) => {
+                        setLogoPosition(e.target.value as typeof logoPosition);
+                        setLogoMsg(null);
+                      }}
+                      className="w-full rounded-lg border border-[#E6E6E6] px-3 py-2 text-sm text-[#0B0B0C] transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                    >
+                      <option value="bottom-right">Bottom Right</option>
+                      <option value="bottom-left">Bottom Left</option>
+                      <option value="top-right">Top Right</option>
+                      <option value="top-left">Top Left</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Size</label>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min="5"
+                          max="100"
+                          value={logoSize}
+                          onChange={(e) => {
+                            setLogoSize(parseInt(e.target.value));
+                            setLogoMsg(null);
+                          }}
+                          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                        <span className="min-w-[3.5rem] text-right text-sm font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-md">
+                          {logoSize}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>5%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Size Preview Info */}
+                <div className="rounded-lg border border-purple-200 bg-purple-50/30 p-3 text-xs">
+                  <div className="flex items-start gap-2">
+                    <svg className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-purple-800">
+                      <span className="font-medium">Size reference (on 1024px image):</span>
+                      <span className="block mt-1">
+                        Current: ~{Math.round(1024 * logoSize / 100)}px
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {logoMsg && (
+                <div className={`mt-4 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm ${
+                  logoMsg.includes("success") || logoMsg.includes("saved")
+                    ? "bg-green-50 text-green-800 border border-green-200"
+                    : logoMsg.includes("uploaded") || logoMsg.includes("removed")
+                    ? "bg-blue-50 text-blue-800 border border-blue-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}>
+                  {logoMsg}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-xs text-[#2E3A59]/70">
+                  Logo will be overlaid on images generated during autopost.
+                </div>
+                <button
+                  onClick={onSaveLogoSettings}
+                  disabled={logoSaving}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-violet-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {logoSaving ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save Logo Settings
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Twitter Settings Card */}

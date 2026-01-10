@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 19:21:25
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Title: "Industrial Harmony: The Symbiosis of Bitcoin and Sustainability"
+
+Prompt: Create a photorealistic image that encapsulates the essence of Hearst Mining's industrial approach to Bitcoin mining, highlighting a serene yet powerful white-themed environment. The scene is set in a vast, minimalist mining facility, where rows of sleek, futuristic mining rigs line up like a musical symphony, glowing softly in bright neon lime green (#A7FB90), casting reflections on the pristine, bright pure white (#E6F1E7) floors and walls. The atmosphere is calm and professional, yet charged with the energy of cutting-edge technology.
+
+Incorporate geometric and grid-based elements, with technical illustrations subtly embedded into the walls, showcasing the intricate network of blockchain connections. The lighting is a high-contrast blend of deep pure black (#0E0F0F) shadows and bright pure white (#F2F2F2) highlights, creating an engaging play of light and dark that symbolizes the dynamic nature of cryptocurrency.
+
+In the foreground, feature a digital display board in FK Grotesk font, showcasing real-time data in a neutral medium gray (#9EB3A8), emphasizing transparency and performance metrics. The overall mood is institutional and trustworthy, with hints of industrial history and innovation manifesting through the minimalist design.
+
+This image should be designed as a wide-format, high-detail composition suitable for social media, immediately recognizable through its signature color palette, reflecting Hearst Mining's commitment to energy efficiency and long-term operations.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767982885356.png

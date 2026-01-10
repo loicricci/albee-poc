@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from streaming_service import StreamingChatService
-from context_manager import ContextManager
-from conversation_intelligence import ConversationIntelligence
+from backend.streaming_service import StreamingChatService
+from backend.context_manager import ContextManager
+from backend.conversation_intelligence import ConversationIntelligence
 
 
 def example_1_context_management():
@@ -205,6 +205,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 
 
 

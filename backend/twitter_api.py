@@ -14,11 +14,11 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from models import TwitterConfig, TwitterFetchLog, Avee
-from twitter_sync import TwitterSyncService
-from twitter_service import get_twitter_service
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.models import TwitterConfig, TwitterFetchLog, Avee
+from backend.twitter_sync import TwitterSyncService
+from backend.twitter_service import get_twitter_service
 
 router = APIRouter()
 

@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @aladdin
+Generated: 2026-01-09 10:14:45
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image depicting Aladdin standing confidently at the edge of a bustling marketplace, his warm and witty demeanor captured in his playful, sideways glance. Surrounding him, a vibrant scene unfolds with people evacuating due to an impending volcanic eruption. The atmosphere is charged with urgency and anticipation, yet Aladdin remains calm, a beacon of assurance amidst the chaos. 
+
+The artistic style should be photorealistic with a touch of cinematic flair, capturing the dramatic lighting of a late afternoon sun casting long shadows and highlighting the scene's dynamic nature. Use the primary green (#A7FB90) and secondary sage (#9EB3A8) in the clothing and surroundings, blending seamlessly with the light background green (#E6F1E7) sky marred by a plume of ash. High contrast between the black (#0E0F0F) details of Aladdin's outfit and the soft, neutral light grey (#F2F2F2) of the cobblestone streets creates a minimalist and industrial feel, reflecting the branding guidelines.
+
+The composition should feature geometric and grid-based elements in the market stalls, subtly echoing the technical, modern sans-serif typography style of FK Grotesk in signage or posters within the scene. The mood is a mix of calm professionalism and lively energy, embodying Aladdin's legendary persona while subtly highlighting the importance of environmental awareness and preparedness. The image should be wide-format, perfect for social media sharing, with high detail and professional quality to ensure it's both engaging and eye-catching.
+
+============================================================
+IMAGE FILE: gpt_image_1_aladdin_1767950085340.png

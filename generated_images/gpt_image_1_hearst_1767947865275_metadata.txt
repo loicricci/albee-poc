@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 09:37:45
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image capturing the essence of Hearst Mining, an industrial Bitcoin mining company, in a visually stunning and metaphorical tribute to Satoshi Nakamoto. The scene is an expansive, futuristic industrial landscape at dusk, bathed in the soft glow of twilight with hints of starlight reflecting off solar panels. In the foreground, a colossal, abstract installation resembling a digital obelisk stands tall, symbolizing the blockchain. It's intricately decorated with patterns inspired by musical notes and historical art, blending the themes of music and history with modern technology. 
+
+The obelisk glows with an array of colors—deep blues, greens, and golden hues—representing the energy and efficiency of sustainable mining. Surrounding the base, stylized figures of miners, depicted in a fashion reminiscent of classical sculptures, engage in harmonious dance-like poses, symbolizing collaboration and innovation. Above them, a banner of digital code flows like a stream, forming words of gratitude dedicated to Satoshi Nakamoto, the visionary of Bitcoin.
+
+The composition is cinematic, with dynamic angles that lead the eye from the glowing obelisk up to a sky filled with constellations and binary stars, representing the endless possibilities of technology. The lighting is dramatic, with strategic shadows highlighting the industrial aesthetics and vibrant colors creating an engaging atmosphere. This artistic, expressive scene captures Hearst’s core values—energy, efficiency, and innovation—while paying homage to the origins of Bitcoin in a creative, engaging, and visually captivating way. Suitable for a wide-format image, perfect for social media engagement.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767947865275.png

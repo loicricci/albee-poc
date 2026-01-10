@@ -8,10 +8,98 @@ based on agent context and daily news topics.
 import json
 import time
 import asyncio
+import re
 from typing import Dict, Any, Tuple
 from openai import OpenAI
 
 client = OpenAI()
+
+
+def transform_hex_to_vivid_descriptions(branding_text: str) -> str:
+    """
+    Transform hex color codes into vivid, emphatic descriptions that image models understand better.
+    
+    Image generation models (DALL-E, GPT-Image-1) don't interpret hex codes literally.
+    This function converts them to vivid, descriptive language.
+    
+    Examples:
+    - #A7FB90 (primary green) → BRIGHT NEON LIME GREEN - like a highlighter, very saturated, almost fluorescent
+    - #0E0F0F (primary black) → DEEP PURE BLACK - like charcoal or ink, completely dark
+    """
+    # Common hex to vivid description mappings
+    # We'll use color analysis to generate appropriate descriptions
+    
+    def hex_to_rgb(hex_code: str) -> tuple:
+        """Convert hex to RGB tuple"""
+        hex_code = hex_code.lstrip('#')
+        return tuple(int(hex_code[i:i+2], 16) for i in (0, 2, 4))
+    
+    def describe_color_vividly(hex_code: str, original_name: str = "") -> str:
+        """Generate a vivid description for a hex color"""
+        try:
+            r, g, b = hex_to_rgb(hex_code)
+        except:
+            return original_name or hex_code
+        
+        # Calculate brightness and saturation
+        max_c = max(r, g, b)
+        min_c = min(r, g, b)
+        brightness = (max_c + min_c) / 2 / 255
+        saturation = (max_c - min_c) / 255 if max_c > 0 else 0
+        
+        # Determine base color
+        if max_c - min_c < 30:  # Grayscale
+            if brightness < 0.15:
+                return f"DEEP PURE BLACK (like charcoal or ink, completely dark) {hex_code}"
+            elif brightness < 0.4:
+                return f"DARK CHARCOAL GRAY (deep shadow color) {hex_code}"
+            elif brightness > 0.9:
+                return f"BRIGHT PURE WHITE (like fresh snow, very bright) {hex_code}"
+            elif brightness > 0.8:
+                return f"VERY LIGHT GRAY (almost white, soft and pale) {hex_code}"
+            else:
+                return f"NEUTRAL MEDIUM GRAY {hex_code}"
+        
+        # Determine dominant color with vivid descriptions
+        if g > r and g > b:
+            if g > 200 and brightness > 0.6:
+                return f"BRIGHT NEON LIME GREEN (like a highlighter, very saturated, almost fluorescent, eye-catching) {hex_code}"
+            elif saturation > 0.3 and brightness > 0.5:
+                return f"VIBRANT FRESH GREEN (like spring leaves, lively and energetic) {hex_code}"
+            else:
+                return f"MUTED SAGE GREEN (soft, natural, calming) {hex_code}"
+        elif r > g and r > b:
+            if r > 200:
+                return f"BRIGHT VIVID RED (bold, attention-grabbing, like a stop sign) {hex_code}"
+            else:
+                return f"DEEP RICH RED (warm, intense) {hex_code}"
+        elif b > r and b > g:
+            if b > 200:
+                return f"BRIGHT ELECTRIC BLUE (vivid, striking, like neon) {hex_code}"
+            else:
+                return f"DEEP OCEAN BLUE (rich, calming) {hex_code}"
+        
+        # Mixed colors
+        if r > 200 and g > 200:
+            return f"BRIGHT YELLOW (sunny, cheerful, eye-catching) {hex_code}"
+        elif g > 150 and b > 150:
+            return f"BRIGHT CYAN/TURQUOISE (fresh, modern, vibrant) {hex_code}"
+        elif r > 150 and b > 150:
+            return f"VIVID MAGENTA/PURPLE (bold, creative) {hex_code}"
+        
+        return f"{original_name} {hex_code}" if original_name else hex_code
+    
+    # Find all hex codes with their descriptions and transform them
+    # Pattern: #XXXXXX followed by optional description in parentheses
+    pattern = r'#([A-Fa-f0-9]{6})\s*(?:\(([^)]+)\))?'
+    
+    def replace_hex(match):
+        hex_code = f"#{match.group(1)}"
+        original_name = match.group(2) or ""
+        return describe_color_vividly(hex_code, original_name)
+    
+    transformed = re.sub(pattern, replace_hex, branding_text)
+    return transformed
 
 
 class AIPromptGenerator:
@@ -44,6 +132,30 @@ class AIPromptGenerator:
         print(f"[AIPromptGenerator] Generating image prompt...")
         start_time = time.time()
         
+        # Get branding guidelines if available
+        branding = agent_context.get('branding_guidelines', '').strip()
+        # #region agent log
+        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:branding_check", "message": "Branding value in generate_image_prompt (DALL-E/simple path)", "data": {"branding_raw": branding[:200] if branding else "", "branding_len": len(branding), "branding_truthy": bool(branding)}, "hypothesisId": "C2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+        # #endregion
+        branding_section = ""
+        if branding:
+            # Transform hex codes to vivid descriptions that image models understand
+            branding_transformed = transform_hex_to_vivid_descriptions(branding)
+            # #region agent log
+            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:branding_transformed", "message": "Branding transformed with vivid colors", "data": {"original_len": len(branding), "transformed_preview": branding_transformed[:400]}, "hypothesisId": "COLOR_TRANSFORM", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+            # #endregion
+            
+            branding_section = f"""
+CRITICAL COLOR PALETTE - YOU MUST USE THESE EXACT COLORS:
+{branding_transformed}
+
+MANDATORY: The image MUST prominently feature these specific colors as the DOMINANT palette.
+These colors should be immediately recognizable - they are the brand identity.
+"""
+            # #region agent log
+            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:branding_section_built", "message": "Branding section built for image prompt", "data": {"branding_section_len": len(branding_section)}, "hypothesisId": "D2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+            # #endregion
+        
         # Construct meta-prompt for GPT-4o to create the image prompt
         meta_prompt = f"""You are an expert at creating detailed image generation prompts for DALL-E 3.
 
@@ -53,7 +165,7 @@ AGENT PROFILE:
 - Persona Summary: {agent_context['persona'][:500]}
 - Style Traits: {', '.join(agent_context['style_traits'])}
 - Themes: {', '.join(agent_context['themes'])}
-
+{branding_section}
 DAILY TOPIC:
 - Topic: {topic['topic']}
 - Description: {topic['description']}
@@ -77,6 +189,10 @@ Create a detailed, vivid image generation prompt that:
    - Include lighting, composition, color palette details
    - Describe the scene, setting, and atmosphere
    - Add specific visual elements that make it unique
+   - If branding guidelines are provided:
+     * Make the branding colors the DOMINANT palette (not just accents)
+     * Describe each color vividly (e.g., "vibrant lime green", "deep charcoal black")
+     * The image should be immediately recognizable as using that color scheme
 
 4. LEGAL SAFETY
    - NO copyrighted characters or trademarked brands
@@ -91,6 +207,9 @@ Create a detailed, vivid image generation prompt that:
 
 IMPORTANT: Your response should be ONLY the image generation prompt itself (200-300 words), not an explanation. Make it detailed, vivid, and creative!
 """
+        # #region agent log
+        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:meta_prompt", "message": "Meta prompt for GPT-4o (DALL-E path)", "data": {"contains_branding": "BRANDING GUIDELINES" in meta_prompt, "meta_prompt_preview": meta_prompt[:600]}, "hypothesisId": "D2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+        # #endregion
         
         try:
             response = client.chat.completions.create(
@@ -110,6 +229,9 @@ IMPORTANT: Your response should be ONLY the image generation prompt itself (200-
                         )
             
             image_prompt = response.choices[0].message.content.strip()
+            # #region agent log
+            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:gpt4o_response", "message": "GPT-4o returned image prompt (DALL-E path)", "data": {"image_prompt": image_prompt, "image_prompt_len": len(image_prompt)}, "hypothesisId": "E2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+            # #endregion
             
             duration = time.time() - start_time
             tokens = response.usage.total_tokens if hasattr(response, 'usage') else 'N/A'
@@ -251,6 +373,24 @@ IMPORTANT: Write ONLY the post text itself, not meta-commentary. Make it feel li
         print(f"[AIPromptGenerator] Generating image EDIT prompt for reference image...")
         start_time = time.time()
         
+        # Get branding guidelines if available
+        branding = agent_context.get('branding_guidelines', '').strip()
+        # #region agent log
+        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_edit_prompt:branding_check", "message": "Branding value in generate_edit_prompt", "data": {"branding_raw": branding, "branding_len": len(branding), "branding_truthy": bool(branding), "agent_context_keys": list(agent_context.keys())}, "hypothesisId": "C", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+        # #endregion
+        branding_section = ""
+        if branding:
+            # Transform hex codes to vivid descriptions, then truncate for character limits
+            branding_transformed = transform_hex_to_vivid_descriptions(branding)
+            branding_truncated = branding_transformed[:400] if len(branding_transformed) > 400 else branding_transformed
+            branding_section = f"""
+CRITICAL COLORS (MUST USE):
+{branding_truncated}
+"""
+            # #region agent log
+            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_edit_prompt:branding_section_built", "message": "Branding section built", "data": {"branding_section": branding_section[:200]}, "hypothesisId": "D", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+            # #endregion
+        
         # Construct meta-prompt for GPT-4o to create the edit prompt
         meta_prompt = f"""You are an expert at creating prompts for the OpenAI Image Edits API.
 
@@ -258,12 +398,13 @@ IMPORTANT: The Image Edits API MODIFIES an existing reference image. The prompt 
 1. What to ADD or CHANGE in the image (background, context, elements)
 2. What visual elements to incorporate based on the topic
 3. Keep the prompt CONCISE (under 800 characters) as the API has a 1000 char limit
+4. If branding guidelines are provided, incorporate those colors and visual style elements
 
 AGENT PROFILE:
 - Name: {agent_context['display_name']}
 - Style Traits: {', '.join(agent_context['style_traits'][:4])}
 - Themes: {', '.join(agent_context['themes'][:3])}
-
+{branding_section}
 DAILY TOPIC TO INCORPORATE:
 - Topic: {topic['topic']}
 - Description: {topic['description'][:200]}
@@ -301,6 +442,9 @@ EXAMPLES OF GOOD EDIT PROMPTS:
 
 Write ONLY the edit prompt (under 800 chars), no explanation:
 """
+        # #region agent log
+        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_edit_prompt:meta_prompt_built", "message": "Meta prompt for GPT-4o", "data": {"meta_prompt_preview": meta_prompt[:500], "contains_branding": "BRANDING GUIDELINES" in meta_prompt, "branding_section_in_prompt": branding_section in meta_prompt if branding_section else "no_section"}, "hypothesisId": "D", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+        # #endregion
         
         try:
             response = client.chat.completions.create(
@@ -320,6 +464,9 @@ Write ONLY the edit prompt (under 800 chars), no explanation:
             )
             
             edit_prompt = response.choices[0].message.content.strip()
+            # #region agent log
+            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_edit_prompt:gpt4o_response", "message": "GPT-4o returned edit prompt", "data": {"edit_prompt": edit_prompt, "edit_prompt_len": len(edit_prompt)}, "hypothesisId": "E", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+            # #endregion
             
             # Ensure it's not too long for OpenAI Edits API (1000 char limit)
             if len(edit_prompt) > 900:

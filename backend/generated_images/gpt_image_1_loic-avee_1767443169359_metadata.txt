@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-03 13:26:09
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+Transform the background into a cosmic landscape with a view of Earth from space, featuring a starry expanse and a distant spacecraft gracefully orbiting. Introduce a shimmering nebula with hues of deep blue and violet, casting an ethereal glow. Add floating books and quills, symbolizing the fusion of literature and space exploration. Include subtle historical motifs like constellation maps or vintage telescopes subtly integrated into the scene, enhancing the theme. Ensure Loic Ricci remains the focal point, blending seamlessly into this imaginative, celestial setting.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1767443169359.png

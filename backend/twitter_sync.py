@@ -10,7 +10,7 @@ from typing import List, Dict
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from models import (
+from backend.models import (
     TwitterConfig,
     TwitterFetchLog,
     Avee,
@@ -18,9 +18,9 @@ from models import (
     Document,
     DocumentChunk
 )
-from twitter_service import get_twitter_service
-from rag_utils import chunk_text
-from openai_embed import embed_texts
+from backend.twitter_service import get_twitter_service
+from backend.rag_utils import chunk_text
+from backend.openai_embed import embed_texts
 import uuid
 
 logger = logging.getLogger(__name__)

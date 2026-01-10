@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @bureauxvalhaut
+Generated: 2026-01-08 00:33:35
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/af19e613-9ce5-4845-87ce-a164149264dc/reference_1767735335650.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+Transform the background into a serene night scene. Replace the surroundings with a starry sky backdrop and a crescent moon casting a gentle glow. Add silhouettes of distant trees for depth. Integrate subtle twinkling stars and a soft blue hue to evoke nighttime tranquility. Include lanterns or fairy lights gently illuminating the scene to create a warm, inviting atmosphere. Maintain Bureaux Valhaut's appearance, ensuring the nighttime theme accentuates his creative and expressive style, complementing the ambiance of artful night exploration.
+
+============================================================
+IMAGE FILE: gpt_image_1_bureauxvalhaut_1767828815242.png

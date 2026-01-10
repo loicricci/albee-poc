@@ -4,7 +4,7 @@ Run the add_message_validation migration
 import os
 import sys
 from sqlalchemy import text
-from db import SessionLocal
+from backend.db import SessionLocal
 
 def run_migration():
     db = SessionLocal()

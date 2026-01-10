@@ -456,6 +456,9 @@ IMAGE FILE: {os.path.basename(image_path)}
         Raises:
             Exception: If image editing or download fails
         """
+        # #region agent log
+        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "image_generator.py:generate_with_gpt_image:entry", "message": "GPT-Image-1 called with prompt", "data": {"prompt_full": prompt, "prompt_len": len(prompt), "agent_handle": agent_handle}, "hypothesisId": "E", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+        # #endregion
         print(f"[ImageGenerator] Editing image with GPT-Image-1...")
         print(f"[ImageGenerator] Using semantic editing (no mask required)")
         print(f"[ImageGenerator] Edit instruction: {prompt[:100]}...")
@@ -496,6 +499,7 @@ IMAGE FILE: {os.path.basename(image_path)}
             try:
                 # Use the images.edit endpoint with GPT-Image-1
                 # This is the correct endpoint for image-to-image with semantic editing
+                # Note: GPT-Image-1 doesn't support response_format parameter, returns base64 by default
                 response = client.images.edit(
                     model="gpt-image-1",
                     image=reference_buffer,
@@ -505,7 +509,55 @@ IMAGE FILE: {os.path.basename(image_path)}
                 )
                 
                 duration = time.time() - start_time
-                edited_image_url = response.data[0].url
+                
+                # Handle both URL and base64 responses
+                if response.data and len(response.data) > 0:
+                    image_data = response.data[0]
+                    
+                    # Check if we got a URL
+                    if hasattr(image_data, 'url') and image_data.url:
+                        edited_image_url = image_data.url
+                        print(f"[ImageGenerator] ✅ Image edited with GPT-Image-1! Got URL ({duration:.2f}s)")
+                    
+                    # Otherwise check for base64 data
+                    elif hasattr(image_data, 'b64_json') and image_data.b64_json:
+                        print(f"[ImageGenerator] Got base64 response, converting to file...")
+                        import base64
+                        import io
+                        import os as os_module
+                        from PIL import Image
+                        
+                        # Decode base64 to image
+                        image_bytes = base64.b64decode(image_data.b64_json)
+                        image = Image.open(io.BytesIO(image_bytes))
+                        
+                        # Save directly to file instead of downloading
+                        os_module.makedirs(self.output_dir, exist_ok=True)
+                        timestamp = int(time.time() * 1000)
+                        filename = f"gpt_image_1_{agent_handle}_{timestamp}.png"
+                        filepath = os_module.path.join(self.output_dir, filename)
+                        
+                        image.save(filepath, format='PNG')
+                        print(f"[ImageGenerator] ✅ Image edited with GPT-Image-1! Saved from base64 ({duration:.2f}s)")
+                        
+                        # Save metadata
+                        self._save_gpt_image_metadata(
+                            filepath,
+                            prompt,
+                            agent_handle,
+                            reference_image_url,
+                            size
+                        )
+                        
+                        total_duration = time.time() - overall_start
+                        print(f"[ImageGenerator] ✅ Edited image saved: {filepath} (total: {total_duration:.2f}s)")
+                        
+                        return filepath
+                    else:
+                        raise Exception(f"GPT-Image-1 response has neither URL nor base64 data: {image_data}")
+                else:
+                    raise Exception(f"GPT-Image-1 API returned empty data")
+                
                 print(f"[ImageGenerator] ✅ Image edited with GPT-Image-1! ({duration:.2f}s)")
                 
             except Exception as e:
@@ -665,6 +717,9 @@ IMAGE FILE: {os.path.basename(image_path)}
         Raises:
             Exception: If image generation or download fails
         """
+        # #region agent log
+        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "image_generator.py:generate_with_gpt_image_simple:entry", "message": "GPT-Image-1 SIMPLE called (no reference)", "data": {"prompt_full": prompt, "prompt_len": len(prompt), "agent_handle": agent_handle}, "hypothesisId": "E2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+        # #endregion
         print(f"[ImageGenerator] Generating image with GPT-Image-1...")
         print(f"[ImageGenerator] Using OpenAI's newest image model")
         print(f"[ImageGenerator] Size: {size}")
@@ -676,17 +731,52 @@ IMAGE FILE: {os.path.basename(image_path)}
             print(f"[ImageGenerator] Calling GPT-Image-1 API...")
             start_time = time.time()
             
+            # Note: GPT-Image-1 doesn't support 'quality' or 'response_format' parameters
+            model_to_use = "gpt-image-1"
+            # #region agent log
+            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "image_generator.py:generate_with_gpt_image_simple:api_call", "message": "Calling OpenAI images.generate API", "data": {"model": model_to_use, "size": size, "prompt_len": len(prompt)}, "hypothesisId": "MODEL_CHECK", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+            # #endregion
             response = client.images.generate(
-                model="gpt-image-1",
+                model=model_to_use,
                 prompt=prompt,
                 n=1,
-                size=size,
-                quality="high",
-                response_format="url"
+                size=size
             )
             
             duration = time.time() - start_time
-            image_url = response.data[0].url
+            
+            # Handle both URL and base64 responses
+            if hasattr(response.data[0], 'url') and response.data[0].url:
+                image_url = response.data[0].url
+                print(f"[ImageGenerator] ✅ Image generated successfully! Got URL ({duration:.2f}s)")
+            elif hasattr(response.data[0], 'b64_json') and response.data[0].b64_json:
+                # Handle base64 response
+                print(f"[ImageGenerator] Got base64 response, converting to file...")
+                import base64
+                import io
+                from PIL import Image
+                
+                # Decode base64 to image
+                image_bytes = base64.b64decode(response.data[0].b64_json)
+                image = Image.open(io.BytesIO(image_bytes))
+                
+                # Save directly to file
+                timestamp = int(time.time() * 1000)
+                filename = f"gpt_image_1_{agent_handle}_{timestamp}.png"
+                filepath = os.path.join(self.output_dir, filename)
+                
+                image.save(filepath, format='PNG')
+                print(f"[ImageGenerator] ✅ Image generated and saved from base64! ({duration:.2f}s)")
+                
+                # Save metadata
+                self._save_gpt_image_simple_metadata(filepath, prompt, agent_handle, size)
+                
+                total_duration = time.time() - overall_start
+                print(f"[ImageGenerator] ✅ Image saved: {filepath} (total: {total_duration:.2f}s)")
+                
+                return filepath
+            else:
+                raise Exception(f"GPT-Image-1 response has neither URL nor base64 data")
             
             print(f"[ImageGenerator] ✅ Image generated successfully! ({duration:.2f}s)")
             
@@ -750,6 +840,98 @@ IMAGE FILE: {os.path.basename(image_path)}
             f.write(metadata_content)
         
         print(f"[ImageGenerator] ✅ Metadata saved: {metadata_path}")
+
+
+    def overlay_logo(
+        self, 
+        image_path: str, 
+        logo_url: str, 
+        position: str = "bottom-right",
+        size: str = "medium"
+    ) -> str:
+        """
+        Overlay agent logo on generated image using PIL/Pillow.
+        
+        Args:
+            image_path: Path to the generated image file
+            logo_url: URL to the PNG logo in Supabase storage
+            position: Corner placement (bottom-right, bottom-left, top-right, top-left)
+            size: Logo size percentage (5-100) or legacy preset (small, medium, large)
+        
+        Returns:
+            Path to the image with logo overlay (overwrites original)
+        """
+        from PIL import Image
+        import io
+        
+        print(f"[ImageGenerator] Overlaying logo at {position} ({size})...")
+        
+        # Support both legacy string values and new numeric percentages (5-100)
+        LEGACY_SIZE_MAP = {"small": 5, "medium": 10, "large": 15}
+        if size in LEGACY_SIZE_MAP:
+            size_percent = LEGACY_SIZE_MAP[size]
+        else:
+            try:
+                size_percent = int(size)
+                # Clamp to valid range
+                size_percent = max(5, min(100, size_percent))
+            except (ValueError, TypeError):
+                size_percent = 10  # Default to 10% if invalid
+        
+        try:
+            # 1. Open generated image in RGBA mode
+            base_image = Image.open(image_path).convert("RGBA")
+            print(f"[ImageGenerator] Base image size: {base_image.width}x{base_image.height}")
+            
+            # 2. Download and open logo (PNG with transparency)
+            logo_data = self._download_image_from_url(logo_url)
+            logo = Image.open(io.BytesIO(logo_data)).convert("RGBA")
+            print(f"[ImageGenerator] Logo original size: {logo.width}x{logo.height}")
+            
+            # 2.5 Auto-trim transparent padding from logo
+            # This ensures the visible content sits at the edge, not the canvas
+            bbox = logo.getbbox()  # Bounding box of non-transparent pixels
+            if bbox:
+                logo = logo.crop(bbox)
+                print(f"[ImageGenerator] Logo trimmed to: {logo.width}x{logo.height}")
+            
+            # 3. Calculate logo size maintaining aspect ratio
+            new_logo_width = int(base_image.width * (size_percent / 100))
+            aspect_ratio = logo.height / logo.width
+            new_logo_height = int(new_logo_width * aspect_ratio)
+            logo = logo.resize((new_logo_width, new_logo_height), Image.LANCZOS)
+            print(f"[ImageGenerator] Logo resized to: {new_logo_width}x{new_logo_height} ({size_percent}%)")
+            
+            # 4. Calculate position with 2% padding from edges
+            padding = int(base_image.width * 0.02)
+            
+            positions = {
+                "bottom-right": (base_image.width - new_logo_width - padding, 
+                                 base_image.height - new_logo_height - padding),
+                "bottom-left": (padding, 
+                                base_image.height - new_logo_height - padding),
+                "top-right": (base_image.width - new_logo_width - padding, 
+                              padding),
+                "top-left": (padding, padding)
+            }
+            x, y = positions.get(position, positions["bottom-right"])
+            print(f"[ImageGenerator] Logo position: ({x}, {y})")
+            
+            # 5. Composite using alpha channel (preserves logo transparency)
+            base_image.paste(logo, (x, y), logo)
+            
+            # 6. Convert back to RGB and save (PNG doesn't need RGB but JPEG does)
+            # Keep as PNG to preserve quality
+            final_image = base_image.convert("RGB")
+            final_image.save(image_path, format='PNG')
+            
+            print(f"[ImageGenerator] ✅ Logo overlaid successfully!")
+            return image_path
+            
+        except Exception as e:
+            print(f"[ImageGenerator] ⚠️ Logo overlay failed: {e}")
+            # Don't fail the entire process - just log and return original image
+            return image_path
 
 
 # Convenience function

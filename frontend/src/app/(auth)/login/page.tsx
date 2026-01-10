@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getAppConfig, type AppConfig } from "@/lib/config";
+// Cache clearing is now handled by AppDataContext's SIGNED_IN handler
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -41,32 +42,52 @@ export default function LoginPage() {
       });
   }, []);
 
+  // Prefetch app route on form interaction for faster navigation
+  useEffect(() => {
+    const emailInput = document.querySelector('input[type="email"]');
+    const prefetchApp = () => {
+      router.prefetch('/app');
+    };
+    
+    emailInput?.addEventListener('focus', prefetchApp, { once: true });
+    
+    return () => {
+      emailInput?.removeEventListener('focus', prefetchApp);
+    };
+  }, [router]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
   
-    const { error } = await supabase.auth.signInWithPassword({
+    // Measure actual performance
+    const startTime = performance.now();
+    console.log('[Sign-in] Starting authentication...');
+  
+    // NOTE: Cache clearing is now handled by AppDataContext's SIGNED_IN handler
+    // which properly detects user changes and only clears when necessary.
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
   
+    const authTime = performance.now();
+    const authDuration = authTime - startTime;
+    console.log(`[Sign-in] Auth completed in ${Math.round(authDuration)}ms`);
+    console.log('[Sign-in] Auth result:', { hasData: !!data, hasError: !!error, error: error?.message });
+  
     if (error) {
+      console.error('[Sign-in] Authentication FAILED:', error);
       setLoading(false);
       setError(error.message);
       return;
     }
   
-    // 🔍 DEBUG: check if session exists
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.getSession();
-  
-    console.log("LOGIN SESSION ERROR:", sessionError);
-    console.log("LOGIN SESSION:", sessionData.session);
-  
+    // Redirect immediately - no artificial delays
     setLoading(false);
-  
-    // Success → go to app
+    console.log('[Sign-in] Authentication SUCCESS, redirecting to /app...');
     router.push("/app");
   }
   

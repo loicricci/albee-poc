@@ -1,10 +1,11 @@
 """
-Orchestrator API endpoints.
+Orchestrator API endpoints (v2).
 
 Provides REST API for:
-- Message routing through the Orchestrator
+- Message routing through the Orchestrator (simplified 3-path flow)
+- Forward-to-owner flow with context storage
+- Network notifications when agent learns
 - Creator configuration management
-- Escalation queue management
 - Metrics and analytics
 """
 
@@ -13,24 +14,25 @@ import json
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func, desc
+from sqlalchemy import text, desc
 from pydantic import BaseModel
 from datetime import datetime
 
-from db import SessionLocal
-from auth_supabase import get_current_user_id
-from orchestrator import OrchestratorEngine, RoutingDecision
-from models import (
+from backend.db import SessionLocal
+from backend.auth_supabase import get_current_user_id
+from backend.orchestrator import OrchestratorEngine, RoutingDecision, ContextStorageService
+from backend.models import (
     OrchestratorConfig,
     EscalationQueue,
     OrchestratorDecision,
-    CanonicalAnswer,
     Avee,
     Profile,
     DirectConversation,
     DirectMessage,
+    Notification,
+    AgentUpdate,
+    AgentFollower,
 )
-from openai_embed import embed_texts
 from openai import OpenAI
 
 router = APIRouter(prefix="/orchestrator", tags=["orchestrator"])
@@ -64,39 +66,33 @@ class RouteMessageRequest(BaseModel):
 
 
 class RouteMessageResponse(BaseModel):
-    decision_path: str
+    decision_path: str  # 'A', 'B', 'E', 'P'
     confidence: float
     reason: str
-    response: Optional[str] = None  # AI-generated response for paths A, B, C
-    escalation_id: Optional[str] = None  # For path D
+    response: Optional[str] = None  # AI-generated response for paths A, B
+    escalation_id: Optional[str] = None  # For path E (forward to owner)
+    waiting_for_owner: bool = False  # True when forwarded to owner
     action_data: dict
 
 
 class UpdateConfigRequest(BaseModel):
-    max_escalations_per_day: Optional[int] = None
-    max_escalations_per_week: Optional[int] = None
-    escalation_enabled: Optional[bool] = None
-    auto_answer_confidence_threshold: Optional[int] = None  # 0-100
+    auto_answer_confidence_threshold: Optional[float] = None  # 0.0-1.0
     clarification_enabled: Optional[bool] = None
-    blocked_topics: Optional[List[str]] = None
-    allowed_user_tiers: Optional[List[str]] = None
 
 
-class AnswerEscalationRequest(BaseModel):
+class OwnerReplyRequest(BaseModel):
     answer: str
     layer: str = "public"
 
 
-class EscalationResponse(BaseModel):
+class PendingQuestionResponse(BaseModel):
     id: str
     conversation_id: str
     user_info: dict
     original_message: str
     context_summary: Optional[str]
-    escalation_reason: str
     status: str
-    offered_at: str
-    accepted_at: Optional[str]
+    created_at: str
 
 
 # ============================================================================
@@ -110,8 +106,13 @@ async def route_message(
     user_id: str = Depends(get_current_user_id),
 ):
     """
-    Main Orchestrator entry point.
-    Routes a message through the decision engine and executes the appropriate action.
+    Main Orchestrator entry point (v2).
+    
+    Routes a message through the simplified decision engine:
+    - Path P: Policy violation (content moderation failed)
+    - Path B: Clarification needed (vague query)
+    - Path A: Auto-answer with RAG (confidence >= threshold)
+    - Path E: Forward to owner (insufficient context)
     """
     user_uuid = _parse_uuid(user_id, "user_id")
     conversation_uuid = _parse_uuid(payload.conversation_id, "conversation_id")
@@ -144,30 +145,29 @@ async def route_message(
     # Execute action based on path
     response_text = None
     escalation_id = None
+    waiting_for_owner = False
     
-    if decision.path == "A":
+    if decision.path == "P":
+        # Path P: Policy violation
+        response_text = await _execute_path_policy_violation(decision)
+    
+    elif decision.path == "A":
         # Path A: Auto-answer using RAG
-        response_text = await _execute_path_a(
+        response_text = await _execute_path_auto_answer(
             db, conversation.target_avee_id, payload.message, decision, payload.layer
         )
     
     elif decision.path == "B":
         # Path B: Generate clarification questions
-        response_text = await _execute_path_b(payload.message)
+        response_text = await _execute_path_clarification(payload.message)
     
-    elif decision.path == "C":
-        # Path C: Serve canonical answer
-        response_text = await _execute_path_c(decision)
-    
-    elif decision.path == "D":
-        # Path D: Create escalation offer
-        escalation_id = await _execute_path_d(
-            db, conversation_uuid, user_uuid, conversation.target_avee_id, payload.message, decision
+    elif decision.path == "E":
+        # Path E: Forward to owner
+        escalation_id, response_text = await _execute_path_forward_to_owner(
+            db, conversation_uuid, user_uuid, conversation.target_avee_id, 
+            payload.message, decision
         )
-    
-    elif decision.path == "F":
-        # Path F: Polite refusal
-        response_text = await _execute_path_f(decision)
+        waiting_for_owner = True
     
     # Store the user message
     user_message = DirectMessage(
@@ -201,6 +201,7 @@ async def route_message(
         reason=decision.reason,
         response=response_text,
         escalation_id=escalation_id,
+        waiting_for_owner=waiting_for_owner,
         action_data=decision.action_data
     )
 
@@ -209,7 +210,19 @@ async def route_message(
 # Path Execution Functions
 # ============================================================================
 
-async def _execute_path_a(
+async def _execute_path_policy_violation(decision: RoutingDecision) -> str:
+    """Execute Path P: Content policy violation response."""
+    flagged_categories = decision.action_data.get("flagged_categories", [])
+    
+    # Generic refusal message (don't reveal specific categories to user)
+    return (
+        "I'm sorry, but I cannot respond to this message as it appears to "
+        "violate our content guidelines. Please rephrase your question in a "
+        "respectful and appropriate manner."
+    )
+
+
+async def _execute_path_auto_answer(
     db: Session,
     avee_id: uuid.UUID,
     message: str,
@@ -255,9 +268,8 @@ async def _execute_path_a(
     return completion.choices[0].message.content.strip()
 
 
-async def _execute_path_b(message: str) -> str:
+async def _execute_path_clarification(message: str) -> str:
     """Execute Path B: Ask clarification questions."""
-    # Generate clarification questions
     completion = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -276,57 +288,65 @@ async def _execute_path_b(message: str) -> str:
     return completion.choices[0].message.content.strip()
 
 
-async def _execute_path_c(decision: RoutingDecision) -> str:
-    """Execute Path C: Serve canonical answer."""
-    canonical_content = decision.action_data.get("canonical_content", "")
-    similarity = decision.action_data.get("similarity", 0.0)
-    
-    # Adapt the canonical answer slightly
-    response = f"{canonical_content}\n\n_Note: This answer is based on a similar question I've answered before (similarity: {similarity:.0%})._"
-    return response
-
-
-async def _execute_path_d(
+async def _execute_path_forward_to_owner(
     db: Session,
     conversation_id: uuid.UUID,
     user_id: uuid.UUID,
     avee_id: uuid.UUID,
     message: str,
     decision: RoutingDecision
-) -> str:
-    """Execute Path D: Create escalation offer."""
+) -> tuple[str, str]:
+    """
+    Execute Path E: Forward to agent owner.
+    
+    Returns:
+        Tuple of (escalation_id, waiting_message)
+    """
     # Generate context summary
     context_summary = await _generate_context_summary(db, conversation_id, user_id)
     
-    # Create escalation queue entry
+    # Create escalation queue entry (repurposing for forward-to-owner)
     escalation = EscalationQueue(
         conversation_id=conversation_id,
         user_id=user_id,
         avee_id=avee_id,
         original_message=message,
         context_summary=context_summary,
-        escalation_reason=decision.action_data.get("escalation_reason", "novel"),
+        escalation_reason="forwarded",  # New reason type
         status="pending"
     )
     db.add(escalation)
     db.commit()
     db.refresh(escalation)
     
-    return str(escalation.id)
-
-
-async def _execute_path_f(decision: RoutingDecision) -> str:
-    """Execute Path F: Polite refusal."""
-    refusal_reason = decision.action_data.get("refusal_reason", "unknown")
+    # Notify the agent owner
+    avee = db.query(Avee).filter(Avee.id == avee_id).first()
+    if avee and avee.owner_user_id:
+        # Get sender info
+        sender_profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+        sender_name = sender_profile.display_name if sender_profile else "Someone"
+        
+        notification = Notification(
+            user_id=avee.owner_user_id,
+            notification_type="question_forwarded",
+            title="New Question for Your Agent",
+            message=f"{sender_name} asked a question that needs your response: \"{message[:100]}...\"" if len(message) > 100 else f"{sender_name} asked: \"{message}\"",
+            link=f"/messages?escalation={escalation.id}",
+            related_user_id=user_id,
+            related_agent_id=avee_id,
+            is_read="false"
+        )
+        db.add(notification)
+        db.commit()
     
-    responses = {
-        "escalations_disabled": "I appreciate your question, but the creator has temporarily disabled escalations. Please try asking in a different way, or check back later.",
-        "tier_not_allowed": "This question requires escalation, which is currently available only to followers and premium members. Consider following to get access!",
-        "daily_limit_reached": "The creator has reached their daily limit for answering questions. Your question is valuable! Please try again tomorrow.",
-        "weekly_limit_reached": "The creator has reached their weekly limit for personalized answers. Please check back next week, or browse existing content.",
-    }
+    # Return waiting message to sender
+    waiting_message = (
+        "Thank you for your question! I don't have enough information to answer this "
+        "confidently right now. I've forwarded your question to get a response. "
+        "You'll be notified when an answer is available."
+    )
     
-    return responses.get(refusal_reason, "I'm unable to process this request at the moment. Please try rephrasing your question.")
+    return str(escalation.id), waiting_message
 
 
 async def _generate_context_summary(
@@ -334,7 +354,7 @@ async def _generate_context_summary(
     conversation_id: uuid.UUID,
     user_id: uuid.UUID
 ) -> str:
-    """Generate a context summary for escalation."""
+    """Generate a context summary for the owner."""
     # Get last 5 messages
     messages = db.query(DirectMessage).filter(
         DirectMessage.conversation_id == conversation_id
@@ -360,7 +380,368 @@ async def _generate_context_summary(
 
 
 # ============================================================================
-# Configuration Management
+# Owner Reply Endpoint
+# ============================================================================
+
+@router.post("/owner-reply/{escalation_id}")
+async def owner_reply(
+    escalation_id: str,
+    payload: OwnerReplyRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Owner answers a forwarded question.
+    
+    This endpoint:
+    1. Stores the answer as a message in the conversation
+    2. Stores the Q&A as new context for the agent (DocumentChunk)
+    3. Notifies followers that the agent has been updated
+    4. Notifies the original sender that an answer is available
+    """
+    esc_uuid = _parse_uuid(escalation_id, "escalation_id")
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Get escalation
+    escalation = db.query(EscalationQueue).filter(
+        EscalationQueue.id == esc_uuid
+    ).first()
+    
+    if not escalation:
+        raise HTTPException(status_code=404, detail="Question not found")
+    
+    # Verify ownership
+    avee = db.query(Avee).filter(Avee.id == escalation.avee_id).first()
+    if not avee or avee.owner_user_id != user_uuid:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    if escalation.status == "answered":
+        raise HTTPException(status_code=400, detail="Question already answered")
+    
+    # Update escalation status
+    escalation.status = "answered"
+    escalation.answered_at = datetime.utcnow()
+    escalation.creator_answer = payload.answer
+    escalation.answer_layer = payload.layer
+    
+    # Store as message in conversation
+    agent_message = DirectMessage(
+        conversation_id=escalation.conversation_id,
+        sender_user_id=None,
+        sender_type="agent",
+        sender_avee_id=escalation.avee_id,
+        content=payload.answer,
+        read_by_participant1="false",
+        read_by_participant2="false"
+    )
+    db.add(agent_message)
+    
+    # Store Q&A as new context for future RAG
+    context_service = ContextStorageService(db)
+    chunk_id = await context_service.store_qa_as_context(
+        avee_id=escalation.avee_id,
+        question=escalation.original_message,
+        answer=payload.answer,
+        layer=payload.layer,
+        escalation_id=escalation.id
+    )
+    
+    # Notify the original sender that an answer is available
+    sender_notification = Notification(
+        user_id=escalation.user_id,
+        notification_type="answer_received",
+        title="Your Question Was Answered",
+        message=f"Your question has been answered! Check your messages to see the response.",
+        link=f"/messages?conversation={escalation.conversation_id}",
+        related_agent_id=escalation.avee_id,
+        is_read="false"
+    )
+    db.add(sender_notification)
+    
+    # Notify network (followers) that agent was updated
+    await _notify_network_agent_updated(db, avee, escalation.original_message)
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": "Answer sent successfully",
+        "context_chunk_id": str(chunk_id)
+    }
+
+
+async def _notify_network_agent_updated(
+    db: Session,
+    avee: Avee,
+    question_preview: str
+):
+    """
+    Notify the network that an agent has learned something new.
+    Creates an agent update and notifies followers.
+    """
+    # Create an agent update announcing the learning
+    update_title = "New knowledge acquired"
+    update_content = f"🧠 I just learned something new! Someone asked about: \"{question_preview[:100]}...\"" if len(question_preview) > 100 else f"🧠 I just learned something new! Someone asked: \"{question_preview}\""
+    
+    agent_update = AgentUpdate(
+        avee_id=avee.id,
+        owner_user_id=avee.owner_user_id,
+        title=update_title,
+        content=update_content,
+        topic="learning",
+        layer="public"
+    )
+    db.add(agent_update)
+    db.flush()  # Get the ID without committing
+    
+    # Notify all followers
+    followers = db.query(AgentFollower).filter(
+        AgentFollower.avee_id == avee.id
+    ).all()
+    
+    for follower in followers:
+        notification = Notification(
+            user_id=follower.follower_user_id,
+            notification_type="agent_update",
+            title=f"{avee.name or 'Agent'} learned something new",
+            message="The agent has been updated with new knowledge from a user question.",
+            link=f"/agent/{avee.id}",
+            related_agent_id=avee.id,
+            related_update_id=agent_update.id,
+            is_read="false"
+        )
+        db.add(notification)
+
+
+# ============================================================================
+# Pending Questions (for owner dashboard)
+# ============================================================================
+
+@router.get("/pending-questions")
+def get_pending_questions(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Get pending questions forwarded to the owner's agents."""
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Get all agents owned by user
+    avees = db.query(Avee).filter(Avee.owner_user_id == user_uuid).all()
+    avee_ids = [avee.id for avee in avees]
+    
+    if not avee_ids:
+        return {"pending_questions": []}
+    
+    # Get pending escalations (forwarded questions)
+    escalations = db.query(EscalationQueue).filter(
+        EscalationQueue.avee_id.in_(avee_ids),
+        EscalationQueue.status == "pending"
+    ).order_by(desc(EscalationQueue.offered_at)).all()
+    
+    result = []
+    for esc in escalations:
+        # Get user info
+        user = db.query(Profile).filter(Profile.user_id == esc.user_id).first()
+        user_info = {
+            "user_id": str(esc.user_id),
+            "handle": user.handle if user else "unknown",
+            "display_name": user.display_name if user else "Unknown",
+            "avatar_url": user.avatar_url if user else None
+        }
+        
+        # Get agent info
+        avee = next((a for a in avees if a.id == esc.avee_id), None)
+        
+        result.append({
+            "id": str(esc.id),
+            "conversation_id": str(esc.conversation_id),
+            "avee_id": str(esc.avee_id),
+            "avee_name": avee.display_name if avee else "Unknown Agent",
+            "user_info": user_info,
+            "original_message": esc.original_message,
+            "context_summary": esc.context_summary,
+            "status": esc.status,
+            "created_at": esc.offered_at.isoformat() if esc.offered_at else None
+        })
+    
+    return {"pending_questions": result}
+
+
+@router.get("/queue")
+def get_escalation_queue(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Get all escalations for the owner's agents.
+    This is an alias for the escalations page UI.
+    """
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Get all agents owned by user
+    avees = db.query(Avee).filter(Avee.owner_user_id == user_uuid).all()
+    avee_ids = [avee.id for avee in avees]
+    
+    if not avee_ids:
+        return {"escalations": []}
+    
+    # Get ALL escalations (not just pending) for the queue view
+    escalations = db.query(EscalationQueue).filter(
+        EscalationQueue.avee_id.in_(avee_ids)
+    ).order_by(desc(EscalationQueue.offered_at)).all()
+    
+    result = []
+    for esc in escalations:
+        # Get user info
+        user = db.query(Profile).filter(Profile.user_id == esc.user_id).first()
+        user_info = {
+            "user_id": str(esc.user_id),
+            "handle": user.handle if user else "unknown",
+            "display_name": user.display_name if user else "Unknown",
+            "avatar_url": user.avatar_url if user else None
+        }
+        
+        # Get agent info for the update endpoint
+        agent = db.query(Avee).filter(Avee.id == esc.avee_id).first()
+        
+        result.append({
+            "id": str(esc.id),
+            "avee_id": str(esc.avee_id),
+            "avee_handle": agent.handle if agent else None,
+            "conversation_id": str(esc.conversation_id),
+            "user_info": user_info,
+            "original_message": esc.original_message,
+            "context_summary": esc.context_summary,
+            "escalation_reason": esc.escalation_reason,
+            "status": esc.status,
+            "offered_at": esc.offered_at.isoformat() if esc.offered_at else None,
+            "accepted_at": esc.accepted_at.isoformat() if esc.accepted_at else None,
+        })
+    
+    return {"escalations": result}
+
+
+@router.post("/queue/{escalation_id}/answer")
+async def answer_escalation_alias(
+    escalation_id: str,
+    payload: OwnerReplyRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Alias for owner_reply endpoint - used by escalations page."""
+    return await owner_reply(escalation_id, payload, db, user_id)
+
+
+@router.post("/queue/{escalation_id}/decline")
+def decline_escalation(
+    escalation_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Decline an escalation request."""
+    esc_uuid = _parse_uuid(escalation_id, "escalation_id")
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Get escalation
+    escalation = db.query(EscalationQueue).filter(
+        EscalationQueue.id == esc_uuid
+    ).first()
+    
+    if not escalation:
+        raise HTTPException(status_code=404, detail="Escalation not found")
+    
+    # Verify ownership
+    avee = db.query(Avee).filter(Avee.id == escalation.avee_id).first()
+    if not avee or avee.owner_user_id != user_uuid:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Update status to declined
+    escalation.status = "declined"
+    db.commit()
+    
+    return {"success": True, "message": "Escalation declined"}
+
+
+class MarkAnsweredRequest(BaseModel):
+    answer: str
+    layer: str = "public"
+
+
+@router.post("/queue/{escalation_id}/mark-answered")
+async def mark_escalation_answered(
+    escalation_id: str,
+    payload: MarkAnsweredRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Mark an escalation as answered and send the reply to the conversation."""
+    esc_uuid = _parse_uuid(escalation_id, "escalation_id")
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Get escalation
+    escalation = db.query(EscalationQueue).filter(
+        EscalationQueue.id == esc_uuid
+    ).first()
+    
+    if not escalation:
+        raise HTTPException(status_code=404, detail="Escalation not found")
+    
+    # Verify ownership
+    avee = db.query(Avee).filter(Avee.id == escalation.avee_id).first()
+    if not avee or avee.owner_user_id != user_uuid:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Update status to answered
+    escalation.status = "answered"
+    escalation.answered_at = datetime.utcnow()
+    escalation.creator_answer = payload.answer
+    escalation.answer_layer = payload.layer
+    
+    # Send reply message to the conversation
+    agent_message = DirectMessage(
+        conversation_id=escalation.conversation_id,
+        sender_user_id=None,
+        sender_type="agent",
+        sender_avee_id=escalation.avee_id,
+        content=payload.answer,
+        human_validated="true",  # Mark as human-validated answer
+        read_by_participant1="false",
+        read_by_participant2="false"
+    )
+    db.add(agent_message)
+    
+    # Store Q&A as context for future RAG
+    try:
+        context_service = ContextStorageService(db)
+        await context_service.store_qa_as_context(
+            avee_id=escalation.avee_id,
+            question=escalation.original_message,
+            answer=payload.answer,
+            layer=payload.layer,
+            escalation_id=escalation.id
+        )
+    except Exception as e:
+        print(f"Error storing Q&A context: {e}")
+    
+    # Notify the original sender
+    sender_notification = Notification(
+        user_id=escalation.user_id,
+        notification_type="answer_received",
+        title="Your Question Was Answered",
+        message=f"Your question has been answered! Check your messages.",
+        link=f"/messages",
+        related_agent_id=escalation.avee_id,
+        is_read="false"
+    )
+    db.add(sender_notification)
+    
+    db.commit()
+    
+    return {"success": True, "message": "Escalation answered and reply sent"}
+
+
+# ============================================================================
+# Configuration Management (Simplified)
 # ============================================================================
 
 @router.get("/config/{avee_id}")
@@ -369,7 +750,7 @@ def get_orchestrator_config(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    """Get orchestrator configuration for an agent."""
+    """Get orchestrator configuration for an agent (simplified)."""
     avee_uuid = _parse_uuid(avee_id, "avee_id")
     user_uuid = _parse_uuid(user_id, "user_id")
     
@@ -392,15 +773,15 @@ def get_orchestrator_config(
         db.commit()
         db.refresh(config)
     
+    # Convert threshold to float for JSON serialization
+    threshold = config.auto_answer_confidence_threshold
+    if hasattr(threshold, '__float__'):
+        threshold = float(threshold)
+    
     return {
         "avee_id": str(config.avee_id),
-        "max_escalations_per_day": config.max_escalations_per_day,
-        "max_escalations_per_week": config.max_escalations_per_week,
-        "escalation_enabled": config.escalation_enabled == "true",
-        "auto_answer_confidence_threshold": config.auto_answer_confidence_threshold,
-        "clarification_enabled": config.clarification_enabled == "true",
-        "blocked_topics": json.loads(config.blocked_topics),
-        "allowed_user_tiers": json.loads(config.allowed_user_tiers),
+        "auto_answer_confidence_threshold": threshold,
+        "clarification_enabled": config.clarification_enabled == "true" if isinstance(config.clarification_enabled, str) else config.clarification_enabled,
     }
 
 
@@ -411,7 +792,7 @@ def update_orchestrator_config(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    """Update orchestrator configuration."""
+    """Update orchestrator configuration (simplified)."""
     avee_uuid = _parse_uuid(avee_id, "avee_id")
     user_uuid = _parse_uuid(user_id, "user_id")
     
@@ -432,192 +813,15 @@ def update_orchestrator_config(
         db.add(config)
     
     # Update fields
-    if payload.max_escalations_per_day is not None:
-        config.max_escalations_per_day = payload.max_escalations_per_day
-    if payload.max_escalations_per_week is not None:
-        config.max_escalations_per_week = payload.max_escalations_per_week
-    if payload.escalation_enabled is not None:
-        config.escalation_enabled = "true" if payload.escalation_enabled else "false"
     if payload.auto_answer_confidence_threshold is not None:
         config.auto_answer_confidence_threshold = payload.auto_answer_confidence_threshold
     if payload.clarification_enabled is not None:
         config.clarification_enabled = "true" if payload.clarification_enabled else "false"
-    if payload.blocked_topics is not None:
-        config.blocked_topics = json.dumps(payload.blocked_topics)
-    if payload.allowed_user_tiers is not None:
-        config.allowed_user_tiers = json.dumps(payload.allowed_user_tiers)
     
     db.commit()
     db.refresh(config)
     
     return {"success": True, "message": "Configuration updated"}
-
-
-# ============================================================================
-# Escalation Queue Management
-# ============================================================================
-
-@router.get("/queue")
-def get_escalation_queue(
-    db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    """Get escalation queue for creator's agents."""
-    user_uuid = _parse_uuid(user_id, "user_id")
-    
-    # Get all agents owned by user
-    avees = db.query(Avee).filter(Avee.owner_user_id == user_uuid).all()
-    avee_ids = [avee.id for avee in avees]
-    
-    if not avee_ids:
-        return {"escalations": []}
-    
-    # Get pending escalations
-    escalations = db.query(EscalationQueue).filter(
-        EscalationQueue.avee_id.in_(avee_ids),
-        EscalationQueue.status.in_(["pending", "accepted"])
-    ).order_by(desc(EscalationQueue.offered_at)).all()
-    
-    result = []
-    for esc in escalations:
-        # Get user info
-        user = db.query(Profile).filter(Profile.user_id == esc.user_id).first()
-        user_info = {
-            "user_id": str(esc.user_id),
-            "handle": user.handle if user else "unknown",
-            "display_name": user.display_name if user else "Unknown",
-            "avatar_url": user.avatar_url if user else None
-        }
-        
-        result.append({
-            "id": str(esc.id),
-            "conversation_id": str(esc.conversation_id),
-            "user_info": user_info,
-            "original_message": esc.original_message,
-            "context_summary": esc.context_summary,
-            "escalation_reason": esc.escalation_reason,
-            "status": esc.status,
-            "offered_at": esc.offered_at.isoformat() if esc.offered_at else None,
-            "accepted_at": esc.accepted_at.isoformat() if esc.accepted_at else None
-        })
-    
-    return {"escalations": result}
-
-
-@router.post("/queue/{escalation_id}/answer")
-def answer_escalation(
-    escalation_id: str,
-    payload: AnswerEscalationRequest,
-    db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    """Creator answers an escalation."""
-    esc_uuid = _parse_uuid(escalation_id, "escalation_id")
-    user_uuid = _parse_uuid(user_id, "user_id")
-    
-    # Get escalation
-    escalation = db.query(EscalationQueue).filter(
-        EscalationQueue.id == esc_uuid
-    ).first()
-    
-    if not escalation:
-        raise HTTPException(status_code=404, detail="Escalation not found")
-    
-    # Verify ownership
-    avee = db.query(Avee).filter(Avee.id == escalation.avee_id).first()
-    if not avee or avee.owner_user_id != user_uuid:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # Update escalation
-    escalation.status = "answered"
-    escalation.answered_at = datetime.utcnow()
-    escalation.creator_answer = payload.answer
-    escalation.answer_layer = payload.layer
-    
-    # Store as message in conversation
-    agent_message = DirectMessage(
-        conversation_id=escalation.conversation_id,
-        sender_user_id=None,
-        sender_type="agent",
-        sender_avee_id=escalation.avee_id,
-        content=payload.answer,
-        read_by_participant1="false",
-        read_by_participant2="false"
-    )
-    db.add(agent_message)
-    
-    db.commit()
-    
-    # Note: Canonical answer will be auto-created by trigger
-    
-    return {"success": True, "message": "Answer sent successfully"}
-
-
-@router.post("/queue/{escalation_id}/decline")
-def decline_escalation(
-    escalation_id: str,
-    db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    """Creator declines an escalation."""
-    esc_uuid = _parse_uuid(escalation_id, "escalation_id")
-    user_uuid = _parse_uuid(user_id, "user_id")
-    
-    # Get escalation
-    escalation = db.query(EscalationQueue).filter(
-        EscalationQueue.id == esc_uuid
-    ).first()
-    
-    if not escalation:
-        raise HTTPException(status_code=404, detail="Escalation not found")
-    
-    # Verify ownership
-    avee = db.query(Avee).filter(Avee.id == escalation.avee_id).first()
-    if not avee or avee.owner_user_id != user_uuid:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # Update status
-    escalation.status = "declined"
-    db.commit()
-    
-    return {"success": True, "message": "Escalation declined"}
-
-
-# ============================================================================
-# Accept Escalation (User side)
-# ============================================================================
-
-@router.post("/queue/{escalation_id}/accept")
-def accept_escalation(
-    escalation_id: str,
-    db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
-):
-    """User accepts an escalation offer."""
-    esc_uuid = _parse_uuid(escalation_id, "escalation_id")
-    user_uuid = _parse_uuid(user_id, "user_id")
-    
-    # Get escalation
-    escalation = db.query(EscalationQueue).filter(
-        EscalationQueue.id == esc_uuid
-    ).first()
-    
-    if not escalation:
-        raise HTTPException(status_code=404, detail="Escalation not found")
-    
-    # Verify user
-    if escalation.user_id != user_uuid:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    if escalation.status != "pending":
-        raise HTTPException(status_code=400, detail="Escalation already processed")
-    
-    # Update status
-    escalation.status = "accepted"
-    escalation.accepted_at = datetime.utcnow()
-    db.commit()
-    
-    return {"success": True, "message": "Escalation accepted, creator will be notified"}
 
 
 # ============================================================================
@@ -642,41 +846,37 @@ def get_orchestrator_metrics(
     if avee.owner_user_id != user_uuid:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    # Use the SQL function
-    result = db.execute(
-        text("SELECT * FROM get_orchestrator_metrics(:avee_id, :days)"),
-        {"avee_id": str(avee_uuid), "days": days}
-    ).fetchone()
+    # Calculate metrics manually for new paths
+    from datetime import timedelta
+    start_date = datetime.utcnow() - timedelta(days=days)
     
-    if not result:
-        return {
-            "total_messages": 0,
-            "auto_answered": 0,
-            "escalations_offered": 0,
-            "escalations_accepted": 0,
-            "escalations_answered": 0,
-            "canonical_reused": 0,
-            "avg_confidence": 0.0,
-            "avg_novelty": 0.0,
-            "auto_answer_rate": 0.0
-        }
+    decisions = db.query(OrchestratorDecision).filter(
+        OrchestratorDecision.avee_id == avee_uuid,
+        OrchestratorDecision.created_at >= start_date
+    ).all()
+    
+    total = len(decisions)
+    auto_answered = sum(1 for d in decisions if d.decision_path == "A")
+    clarifications = sum(1 for d in decisions if d.decision_path == "B")
+    forwarded = sum(1 for d in decisions if d.decision_path == "E")
+    policy_violations = sum(1 for d in decisions if d.decision_path == "P")
+    
+    # Get answered count from escalation queue
+    answered = db.query(EscalationQueue).filter(
+        EscalationQueue.avee_id == avee_uuid,
+        EscalationQueue.status == "answered",
+        EscalationQueue.offered_at >= start_date
+    ).count()
+    
+    avg_confidence = sum(float(d.confidence_score or 0) for d in decisions) / total if total > 0 else 0
     
     return {
-        "total_messages": result[0],
-        "auto_answered": result[1],
-        "escalations_offered": result[2],
-        "escalations_accepted": result[3],
-        "escalations_answered": result[4],
-        "canonical_reused": result[5],
-        "avg_confidence": float(result[6]) if result[6] else 0.0,
-        "avg_novelty": float(result[7]) if result[7] else 0.0,
-        "auto_answer_rate": float(result[8]) if result[8] else 0.0
+        "total_messages": total,
+        "auto_answered": auto_answered,
+        "clarifications": clarifications,
+        "forwarded_to_owner": forwarded,
+        "owner_answered": answered,
+        "policy_violations": policy_violations,
+        "avg_confidence": round(avg_confidence, 4),
+        "auto_answer_rate": round(auto_answered / total, 4) if total > 0 else 0
     }
-
-
-
-
-
-
-
-

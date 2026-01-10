@@ -11,10 +11,10 @@ from sqlalchemy import text
 import uuid
 
 # Import shared database session
-from db import SessionLocal
+from backend.db import SessionLocal
 
 # Import caching
-from cache import agent_cache
+from backend.cache import agent_cache
 
 
 class ProfileContextLoader:
@@ -87,7 +87,13 @@ class ProfileContextLoader:
             "avee_id": profile_data["avee_id"],
             "reference_image_url": profile_data["reference_image_url"],
             "reference_image_mask_url": profile_data["reference_image_mask_url"],
-            "image_edit_instructions": profile_data["image_edit_instructions"]
+            "image_edit_instructions": profile_data["image_edit_instructions"],
+            "branding_guidelines": profile_data["branding_guidelines"],
+            # Logo watermark settings
+            "logo_enabled": profile_data["logo_enabled"],
+            "logo_url": profile_data["logo_url"],
+            "logo_position": profile_data["logo_position"],
+            "logo_size": profile_data["logo_size"]
         }
         
         print(f"[ProfileContextLoader] ✅ Loaded context for {profile_data['display_name']}")
@@ -113,7 +119,12 @@ class ProfileContextLoader:
                 avatar_url,
                 reference_image_url,
                 reference_image_mask_url,
-                image_edit_instructions
+                image_edit_instructions,
+                branding_guidelines,
+                logo_enabled,
+                logo_url,
+                logo_position,
+                logo_size
             FROM avees
             WHERE handle = :handle
             LIMIT 1
@@ -125,6 +136,9 @@ class ProfileContextLoader:
         if not row:
             return None
         
+        # #region agent log
+        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "profile_context_loader.py:_load_profile_data", "message": "DB branding_guidelines loaded", "data": {"handle": row.handle, "branding_guidelines_raw": row.branding_guidelines, "branding_guidelines_len": len(row.branding_guidelines) if row.branding_guidelines else 0}, "hypothesisId": "A,B", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
+        # #endregion
         return {
             "avee_id": str(row.avee_id),
             "handle": row.handle,
@@ -134,7 +148,13 @@ class ProfileContextLoader:
             "avatar_url": row.avatar_url,
             "reference_image_url": row.reference_image_url,
             "reference_image_mask_url": row.reference_image_mask_url,
-            "image_edit_instructions": row.image_edit_instructions
+            "image_edit_instructions": row.image_edit_instructions,
+            "branding_guidelines": row.branding_guidelines or "",
+            # Logo watermark settings
+            "logo_enabled": row.logo_enabled or False,
+            "logo_url": row.logo_url,
+            "logo_position": row.logo_position or "bottom-right",
+            "logo_size": row.logo_size or "10"
         }
     
     def _load_knowledge_summary(self, avee_id: str) -> Dict[str, Any]:

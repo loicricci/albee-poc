@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-09 21:57:07
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image capturing the essence of Hearst Mining, an industrial Bitcoin mining company, enveloped in a blockchain encryption white theme. Design a photorealistic scene set in a high-tech, minimalist mining facility. The facility is illuminated by a bright, pure white light reminiscent of fresh snow (#E6F1E7, #F2F2F2), casting sharp contrasts against the deep pure black (#0E0F0F) structures. The main focal point is a geometric, grid-based display of digital blockchain nodes, interconnected with vibrant neon lime green (#A7FB90) lines, symbolizing energy and data flow. The lime green is vivid, akin to a highlighter, creating a futuristic, engaging aura. The setting is filled with sleek mining rigs and cooling systems, emphasizing Hearst's focus on energy efficiency and durability.
+
+The composition should be symmetrical, reflecting the company's professional and trustworthy nature. Incorporate technical illustrations subtly on the walls, depicting blockchain encryption algorithms. The atmosphere is calm yet energetic, highlighting industrial operations with a modern, institutional feel. Ensure the signature color palette dominates the scene, creating a coherent brand identity. The lighting is even, casting a serene glow over the facility, enhancing the minimalist, industrial style.
+
+No recognizable brands or products should be visible; instead, use generic digital elements to represent blockchain technology. The image should be wide-format, high-detail, suitable for social media, and instantly identifiable through its unique color combination and industrial aesthetic, encapsulating Hearst Mining's innovative and expressive persona.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1767992227504.png
