@@ -571,9 +571,9 @@ async def get_unified_feed(
         # Rollback any previous failed transaction
         db.rollback()
         
-        # Set statement timeout
+        # Set aggressive statement timeout for production
         try:
-            db.execute(text("SET LOCAL statement_timeout = '10s'"))
+            db.execute(text("SET LOCAL statement_timeout = '5s'"))
         except Exception as e:
             print(f"[UnifiedFeed] Warning: Could not set statement timeout: {e}")
         
@@ -605,11 +605,21 @@ async def get_unified_feed(
         all_agent_ids = list(set(followed_ids + own_ids))
         print(f"[UnifiedFeed] Total agents in feed: {len(all_agent_ids)}")
         
+        # FAST PATH: If no agents, return empty feed immediately
+        if not all_agent_ids:
+            print(f"[UnifiedFeed] No agents found, returning empty feed")
+            return UnifiedFeedResponse(
+                items=[],
+                total=0,
+                has_more=False,
+                timings={"fast_path": "no_agents"}
+            )
+        
         # OPTIMIZATION: Instead of fetching ALL updates and posts, fetch only latest N items
         # This dramatically reduces query time for users with many agents
         
-        # Calculate how many items to fetch from database (with buffer for sorting)
-        fetch_limit = max(limit + offset + 50, 100)  # Fetch extra for proper pagination
+        # Calculate how many items to fetch from database (REDUCED for performance)
+        fetch_limit = min(limit + offset + 10, 50)  # Keep small for fast queries
         
         # Step 2: Fetch ONLY the latest updates (limited!)
         step2_start = time.time()
