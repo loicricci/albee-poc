@@ -46,6 +46,32 @@ type NotificationsResponse = {
   offset: number;
 };
 
+// Module-level request deduplication - prevents duplicate API calls from React StrictMode
+// This ensures only ONE request hits the backend, regardless of how many times the function is called
+let pendingRequest: Promise<NotificationsResponse> | null = null;
+let pendingRequestKey: string | null = null;
+
+async function fetchNotificationsOnce(params: { limit: number; unread_only: boolean }): Promise<NotificationsResponse> {
+  const requestKey = `${params.limit}-${params.unread_only}`;
+  
+  // If there's already a pending request with the same params, return it
+  if (pendingRequest && pendingRequestKey === requestKey) {
+    return pendingRequest;
+  }
+  
+  // Create new request
+  pendingRequestKey = requestKey;
+  pendingRequest = getNotifications(params).finally(() => {
+    // Clear the pending request after it completes (success or error)
+    if (pendingRequestKey === requestKey) {
+      pendingRequest = null;
+      pendingRequestKey = null;
+    }
+  });
+  
+  return pendingRequest;
+}
+
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -327,7 +353,8 @@ function NotificationsContent() {
       setLoading(true);
       setError(null);
       
-      const data: NotificationsResponse = await getNotifications({
+      // Use deduplicated fetch - only ONE request hits the backend
+      const data: NotificationsResponse = await fetchNotificationsOnce({
         limit: 100,
         unread_only: filter === "unread"
       });

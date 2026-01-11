@@ -324,10 +324,29 @@ export async function getNotifications(params?: {
   if (params?.notification_type) query.set("notification_type", params.notification_type);
   
   const queryString = query.toString();
-  // Use trailing slash to avoid 307 redirect
-  return apiFetch(`/notifications/${queryString ? `?${queryString}` : ""}`, {
+  const path = `/notifications/${queryString ? `?${queryString}` : ""}`;
+  
+  // Use extended timeout (30s) for notifications - they can be slow due to DB contention
+  if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE is not set");
+
+  const token = await getToken();
+
+  const res = await fetchWithTimeout(`${API_BASE}${path}`, {
     method: "GET",
-  });
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  }, 30000); // 30 second timeout
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const err: any = new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  return res.json();
 }
 
 export async function getUnreadNotificationCount() {
