@@ -908,14 +908,8 @@ async def generate_single_post(
     start_time = datetime.now()
     
     try:
-        # Import generator modules - add parent directory to path
-        import sys
-        import os
-        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if parent_dir not in sys.path:
-            sys.path.insert(0, parent_dir)
-        
-        from generate_daily_post import DailyPostGenerator
+        # Import generator module (now part of the backend package)
+        from .generate_daily_post import DailyPostGenerator
         
         generator = DailyPostGenerator(verbose=False)
         result = await generator.generate_post_async(
@@ -1034,15 +1028,9 @@ async def generate_multiple_posts(
     # This runs in background - can't return results to API
     # Could store results in database or send notifications
     
-    # Import generator modules - add parent directory to path
-    import sys
-    import os
-    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if parent_dir not in sys.path:
-        sys.path.insert(0, parent_dir)
-    
-    from generate_daily_post import DailyPostGenerator
-    from db import SessionLocal
+    # Import generator module (now part of the backend package)
+    from .generate_daily_post import DailyPostGenerator
+    from .db import SessionLocal
     
     db = SessionLocal()
     generator = DailyPostGenerator(verbose=False)
