@@ -659,16 +659,26 @@ export type DiagnosticGenerateRequest = {
   image_engine?: string;
 };
 
+export type DiagnosticStepData = {
+  step_number: number;
+  step_name: string;
+  duration: number;
+  success: boolean;
+  error: string | null;
+  data: any;
+};
+
 export type DiagnosticResult = {
-  status: string;
-  logs: Array<{
-    step?: number;
-    message: string;
-    timestamp: string;
-    level?: string;
-  }>;
-  result?: any;
+  success: boolean;
+  agent_handle: string;
+  total_duration: number;
+  steps: DiagnosticStepData[];
+  messages: Array<{ timestamp: number; message: string }>;
+  final_result: any;
+  image_engine: string;
+  post_id?: string;
   error?: string;
+  error_trace?: string;
 };
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, diagnosticGeneratePost } from "@/lib/api";
+import { api, diagnosticGeneratePost, DiagnosticResult } from "@/lib/api";
 import { supabase } from "@/lib/supabaseClient";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 
@@ -15,27 +15,6 @@ interface Agent {
   reference_images: any[];
 }
 
-interface StepData {
-  step_number: number;
-  step_name: string;
-  duration: number;
-  success: boolean;
-  error: string | null;
-  data: any;
-}
-
-interface DiagnosticResult {
-  success: boolean;
-  agent_handle: string;
-  total_duration: number;
-  steps: StepData[];
-  messages: Array<{ timestamp: number; message: string }>;
-  final_result: any;
-  image_engine: string;
-  post_id?: string;
-  error?: string;
-  error_trace?: string;
-}
 
 export default function DiagnosticPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
