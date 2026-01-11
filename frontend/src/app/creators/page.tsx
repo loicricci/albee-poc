@@ -4,25 +4,25 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getAppConfig, type AppConfig } from "@/lib/config";
 
-// Brand Colors
-// Primary: #0B1220 (Midnight Navy), #0E2A47 (Deep Blue), #1F6BFF (Electric Blue)
-// Supporting: #2F5F8F (Steel Blue), #4FB3FF (Cyan Glow), #E9F1FA (Soft Ice Blue)
-// Neutrals: #F4F7FB (Soft White), #7A8899 (Graphite)
+// Brand Colors - Light Theme
+// Primary: #0B1220 (Dark text), #1F6BFF (Electric Blue), #4FB3FF (Cyan Glow)
+// Supporting: #2F5F8F (Steel Blue), #64748b (Slate gray for secondary text)
+// Backgrounds: white, #f8fafc (Soft gray), #f1f5f9 (Light gray)
 
 // FAQ Item component for accordion
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="border-b border-[#2F5F8F]/30">
+    <div className="border-b border-gray-200">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full py-6 flex items-center justify-between text-left group"
       >
-        <span className="text-lg font-medium text-[#F4F7FB] group-hover:text-[#4FB3FF] transition-colors">
+        <span className="text-lg font-medium text-gray-900 group-hover:text-[#1F6BFF] transition-colors">
           {question}
         </span>
         <svg
-          className={`w-5 h-5 text-[#7A8899] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+          className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -33,7 +33,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
       <div
         className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-96 pb-6" : "max-h-0"}`}
       >
-        <p className="text-[#7A8899] leading-relaxed">{answer}</p>
+        <p className="text-gray-600 leading-relaxed">{answer}</p>
       </div>
     </div>
   );
@@ -69,11 +69,11 @@ export default function CreatorsLanding() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0B1220] text-[#F4F7FB] font-sans antialiased">
+    <div className="min-h-screen bg-white text-gray-900 font-sans antialiased">
       {/* ============================================ */}
       {/* 1. STICKY NAVIGATION */}
       {/* ============================================ */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#0B1220]/80 border-b border-[#2F5F8F]/30">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 py-4 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -87,10 +87,10 @@ export default function CreatorsLanding() {
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#1F6BFF] to-[#4FB3FF] shadow-lg shadow-[#1F6BFF]/25" />
             )}
             <div className="flex flex-col">
-              <span className="text-lg font-bold text-[#F4F7FB] group-hover:text-[#4FB3FF] transition-colors">
+              <span className="text-lg font-bold text-gray-900 group-hover:text-[#1F6BFF] transition-colors">
                 {appConfig.app_name || "Avee"}
               </span>
-              <span className="text-[10px] text-[#7A8899] -mt-1 hidden sm:block">
+              <span className="text-[10px] text-gray-500 -mt-1 hidden sm:block">
                 AI-native social for creators
               </span>
             </div>
@@ -109,8 +109,8 @@ export default function CreatorsLanding() {
                 href={link.href}
                 className={`text-sm font-medium transition-colors ${
                   activeSection === link.href.slice(1)
-                    ? "text-[#4FB3FF]"
-                    : "text-[#7A8899] hover:text-[#F4F7FB]"
+                    ? "text-[#1F6BFF]"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
               >
                 {link.label}
@@ -122,13 +122,13 @@ export default function CreatorsLanding() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="hidden sm:inline-flex h-10 px-5 items-center justify-center text-sm font-medium text-[#7A8899] hover:text-[#F4F7FB] transition-colors"
+              className="hidden sm:inline-flex h-10 px-5 items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="h-10 px-6 inline-flex items-center justify-center rounded-full bg-[#1F6BFF] text-sm font-semibold text-[#F4F7FB] shadow-lg shadow-[#1F6BFF]/25 hover:shadow-[#1F6BFF]/40 hover:scale-105 transition-all duration-300"
+              className="h-10 px-6 inline-flex items-center justify-center rounded-full bg-[#1F6BFF] text-sm font-semibold text-white shadow-lg shadow-[#1F6BFF]/25 hover:shadow-[#1F6BFF]/40 hover:scale-105 transition-all duration-300"
             >
               Start free
             </Link>
@@ -140,19 +140,18 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 2. HERO SECTION */}
         {/* ============================================ */}
-        <section className="relative overflow-hidden">
+        <section className="relative overflow-hidden bg-gradient-to-b from-blue-50/50 to-white">
           {/* Gradient mesh background */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#1F6BFF]/20 rounded-full blur-[128px] animate-pulse" />
-            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#4FB3FF]/15 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: "1s" }} />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-[#1F6BFF]/10 to-[#4FB3FF]/10 rounded-full blur-[100px]" />
+            <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#1F6BFF]/10 rounded-full blur-[128px] animate-pulse" />
+            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#4FB3FF]/10 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: "1s" }} />
           </div>
 
           {/* Grid pattern overlay */}
           <div
             className="absolute inset-0 opacity-[0.03]"
             style={{
-              backgroundImage: `linear-gradient(to right, #4FB3FF 1px, transparent 1px), linear-gradient(to bottom, #4FB3FF 1px, transparent 1px)`,
+              backgroundImage: `linear-gradient(to right, #1F6BFF 1px, transparent 1px), linear-gradient(to bottom, #1F6BFF 1px, transparent 1px)`,
               backgroundSize: "60px 60px",
             }}
           />
@@ -160,27 +159,27 @@ export default function CreatorsLanding() {
           <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8 pt-20 pb-32 lg:pt-32 lg:pb-40">
             <div className="max-w-4xl mx-auto text-center">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#1F6BFF]/10 border border-[#1F6BFF]/30 px-4 py-1.5 text-sm font-medium text-[#4FB3FF] mb-8">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#1F6BFF]/10 border border-[#1F6BFF]/30 px-4 py-1.5 text-sm font-medium text-[#1F6BFF] mb-8">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4FB3FF] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4FB3FF]" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1F6BFF] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1F6BFF]" />
                 </span>
                 Now in public beta
               </div>
 
               {/* Headline */}
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
-                <span className="bg-gradient-to-r from-[#F4F7FB] via-[#E9F1FA] to-[#7A8899] bg-clip-text text-transparent">
+                <span className="text-gray-900">
                   Meet the AI that runs
                 </span>
                 <br />
-                <span className="bg-gradient-to-r from-[#1F6BFF] via-[#4FB3FF] to-[#4FB3FF] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#1F6BFF] via-[#4FB3FF] to-[#1F6BFF] bg-clip-text text-transparent">
                   your creator presence.
                 </span>
               </h1>
 
               {/* Subhead */}
-              <p className="mt-8 text-xl lg:text-2xl text-[#7A8899] leading-relaxed max-w-3xl mx-auto">
+              <p className="mt-8 text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
                 Launch an agent that learns your content, chats with your audience
                 (text + voice), and auto-posts with images—without losing your tone.
               </p>
@@ -189,7 +188,7 @@ export default function CreatorsLanding() {
               <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link
                   href="/signup"
-                  className="group h-14 px-8 inline-flex items-center justify-center rounded-full bg-[#1F6BFF] text-lg font-semibold text-[#F4F7FB] shadow-xl shadow-[#1F6BFF]/25 hover:shadow-[#1F6BFF]/40 hover:scale-105 transition-all duration-300"
+                  className="group h-14 px-8 inline-flex items-center justify-center rounded-full bg-[#1F6BFF] text-lg font-semibold text-white shadow-xl shadow-[#1F6BFF]/25 hover:shadow-[#1F6BFF]/40 hover:scale-105 transition-all duration-300"
                 >
                   Start free
                   <svg
@@ -201,8 +200,8 @@ export default function CreatorsLanding() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </Link>
-                <button className="h-14 px-8 inline-flex items-center justify-center rounded-full border border-[#2F5F8F] bg-[#0E2A47]/50 text-lg font-medium text-[#E9F1FA] hover:border-[#4FB3FF] hover:bg-[#0E2A47] hover:text-[#F4F7FB] transition-all duration-300">
-                  <svg className="mr-2 w-5 h-5 text-[#4FB3FF]" fill="currentColor" viewBox="0 0 24 24">
+                <button className="h-14 px-8 inline-flex items-center justify-center rounded-full border border-gray-300 bg-white text-lg font-medium text-gray-700 hover:border-[#1F6BFF] hover:text-[#1F6BFF] transition-all duration-300">
+                  <svg className="mr-2 w-5 h-5 text-[#1F6BFF]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                   Watch 90-sec demo
@@ -210,21 +209,21 @@ export default function CreatorsLanding() {
               </div>
 
               {/* Trust line */}
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-[#7A8899]">
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-[#4FB3FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-[#1F6BFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                   No credit card
                 </div>
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-[#4FB3FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-[#1F6BFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                   Launch in minutes
                 </div>
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-[#4FB3FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-[#1F6BFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                   Control what it can say
@@ -239,31 +238,31 @@ export default function CreatorsLanding() {
                 <div className="absolute -inset-4 bg-gradient-to-r from-[#1F6BFF]/20 via-[#4FB3FF]/20 to-[#1F6BFF]/20 rounded-3xl blur-2xl opacity-60" />
                 
                 {/* Card */}
-                <div className="relative bg-[#0E2A47]/80 backdrop-blur-xl border border-[#2F5F8F]/50 rounded-2xl p-6 shadow-2xl">
+                <div className="relative bg-white backdrop-blur-xl border border-gray-200 rounded-2xl p-6 shadow-2xl shadow-gray-200/50">
                   <div className="flex items-start gap-4">
                     {/* Avatar */}
-                    <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-[#1F6BFF] to-[#4FB3FF] flex items-center justify-center text-2xl font-bold text-[#F4F7FB]">
+                    <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-[#1F6BFF] to-[#4FB3FF] flex items-center justify-center text-2xl font-bold text-white">
                       Y
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-[#F4F7FB]">Your AI Agent</h3>
-                        <span className="px-2 py-0.5 text-xs font-medium bg-[#1F6BFF]/20 text-[#4FB3FF] rounded-full">Online</span>
+                        <h3 className="text-lg font-semibold text-gray-900">Your AI Agent</h3>
+                        <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">Online</span>
                       </div>
-                      <p className="text-sm text-[#7A8899] mt-1">Trained on your content • Speaks in your voice</p>
+                      <p className="text-sm text-gray-500 mt-1">Trained on your content • Speaks in your voice</p>
                       
                       {/* Chat preview */}
                       <div className="mt-4 space-y-3">
                         <div className="flex gap-3">
-                          <div className="w-6 h-6 rounded-full bg-[#2F5F8F] flex-shrink-0" />
-                          <div className="bg-[#0B1220] rounded-xl rounded-tl-none px-4 py-2 text-sm text-[#E9F1FA]">
+                          <div className="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0" />
+                          <div className="bg-gray-100 rounded-xl rounded-tl-none px-4 py-2 text-sm text-gray-700">
                             Hey! What's your best advice for growing on social?
                           </div>
                         </div>
                         <div className="flex gap-3 justify-end">
-                          <div className="bg-[#1F6BFF]/20 border border-[#1F6BFF]/30 rounded-xl rounded-tr-none px-4 py-2 text-sm text-[#E9F1FA]">
+                          <div className="bg-[#1F6BFF]/10 border border-[#1F6BFF]/20 rounded-xl rounded-tr-none px-4 py-2 text-sm text-gray-700">
                             Consistency beats virality every time. Post daily, engage genuinely, and let your authentic voice shine through...
-                            <span className="inline-block w-2 h-4 bg-[#4FB3FF] ml-1 animate-pulse" />
+                            <span className="inline-block w-2 h-4 bg-[#1F6BFF] ml-1 animate-pulse" />
                           </div>
                         </div>
                       </div>
@@ -271,15 +270,15 @@ export default function CreatorsLanding() {
                   </div>
                   
                   {/* Stats bar */}
-                  <div className="mt-6 pt-4 border-t border-[#2F5F8F]/30 flex items-center justify-between text-sm">
+                  <div className="mt-6 pt-4 border-t border-gray-200 flex items-center justify-between text-sm">
                     <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-2 text-[#7A8899]">
+                      <div className="flex items-center gap-2 text-gray-500">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                         1.2k chats
                       </div>
-                      <div className="flex items-center gap-2 text-[#7A8899]">
+                      <div className="flex items-center gap-2 text-gray-500">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -287,8 +286,8 @@ export default function CreatorsLanding() {
                         4.8k followers
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[#4FB3FF]">
-                      <div className="w-2 h-2 rounded-full bg-[#4FB3FF] animate-pulse" />
+                    <div className="flex items-center gap-2 text-green-600">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                       Always on
                     </div>
                   </div>
@@ -301,7 +300,7 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 3. SOCIAL PROOF STRIP */}
         {/* ============================================ */}
-        <section className="border-y border-[#2F5F8F]/30 bg-[#0E2A47]/50">
+        <section className="border-y border-gray-200 bg-gray-50">
           <div className="mx-auto max-w-7xl px-6 lg:px-8 py-8">
             <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-16">
               {[
@@ -313,7 +312,7 @@ export default function CreatorsLanding() {
                   <span className="text-3xl font-bold bg-gradient-to-r from-[#1F6BFF] to-[#4FB3FF] bg-clip-text text-transparent">
                     {stat.value}
                   </span>
-                  <span className="text-sm text-[#7A8899]">{stat.label}</span>
+                  <span className="text-sm text-gray-600">{stat.label}</span>
                 </div>
               ))}
             </div>
@@ -323,13 +322,13 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 4. PROBLEM FRAMING */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32" id="product">
+        <section className="py-24 lg:py-32 bg-white" id="product">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#F4F7FB] mb-4">
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
                 Consistency is the hard part.
               </h2>
-              <p className="text-xl text-[#7A8899]">
+              <p className="text-xl text-gray-600">
                 You know what to do. You just don't have time to do it all.
               </p>
             </div>
@@ -366,11 +365,11 @@ export default function CreatorsLanding() {
               ].map((pain, i) => (
                 <div
                   key={i}
-                  className="group relative bg-[#0E2A47]/50 border border-[#2F5F8F]/30 rounded-2xl p-8 hover:border-[#2F5F8F]/60 hover:bg-[#0E2A47]/80 transition-all duration-300"
+                  className="group relative bg-white border border-gray-200 rounded-2xl p-8 hover:border-[#1F6BFF]/30 hover:shadow-lg hover:shadow-[#1F6BFF]/5 transition-all duration-300"
                 >
-                  <div className="text-[#7A8899] mb-4">{pain.icon}</div>
-                  <h3 className="text-xl font-semibold text-[#F4F7FB] mb-2">{pain.title}</h3>
-                  <p className="text-[#7A8899]">{pain.description}</p>
+                  <div className="text-[#1F6BFF] mb-4">{pain.icon}</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{pain.title}</h3>
+                  <p className="text-gray-600">{pain.description}</p>
                 </div>
               ))}
             </div>
@@ -380,14 +379,14 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 5. SOLUTION PILLARS */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32 bg-gradient-to-b from-[#0B1220] via-[#0E2A47]/30 to-[#0B1220]">
+        <section className="py-24 lg:py-32 bg-gradient-to-b from-gray-50 via-white to-gray-50">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="text-center mb-16">
-              <p className="text-[#4FB3FF] font-medium mb-4">The solution</p>
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#F4F7FB] mb-4">
+              <p className="text-[#1F6BFF] font-medium mb-4">The solution</p>
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
                 Your AI-native creator presence.
               </h2>
-              <p className="text-xl text-[#7A8899] max-w-2xl mx-auto">
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                 Learn → Engage → Publish. One agent that handles it all.
               </p>
             </div>
@@ -430,20 +429,20 @@ export default function CreatorsLanding() {
               ].map((pillar, i) => (
                 <div
                   key={i}
-                  className="group relative bg-[#0E2A47]/50 border border-[#2F5F8F]/30 rounded-2xl p-8 hover:border-[#2F5F8F]/60 transition-all duration-300"
+                  className="group relative bg-white border border-gray-200 rounded-2xl p-8 hover:border-[#1F6BFF]/30 hover:shadow-lg transition-all duration-300"
                 >
                   <div
-                    className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${pillar.gradient} text-[#F4F7FB] mb-6 shadow-lg`}
+                    className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${pillar.gradient} text-white mb-6 shadow-lg`}
                   >
                     {pillar.icon}
                   </div>
-                  <h3 className="text-2xl font-bold text-[#F4F7FB] mb-3">{pillar.title}</h3>
-                  <p className="text-[#7A8899] mb-6">{pillar.description}</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{pillar.title}</h3>
+                  <p className="text-gray-600 mb-6">{pillar.description}</p>
                   <div className="flex flex-wrap gap-2">
                     {pillar.features.map((feature, j) => (
                       <span
                         key={j}
-                        className="px-3 py-1 text-xs font-medium bg-[#0B1220] text-[#7A8899] rounded-full border border-[#2F5F8F]/30"
+                        className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full"
                       >
                         {feature}
                       </span>
@@ -458,11 +457,11 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 6. HOW IT WORKS */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32" id="how-it-works">
+        <section className="py-24 lg:py-32 bg-white" id="how-it-works">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="text-center mb-16">
-              <p className="text-[#4FB3FF] font-medium mb-4">How it works</p>
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#F4F7FB] mb-4">
+              <p className="text-[#1F6BFF] font-medium mb-4">How it works</p>
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
                 Three steps. That's it.
               </h2>
             </div>
@@ -498,8 +497,8 @@ export default function CreatorsLanding() {
                       <div
                         className="flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold z-10"
                         style={{
-                          backgroundColor: `${item.color}20`,
-                          borderColor: `${item.color}40`,
+                          backgroundColor: `${item.color}15`,
+                          borderColor: `${item.color}30`,
                           borderWidth: "1px",
                           color: item.color,
                         }}
@@ -508,8 +507,8 @@ export default function CreatorsLanding() {
                       </div>
                       {/* Content */}
                       <div className="flex-1 pt-2">
-                        <h3 className="text-2xl font-bold text-[#F4F7FB] mb-2">{item.title}</h3>
-                        <p className="text-lg text-[#7A8899]">{item.description}</p>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">{item.title}</h3>
+                        <p className="text-lg text-gray-600">{item.description}</p>
                       </div>
                     </div>
                   ))}
@@ -517,15 +516,15 @@ export default function CreatorsLanding() {
               </div>
 
               {/* Control callout */}
-              <div className="mt-16 p-6 bg-[#0E2A47]/50 border border-[#2F5F8F]/30 rounded-2xl flex items-start gap-4">
+              <div className="mt-16 p-6 bg-blue-50 border border-blue-100 rounded-2xl flex items-start gap-4">
                 <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#1F6BFF]/20 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-[#4FB3FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-[#1F6BFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-[#F4F7FB] mb-1">You're always in control</h4>
-                  <p className="text-[#7A8899]">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-1">You're always in control</h4>
+                  <p className="text-gray-600">
                     Enable approval mode to review posts before they go live. Set guardrails for what topics your agent can discuss. Turn features on/off anytime.
                   </p>
                 </div>
@@ -537,11 +536,11 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 7. FEATURE DEEP-DIVES */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32 bg-[#0E2A47]/30">
+        <section className="py-24 lg:py-32 bg-gray-50">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="text-center mb-20">
-              <p className="text-[#4FB3FF] font-medium mb-4">Features</p>
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#F4F7FB]">
+              <p className="text-[#1F6BFF] font-medium mb-4">Features</p>
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900">
                 Everything you need to scale.
               </h2>
             </div>
@@ -550,16 +549,16 @@ export default function CreatorsLanding() {
               {/* Feature 1: Instant Agent Creation */}
               <div className="grid lg:grid-cols-2 gap-12 items-center">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#1F6BFF]/10 border border-[#1F6BFF]/30 rounded-full text-sm text-[#4FB3FF] mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#1F6BFF]/10 border border-[#1F6BFF]/30 rounded-full text-sm text-[#1F6BFF] mb-6">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                     Lightning fast
                   </div>
-                  <h3 className="text-3xl lg:text-4xl font-bold text-[#F4F7FB] mb-4">
+                  <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                     Instant Agent Creation
                   </h3>
-                  <p className="text-lg text-[#7A8899] mb-6">
+                  <p className="text-lg text-gray-600 mb-6">
                     Go from blank to knowledgeable in 30–90 seconds. Our auto-research crawls the web, pulls relevant info, and trains your agent automatically.
                   </p>
                   <ul className="space-y-3">
@@ -568,8 +567,8 @@ export default function CreatorsLanding() {
                       "Topic-based bootstrap—just enter your niche",
                       "Continuous updates to keep knowledge fresh",
                     ].map((item, i) => (
-                      <li key={i} className="flex items-start gap-3 text-[#E9F1FA]">
-                        <svg className="w-5 h-5 text-[#4FB3FF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <li key={i} className="flex items-start gap-3 text-gray-700">
+                        <svg className="w-5 h-5 text-[#1F6BFF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         {item}
@@ -578,19 +577,19 @@ export default function CreatorsLanding() {
                   </ul>
                 </div>
                 <div className="relative">
-                  <div className="absolute -inset-4 bg-gradient-to-r from-[#1F6BFF]/20 to-[#4FB3FF]/20 rounded-3xl blur-2xl opacity-50" />
-                  <div className="relative bg-[#0B1220] border border-[#2F5F8F]/30 rounded-2xl p-6 shadow-2xl">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#1F6BFF]/10 to-[#4FB3FF]/10 rounded-3xl blur-2xl opacity-50" />
+                  <div className="relative bg-gray-900 border border-gray-700 rounded-2xl p-6 shadow-2xl">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-3 h-3 rounded-full bg-[#2F5F8F]" />
-                      <div className="w-3 h-3 rounded-full bg-[#4FB3FF]" />
-                      <div className="w-3 h-3 rounded-full bg-[#1F6BFF]" />
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
                     </div>
                     <div className="space-y-3 font-mono text-sm">
-                      <p className="text-[#7A8899]">$ Creating agent...</p>
+                      <p className="text-gray-400">$ Creating agent...</p>
                       <p className="text-[#4FB3FF]">→ Researching "digital marketing"...</p>
-                      <p className="text-[#4FB3FF]">✓ Found 12 relevant sources</p>
+                      <p className="text-green-400">✓ Found 12 relevant sources</p>
                       <p className="text-[#1F6BFF]">→ Training on 847 knowledge chunks...</p>
-                      <p className="text-[#4FB3FF]">✓ Agent ready in 42 seconds</p>
+                      <p className="text-green-400">✓ Agent ready in 42 seconds</p>
                     </div>
                   </div>
                 </div>
@@ -599,20 +598,20 @@ export default function CreatorsLanding() {
               {/* Feature 2: Autonomous Content */}
               <div className="grid lg:grid-cols-2 gap-12 items-center">
                 <div className="order-2 lg:order-1 relative">
-                  <div className="absolute -inset-4 bg-gradient-to-r from-[#2F5F8F]/20 to-[#1F6BFF]/20 rounded-3xl blur-2xl opacity-50" />
-                  <div className="relative bg-[#0B1220] border border-[#2F5F8F]/30 rounded-2xl overflow-hidden">
-                    <div className="p-4 border-b border-[#2F5F8F]/30 flex items-center justify-between">
-                      <span className="text-sm font-medium text-[#7A8899]">Scheduled Post</span>
-                      <span className="text-xs text-[#7A8899]">Tomorrow, 9:00 AM</span>
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#2F5F8F]/10 to-[#1F6BFF]/10 rounded-3xl blur-2xl opacity-50" />
+                  <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Scheduled Post</span>
+                      <span className="text-xs text-gray-500">Tomorrow, 9:00 AM</span>
                     </div>
                     <div className="p-4">
-                      <div className="aspect-video bg-gradient-to-br from-[#1F6BFF]/30 to-[#4FB3FF]/30 rounded-lg mb-4 flex items-center justify-center">
+                      <div className="aspect-video bg-gradient-to-br from-[#1F6BFF]/20 to-[#4FB3FF]/20 rounded-lg mb-4 flex items-center justify-center">
                         <span className="text-6xl">🎨</span>
                       </div>
-                      <p className="text-[#E9F1FA] text-sm">
+                      <p className="text-gray-700 text-sm">
                         "5 underrated tools every creator should know about in 2025. Thread incoming... 🧵"
                       </p>
-                      <div className="mt-4 flex items-center gap-4 text-xs text-[#7A8899]">
+                      <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
                         <span>AI-generated image</span>
                         <span>•</span>
                         <span>Topic: Productivity</span>
@@ -621,16 +620,16 @@ export default function CreatorsLanding() {
                   </div>
                 </div>
                 <div className="order-1 lg:order-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#2F5F8F]/20 border border-[#2F5F8F]/40 rounded-full text-sm text-[#4FB3FF] mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#2F5F8F]/10 border border-[#2F5F8F]/30 rounded-full text-sm text-[#2F5F8F] mb-6">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     AI-powered
                   </div>
-                  <h3 className="text-3xl lg:text-4xl font-bold text-[#F4F7FB] mb-4">
+                  <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                     Autonomous Content + AI Images
                   </h3>
-                  <p className="text-lg text-[#7A8899] mb-6">
+                  <p className="text-lg text-gray-600 mb-6">
                     Posts that look native to your brand. Select topics, set the schedule, and let your agent create engaging content with AI-generated images.
                   </p>
                   <ul className="space-y-3">
@@ -639,8 +638,8 @@ export default function CreatorsLanding() {
                       "Topic-based content generation",
                       "Smart scheduling based on engagement data",
                     ].map((item, i) => (
-                      <li key={i} className="flex items-start gap-3 text-[#E9F1FA]">
-                        <svg className="w-5 h-5 text-[#4FB3FF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <li key={i} className="flex items-start gap-3 text-gray-700">
+                        <svg className="w-5 h-5 text-[#1F6BFF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         {item}
@@ -653,16 +652,16 @@ export default function CreatorsLanding() {
               {/* Feature 3: Messaging */}
               <div className="grid lg:grid-cols-2 gap-12 items-center">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4FB3FF]/10 border border-[#4FB3FF]/30 rounded-full text-sm text-[#4FB3FF] mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4FB3FF]/10 border border-[#4FB3FF]/30 rounded-full text-sm text-[#1F6BFF] mb-6">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     Always-on
                   </div>
-                  <h3 className="text-3xl lg:text-4xl font-bold text-[#F4F7FB] mb-4">
+                  <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                     Messaging that Scales You
                   </h3>
-                  <p className="text-lg text-[#7A8899] mb-6">
+                  <p className="text-lg text-gray-600 mb-6">
                     Your inbox, handled—without sounding robotic. Context-aware replies that remember past conversations and route complex queries to you.
                   </p>
                   <ul className="space-y-3">
@@ -671,8 +670,8 @@ export default function CreatorsLanding() {
                       "Read status and real-time updates",
                       "Smart escalation when human needed",
                     ].map((item, i) => (
-                      <li key={i} className="flex items-start gap-3 text-[#E9F1FA]">
-                        <svg className="w-5 h-5 text-[#4FB3FF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <li key={i} className="flex items-start gap-3 text-gray-700">
+                        <svg className="w-5 h-5 text-[#1F6BFF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         {item}
@@ -681,8 +680,8 @@ export default function CreatorsLanding() {
                   </ul>
                 </div>
                 <div className="relative">
-                  <div className="absolute -inset-4 bg-gradient-to-r from-[#4FB3FF]/20 to-[#1F6BFF]/20 rounded-3xl blur-2xl opacity-50" />
-                  <div className="relative bg-[#0B1220] border border-[#2F5F8F]/30 rounded-2xl p-6">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#4FB3FF]/10 to-[#1F6BFF]/10 rounded-3xl blur-2xl opacity-50" />
+                  <div className="relative bg-white border border-gray-200 rounded-2xl p-6 shadow-xl">
                     <div className="space-y-4">
                       {[
                         { from: "user", text: "How do I get started with content creation?" },
@@ -694,13 +693,13 @@ export default function CreatorsLanding() {
                           <div
                             className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm ${
                               msg.from === "agent"
-                                ? "bg-[#0E2A47] text-[#E9F1FA] rounded-tl-none"
-                                : "bg-[#1F6BFF] text-[#F4F7FB] rounded-tr-none"
+                                ? "bg-gray-100 text-gray-700 rounded-tl-none"
+                                : "bg-[#1F6BFF] text-white rounded-tr-none"
                             }`}
                           >
                             {msg.text}
                             {msg.escalate && (
-                              <span className="block mt-2 text-xs text-[#4FB3FF]">
+                              <span className="block mt-2 text-xs text-[#1F6BFF]">
                                 ↳ Escalation suggested
                               </span>
                             )}
@@ -715,15 +714,15 @@ export default function CreatorsLanding() {
               {/* Feature 4: Voice */}
               <div className="grid lg:grid-cols-2 gap-12 items-center">
                 <div className="order-2 lg:order-1 relative">
-                  <div className="absolute -inset-4 bg-gradient-to-r from-[#1F6BFF]/20 to-[#2F5F8F]/20 rounded-3xl blur-2xl opacity-50" />
-                  <div className="relative bg-[#0B1220] border border-[#2F5F8F]/30 rounded-2xl p-8 flex items-center justify-center">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#1F6BFF]/10 to-[#2F5F8F]/10 rounded-3xl blur-2xl opacity-50" />
+                  <div className="relative bg-white border border-gray-200 rounded-2xl p-8 flex items-center justify-center shadow-xl">
                     <div className="text-center">
                       <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-[#1F6BFF] to-[#4FB3FF] mb-6">
-                        <svg className="w-12 h-12 text-[#F4F7FB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                         </svg>
                       </div>
-                      <p className="text-[#7A8899] text-sm">Voice: Nova</p>
+                      <p className="text-gray-500 text-sm">Voice: Nova</p>
                       <div className="mt-4 flex items-center justify-center gap-1">
                         {[16, 24, 12, 28, 18, 22, 14, 26, 20, 10, 24, 16, 28, 12, 22, 18, 26, 14, 20, 24].map((h, i) => (
                           <div
@@ -740,16 +739,16 @@ export default function CreatorsLanding() {
                   </div>
                 </div>
                 <div className="order-1 lg:order-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#1F6BFF]/10 border border-[#1F6BFF]/30 rounded-full text-sm text-[#4FB3FF] mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#1F6BFF]/10 border border-[#1F6BFF]/30 rounded-full text-sm text-[#1F6BFF] mb-6">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                     </svg>
                     Voice-enabled
                   </div>
-                  <h3 className="text-3xl lg:text-4xl font-bold text-[#F4F7FB] mb-4">
+                  <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                     Voice Conversations
                   </h3>
-                  <p className="text-lg text-[#7A8899] mb-6">
+                  <p className="text-lg text-gray-600 mb-6">
                     Talk to your agent like a co-host. Voice input with Whisper, natural responses with multiple TTS voices.
                   </p>
                   <ul className="space-y-3">
@@ -758,8 +757,8 @@ export default function CreatorsLanding() {
                       "6 natural voice options (alloy, echo, fable...)",
                       "Perfect for audio-first creators",
                     ].map((item, i) => (
-                      <li key={i} className="flex items-start gap-3 text-[#E9F1FA]">
-                        <svg className="w-5 h-5 text-[#4FB3FF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <li key={i} className="flex items-start gap-3 text-gray-700">
+                        <svg className="w-5 h-5 text-[#1F6BFF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         {item}
@@ -772,48 +771,48 @@ export default function CreatorsLanding() {
               {/* Feature 5: Privacy Layers */}
               <div className="grid lg:grid-cols-2 gap-12 items-center">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#2F5F8F]/20 border border-[#2F5F8F]/40 rounded-full text-sm text-[#4FB3FF] mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#2F5F8F]/10 border border-[#2F5F8F]/30 rounded-full text-sm text-[#2F5F8F] mb-6">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                     Privacy-first
                   </div>
-                  <h3 className="text-3xl lg:text-4xl font-bold text-[#F4F7FB] mb-4">
+                  <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                     Privacy Layers
                   </h3>
-                  <p className="text-lg text-[#7A8899] mb-6">
+                  <p className="text-lg text-gray-600 mb-6">
                     Different audiences, different boundaries. Control what your agent reveals based on relationship level.
                   </p>
                   <div className="space-y-4">
                     {[
-                      { level: "Public", desc: "General knowledge for everyone", color: "#7A8899" },
+                      { level: "Public", desc: "General knowledge for everyone", color: "#64748b" },
                       { level: "Friends", desc: "Deeper insights for followers", color: "#4FB3FF" },
                       { level: "Intimate", desc: "Full access for inner circle", color: "#1F6BFF" },
                     ].map((layer, i) => (
-                      <div key={i} className="flex items-center gap-4 p-4 bg-[#0E2A47]/50 border border-[#2F5F8F]/30 rounded-xl">
+                      <div key={i} className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl">
                         <div
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: layer.color }}
                         />
                         <div>
-                          <p className="font-medium text-[#F4F7FB]">{layer.level}</p>
-                          <p className="text-sm text-[#7A8899]">{layer.desc}</p>
+                          <p className="font-medium text-gray-900">{layer.level}</p>
+                          <p className="text-sm text-gray-500">{layer.desc}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="relative">
-                  <div className="absolute -inset-4 bg-gradient-to-r from-[#2F5F8F]/20 to-[#1F6BFF]/20 rounded-3xl blur-2xl opacity-50" />
-                  <div className="relative bg-[#0B1220] border border-[#2F5F8F]/30 rounded-2xl p-8">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#2F5F8F]/10 to-[#1F6BFF]/10 rounded-3xl blur-2xl opacity-50" />
+                  <div className="relative bg-white border border-gray-200 rounded-2xl p-8 shadow-xl">
                     <div className="text-center">
                       <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-[#2F5F8F] to-[#1F6BFF] mb-6">
-                        <svg className="w-10 h-10 text-[#F4F7FB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                       </div>
-                      <h4 className="text-xl font-semibold text-[#F4F7FB] mb-2">You set the boundaries</h4>
-                      <p className="text-[#7A8899] text-sm">
+                      <h4 className="text-xl font-semibold text-gray-900 mb-2">You set the boundaries</h4>
+                      <p className="text-gray-500 text-sm">
                         Your content. Your rules. Scale interaction without sacrificing privacy.
                       </p>
                     </div>
@@ -827,11 +826,11 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 8. USE CASES GRID */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32" id="use-cases">
+        <section className="py-24 lg:py-32 bg-white" id="use-cases">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="text-center mb-16">
-              <p className="text-[#4FB3FF] font-medium mb-4">Use cases</p>
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#F4F7FB] mb-4">
+              <p className="text-[#1F6BFF] font-medium mb-4">Use cases</p>
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
                 Built for how creators work.
               </h2>
             </div>
@@ -861,11 +860,11 @@ export default function CreatorsLanding() {
               ].map((useCase, i) => (
                 <div
                   key={i}
-                  className="group bg-[#0E2A47]/50 border border-[#2F5F8F]/30 rounded-2xl p-6 hover:border-[#1F6BFF]/50 hover:bg-[#1F6BFF]/5 transition-all duration-300"
+                  className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-[#1F6BFF]/30 hover:shadow-lg hover:shadow-[#1F6BFF]/5 transition-all duration-300"
                 >
                   <div className="text-4xl mb-4">{useCase.icon}</div>
-                  <h3 className="text-xl font-semibold text-[#F4F7FB] mb-2">{useCase.title}</h3>
-                  <p className="text-[#7A8899] text-sm">{useCase.description}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{useCase.title}</h3>
+                  <p className="text-gray-600 text-sm">{useCase.description}</p>
                 </div>
               ))}
             </div>
@@ -875,28 +874,28 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 9. DEMO BAND */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32 bg-gradient-to-b from-[#0B1220] via-[#0E2A47]/30 to-[#0B1220]">
+        <section className="py-24 lg:py-32 bg-gradient-to-b from-gray-50 via-white to-gray-50">
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-[#F4F7FB] mb-4">
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                 See it in action.
               </h2>
-              <p className="text-lg text-[#7A8899]">
+              <p className="text-lg text-gray-600">
                 Watch how creators are using Avee to scale their presence.
               </p>
             </div>
 
             {/* Video placeholder */}
-            <div className="relative aspect-video bg-[#0B1220] border border-[#2F5F8F]/30 rounded-2xl overflow-hidden group cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#1F6BFF]/10 to-[#4FB3FF]/10" />
+            <div className="relative aspect-video bg-gray-900 border border-gray-200 rounded-2xl overflow-hidden group cursor-pointer shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#1F6BFF]/20 to-[#4FB3FF]/20" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-[#F4F7FB]/10 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-8 h-8 text-[#F4F7FB] ml-1" fill="currentColor" viewBox="0 0 24 24">
+                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </div>
               </div>
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-sm text-[#7A8899]">
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-sm text-gray-300">
                 <span>Demo: Create to publish in 2 minutes</span>
                 <span>2:34</span>
               </div>
@@ -905,7 +904,7 @@ export default function CreatorsLanding() {
             <div className="mt-10 text-center">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 h-14 px-8 rounded-full bg-[#1F6BFF] text-lg font-semibold text-[#F4F7FB] shadow-lg shadow-[#1F6BFF]/25 hover:shadow-[#1F6BFF]/40 hover:scale-105 transition-all duration-300"
+                className="inline-flex items-center gap-2 h-14 px-8 rounded-full bg-[#1F6BFF] text-lg font-semibold text-white shadow-lg shadow-[#1F6BFF]/25 hover:shadow-[#1F6BFF]/40 hover:scale-105 transition-all duration-300"
               >
                 Start free
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -919,31 +918,31 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 10. PRICING */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32" id="pricing">
+        <section className="py-24 lg:py-32 bg-white" id="pricing">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="text-center mb-16">
-              <p className="text-[#4FB3FF] font-medium mb-4">Pricing</p>
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#F4F7FB] mb-4">
+              <p className="text-[#1F6BFF] font-medium mb-4">Pricing</p>
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
                 Simple, creator-friendly pricing.
               </h2>
-              <p className="text-lg text-[#7A8899]">
+              <p className="text-lg text-gray-600">
                 Start free. Scale when you're ready.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {/* Free */}
-              <div className="bg-[#0E2A47]/50 border border-[#2F5F8F]/30 rounded-2xl p-8">
-                <h3 className="text-xl font-semibold text-[#F4F7FB] mb-2">Free</h3>
-                <p className="text-[#7A8899] text-sm mb-6">Perfect for getting started</p>
+              <div className="bg-white border border-gray-200 rounded-2xl p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Free</h3>
+                <p className="text-gray-500 text-sm mb-6">Perfect for getting started</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-[#F4F7FB]">$0</span>
-                  <span className="text-[#7A8899]">/month</span>
+                  <span className="text-4xl font-bold text-gray-900">$0</span>
+                  <span className="text-gray-500">/month</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {["1 agent", "Basic chat", "5 posts/month", "Community support"].map((feature, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm text-[#E9F1FA]">
-                      <svg className="w-4 h-4 text-[#7A8899]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       {feature}
@@ -952,22 +951,22 @@ export default function CreatorsLanding() {
                 </ul>
                 <Link
                   href="/signup"
-                  className="block w-full h-12 flex items-center justify-center rounded-full border border-[#2F5F8F] text-sm font-medium text-[#E9F1FA] hover:border-[#4FB3FF] hover:bg-[#0E2A47] transition-all"
+                  className="block w-full h-12 flex items-center justify-center rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:border-[#1F6BFF] hover:text-[#1F6BFF] transition-all"
                 >
                   Get started
                 </Link>
               </div>
 
               {/* Creator - Featured */}
-              <div className="relative bg-gradient-to-b from-[#1F6BFF]/10 to-[#4FB3FF]/10 border-2 border-[#1F6BFF]/40 rounded-2xl p-8">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#1F6BFF] to-[#4FB3FF] rounded-full text-xs font-semibold text-[#F4F7FB]">
+              <div className="relative bg-gradient-to-b from-[#1F6BFF]/5 to-[#4FB3FF]/5 border-2 border-[#1F6BFF]/30 rounded-2xl p-8">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#1F6BFF] to-[#4FB3FF] rounded-full text-xs font-semibold text-white">
                   Most popular
                 </div>
-                <h3 className="text-xl font-semibold text-[#F4F7FB] mb-2">Creator</h3>
-                <p className="text-[#7A8899] text-sm mb-6">For serious creators</p>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Creator</h3>
+                <p className="text-gray-500 text-sm mb-6">For serious creators</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-[#F4F7FB]">$29</span>
-                  <span className="text-[#7A8899]">/month</span>
+                  <span className="text-4xl font-bold text-gray-900">$29</span>
+                  <span className="text-gray-500">/month</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {[
@@ -977,8 +976,8 @@ export default function CreatorsLanding() {
                     "Auto-scheduling",
                     "Priority support",
                   ].map((feature, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm text-[#E9F1FA]">
-                      <svg className="w-4 h-4 text-[#4FB3FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
+                      <svg className="w-4 h-4 text-[#1F6BFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       {feature}
@@ -987,19 +986,19 @@ export default function CreatorsLanding() {
                 </ul>
                 <Link
                   href="/signup"
-                  className="block w-full h-12 flex items-center justify-center rounded-full bg-[#1F6BFF] text-sm font-semibold text-[#F4F7FB] shadow-lg shadow-[#1F6BFF]/25 hover:shadow-[#1F6BFF]/40 transition-all"
+                  className="block w-full h-12 flex items-center justify-center rounded-full bg-[#1F6BFF] text-sm font-semibold text-white shadow-lg shadow-[#1F6BFF]/25 hover:shadow-[#1F6BFF]/40 transition-all"
                 >
                   Start free trial
                 </Link>
               </div>
 
               {/* Pro */}
-              <div className="bg-[#0E2A47]/50 border border-[#2F5F8F]/30 rounded-2xl p-8">
-                <h3 className="text-xl font-semibold text-[#F4F7FB] mb-2">Pro</h3>
-                <p className="text-[#7A8899] text-sm mb-6">For teams and agencies</p>
+              <div className="bg-white border border-gray-200 rounded-2xl p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Pro</h3>
+                <p className="text-gray-500 text-sm mb-6">For teams and agencies</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-[#F4F7FB]">$99</span>
-                  <span className="text-[#7A8899]">/month</span>
+                  <span className="text-4xl font-bold text-gray-900">$99</span>
+                  <span className="text-gray-500">/month</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {[
@@ -1009,8 +1008,8 @@ export default function CreatorsLanding() {
                     "Advanced analytics",
                     "Dedicated support",
                   ].map((feature, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm text-[#E9F1FA]">
-                      <svg className="w-4 h-4 text-[#7A8899]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       {feature}
@@ -1019,7 +1018,7 @@ export default function CreatorsLanding() {
                 </ul>
                 <Link
                   href="/signup"
-                  className="block w-full h-12 flex items-center justify-center rounded-full border border-[#2F5F8F] text-sm font-medium text-[#E9F1FA] hover:border-[#4FB3FF] hover:bg-[#0E2A47] transition-all"
+                  className="block w-full h-12 flex items-center justify-center rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:border-[#1F6BFF] hover:text-[#1F6BFF] transition-all"
                 >
                   Contact sales
                 </Link>
@@ -1028,8 +1027,8 @@ export default function CreatorsLanding() {
 
             {/* AI usage note */}
             <div className="mt-12 max-w-2xl mx-auto text-center">
-              <p className="text-sm text-[#7A8899]">
-                💡 <strong className="text-[#E9F1FA]">Transparent AI costs:</strong> We optimize API usage so you don't have to worry. GPT-4o-mini keeps costs low without sacrificing quality.
+              <p className="text-sm text-gray-500">
+                💡 <strong className="text-gray-700">Transparent AI costs:</strong> We optimize API usage so you don't have to worry. GPT-4o-mini keeps costs low without sacrificing quality.
               </p>
             </div>
           </div>
@@ -1038,18 +1037,18 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 11. TRUST & SAFETY */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32 bg-[#0E2A47]/30">
+        <section className="py-24 lg:py-32 bg-gray-50">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#1F6BFF]/20 mb-6">
-                <svg className="w-8 h-8 text-[#4FB3FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#1F6BFF]/10 mb-6">
+                <svg className="w-8 h-8 text-[#1F6BFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-[#F4F7FB] mb-4">
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                 You control the agent.
               </h2>
-              <p className="text-lg text-[#7A8899] mb-12">
+              <p className="text-lg text-gray-600 mb-12">
                 Built with safety and control at the core.
               </p>
 
@@ -1072,13 +1071,13 @@ export default function CreatorsLanding() {
                     description: "Disable any feature instantly. You're always in the driver's seat.",
                   },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-4 p-5 bg-[#0E2A47]/50 border border-[#2F5F8F]/30 rounded-xl">
-                    <svg className="w-5 h-5 text-[#4FB3FF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div key={i} className="flex items-start gap-4 p-5 bg-white border border-gray-200 rounded-xl">
+                    <svg className="w-5 h-5 text-[#1F6BFF] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <div>
-                      <h4 className="font-medium text-[#F4F7FB] mb-1">{item.title}</h4>
-                      <p className="text-sm text-[#7A8899]">{item.description}</p>
+                      <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
+                      <p className="text-sm text-gray-500">{item.description}</p>
                     </div>
                   </div>
                 ))}
@@ -1090,15 +1089,15 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 12. FAQ ACCORDION */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32">
+        <section className="py-24 lg:py-32 bg-white">
           <div className="mx-auto max-w-3xl px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-3xl lg:text-4xl font-bold text-[#F4F7FB] mb-4">
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                 Frequently asked questions
               </h2>
             </div>
 
-            <div className="divide-y divide-[#2F5F8F]/30">
+            <div className="divide-y divide-gray-200">
               <FAQItem
                 question="Will it sound like me?"
                 answer="Yes! Your agent is trained on your content and uses your writing style. You can fine-tune the tone, adjust personality traits, and set specific phrases to use or avoid. Most users say their agents sound 90%+ like them."
@@ -1130,7 +1129,7 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 13. FINAL CTA */}
         {/* ============================================ */}
-        <section className="py-24 lg:py-32">
+        <section className="py-24 lg:py-32 bg-white">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="relative overflow-hidden rounded-3xl">
               {/* Background */}
@@ -1138,17 +1137,17 @@ export default function CreatorsLanding() {
               <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-50" />
 
               <div className="relative px-8 py-20 lg:py-28 text-center">
-                <h2 className="text-4xl lg:text-5xl font-bold text-[#F4F7FB] mb-6">
+                <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
                   Start free. Meet your AI twin today.
                 </h2>
-                <p className="text-xl text-[#E9F1FA]/80 max-w-2xl mx-auto mb-10">
+                <p className="text-xl text-white/80 max-w-2xl mx-auto mb-10">
                   Join creators who are building AI versions of themselves. Takes minutes. No credit card required.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                   <Link
                     href="/signup"
-                    className="group h-14 px-8 inline-flex items-center justify-center rounded-full bg-[#F4F7FB] text-lg font-semibold text-[#0B1220] shadow-xl hover:bg-[#E9F1FA] hover:scale-105 transition-all duration-300"
+                    className="group h-14 px-8 inline-flex items-center justify-center rounded-full bg-white text-lg font-semibold text-[#1F6BFF] shadow-xl hover:bg-gray-100 hover:scale-105 transition-all duration-300"
                   >
                     Start free
                     <svg
@@ -1160,12 +1159,12 @@ export default function CreatorsLanding() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </Link>
-                  <button className="h-14 px-8 inline-flex items-center justify-center rounded-full border-2 border-[#F4F7FB]/30 text-lg font-medium text-[#F4F7FB] hover:border-[#F4F7FB]/50 hover:bg-[#F4F7FB]/10 transition-all duration-300">
+                  <button className="h-14 px-8 inline-flex items-center justify-center rounded-full border-2 border-white/30 text-lg font-medium text-white hover:border-white/50 hover:bg-white/10 transition-all duration-300">
                     Watch demo
                   </button>
                 </div>
 
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-[#E9F1FA]/70">
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-white/70">
                   <div className="flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1187,7 +1186,7 @@ export default function CreatorsLanding() {
         {/* ============================================ */}
         {/* 14. FOOTER */}
         {/* ============================================ */}
-        <footer className="border-t border-[#2F5F8F]/30 py-16">
+        <footer className="border-t border-gray-200 py-16 bg-white">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
               {/* Logo */}
@@ -1202,9 +1201,9 @@ export default function CreatorsLanding() {
                   ) : (
                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#1F6BFF] to-[#4FB3FF]" />
                   )}
-                  <span className="text-lg font-bold text-[#F4F7FB]">{appConfig.app_name || "Avee"}</span>
+                  <span className="text-lg font-bold text-gray-900">{appConfig.app_name || "Avee"}</span>
                 </Link>
-                <p className="text-sm text-[#7A8899] max-w-xs">
+                <p className="text-sm text-gray-500 max-w-xs">
                   The AI-native social platform for creators. Build your digital twin and scale your presence.
                 </p>
               </div>
@@ -1237,13 +1236,13 @@ export default function CreatorsLanding() {
                 },
               ].map((section, i) => (
                 <div key={i}>
-                  <h4 className="text-sm font-semibold text-[#F4F7FB] mb-4">{section.title}</h4>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-4">{section.title}</h4>
                   <ul className="space-y-3">
                     {section.links.map((link, j) => (
                       <li key={j}>
                         <Link
                           href={link.href}
-                          className="text-sm text-[#7A8899] hover:text-[#E9F1FA] transition-colors"
+                          className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
                         >
                           {link.label}
                         </Link>
@@ -1255,23 +1254,23 @@ export default function CreatorsLanding() {
             </div>
 
             {/* Bottom */}
-            <div className="pt-8 border-t border-[#2F5F8F]/30 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-sm text-[#7A8899]">
+            <div className="pt-8 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-gray-500">
                 © {new Date().getFullYear()} {appConfig.app_name || "Avee"}. All rights reserved.
               </p>
               <div className="flex items-center gap-4">
                 {/* Social icons */}
-                <a href="#" className="text-[#7A8899] hover:text-[#E9F1FA] transition-colors">
+                <a href="#" className="text-gray-400 hover:text-gray-600 transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                   </svg>
                 </a>
-                <a href="#" className="text-[#7A8899] hover:text-[#E9F1FA] transition-colors">
+                <a href="#" className="text-gray-400 hover:text-gray-600 transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                   </svg>
                 </a>
-                <a href="#" className="text-[#7A8899] hover:text-[#E9F1FA] transition-colors">
+                <a href="#" className="text-gray-400 hover:text-gray-600 transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                   </svg>

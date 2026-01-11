@@ -86,6 +86,19 @@ function TopNavigation() {
         const results = await res.json();
         setSearchResults(Array.isArray(results) ? results : []);
         setShowSearchDropdown(true);
+      } else if (res.status === 401) {
+        // Token expired - try to refresh and retry once
+        const { data: refreshData } = await supabase.auth.refreshSession();
+        if (refreshData.session?.access_token) {
+          const retryRes = await fetch(url.toString(), {
+            headers: { Authorization: `Bearer ${refreshData.session.access_token}` },
+          });
+          if (retryRes.ok) {
+            const results = await retryRes.json();
+            setSearchResults(Array.isArray(results) ? results : []);
+            setShowSearchDropdown(true);
+          }
+        }
       }
     } catch (e) {
       console.error("Search error:", e);

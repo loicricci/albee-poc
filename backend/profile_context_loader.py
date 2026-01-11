@@ -136,9 +136,6 @@ class ProfileContextLoader:
         if not row:
             return None
         
-        # #region agent log
-        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "profile_context_loader.py:_load_profile_data", "message": "DB branding_guidelines loaded", "data": {"handle": row.handle, "branding_guidelines_raw": row.branding_guidelines, "branding_guidelines_len": len(row.branding_guidelines) if row.branding_guidelines else 0}, "hypothesisId": "A,B", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-        # #endregion
         return {
             "avee_id": str(row.avee_id),
             "handle": row.handle,

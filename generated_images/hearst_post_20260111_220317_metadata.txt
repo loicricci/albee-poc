@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-11 22:03:19
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic image depicting a futuristic industrial space station interior, seamlessly integrating Hearst Mining's signature style and color palette. The scene is set in a high-tech medical bay within the space station, featuring advanced medical equipment and astronauts in sleek, geometric space suits. The room is bathed in a vibrant neon lime green glow (#A7FB90), casting dynamic shadows on the neutral medium gray (#9EB3A8) walls and deep pure black (#0E0F0F) metallic surfaces, creating high contrast and a sense of depth. 
+
+The astronauts, equipped with minimalist and technical helmets, are being attended to by robotic arms, showcasing the fusion of technology and medicine in a microgravity environment. The bright pure white lighting (#E6F1E7, #F2F2F2) floods the scene, reflecting off the equipment and highlighting the serene, yet professional mood. 
+
+In the background, see a large digital display with grid-based technical illustrations and geometric patterns, embodying Hearst's clean and technical aesthetic. The entire composition exudes a calm and trustworthy atmosphere, with an emphasis on infrastructure and energy efficiency, capturing Hearst Mining's essence. The image should be wide-format, perfect for social media sharing, with intricate details and a cinematic feel, drawing viewers into this captivating and advanced world of space exploration and medical innovation.
+
+============================================================
+IMAGE FILE: hearst_post_20260111_220317.png

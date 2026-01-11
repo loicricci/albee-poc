@@ -134,16 +134,10 @@ class AIPromptGenerator:
         
         # Get branding guidelines if available
         branding = agent_context.get('branding_guidelines', '').strip()
-        # #region agent log
-        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:branding_check", "message": "Branding value in generate_image_prompt (DALL-E/simple path)", "data": {"branding_raw": branding[:200] if branding else "", "branding_len": len(branding), "branding_truthy": bool(branding)}, "hypothesisId": "C2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-        # #endregion
         branding_section = ""
         if branding:
             # Transform hex codes to vivid descriptions that image models understand
             branding_transformed = transform_hex_to_vivid_descriptions(branding)
-            # #region agent log
-            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:branding_transformed", "message": "Branding transformed with vivid colors", "data": {"original_len": len(branding), "transformed_preview": branding_transformed[:400]}, "hypothesisId": "COLOR_TRANSFORM", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-            # #endregion
             
             branding_section = f"""
 CRITICAL COLOR PALETTE - YOU MUST USE THESE EXACT COLORS:
@@ -152,9 +146,6 @@ CRITICAL COLOR PALETTE - YOU MUST USE THESE EXACT COLORS:
 MANDATORY: The image MUST prominently feature these specific colors as the DOMINANT palette.
 These colors should be immediately recognizable - they are the brand identity.
 """
-            # #region agent log
-            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:branding_section_built", "message": "Branding section built for image prompt", "data": {"branding_section_len": len(branding_section)}, "hypothesisId": "D2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-            # #endregion
         
         # Construct meta-prompt for GPT-4o to create the image prompt
         meta_prompt = f"""You are an expert at creating detailed image generation prompts for DALL-E 3.
@@ -207,9 +198,6 @@ Create a detailed, vivid image generation prompt that:
 
 IMPORTANT: Your response should be ONLY the image generation prompt itself (200-300 words), not an explanation. Make it detailed, vivid, and creative!
 """
-        # #region agent log
-        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:meta_prompt", "message": "Meta prompt for GPT-4o (DALL-E path)", "data": {"contains_branding": "BRANDING GUIDELINES" in meta_prompt, "meta_prompt_preview": meta_prompt[:600]}, "hypothesisId": "D2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-        # #endregion
         
         try:
             response = client.chat.completions.create(
@@ -229,9 +217,6 @@ IMPORTANT: Your response should be ONLY the image generation prompt itself (200-
                         )
             
             image_prompt = response.choices[0].message.content.strip()
-            # #region agent log
-            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_image_prompt:gpt4o_response", "message": "GPT-4o returned image prompt (DALL-E path)", "data": {"image_prompt": image_prompt, "image_prompt_len": len(image_prompt)}, "hypothesisId": "E2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-            # #endregion
             
             duration = time.time() - start_time
             tokens = response.usage.total_tokens if hasattr(response, 'usage') else 'N/A'
@@ -375,9 +360,6 @@ IMPORTANT: Write ONLY the post text itself, not meta-commentary. Make it feel li
         
         # Get branding guidelines if available
         branding = agent_context.get('branding_guidelines', '').strip()
-        # #region agent log
-        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_edit_prompt:branding_check", "message": "Branding value in generate_edit_prompt", "data": {"branding_raw": branding, "branding_len": len(branding), "branding_truthy": bool(branding), "agent_context_keys": list(agent_context.keys())}, "hypothesisId": "C", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-        # #endregion
         branding_section = ""
         if branding:
             # Transform hex codes to vivid descriptions, then truncate for character limits
@@ -387,9 +369,6 @@ IMPORTANT: Write ONLY the post text itself, not meta-commentary. Make it feel li
 CRITICAL COLORS (MUST USE):
 {branding_truncated}
 """
-            # #region agent log
-            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_edit_prompt:branding_section_built", "message": "Branding section built", "data": {"branding_section": branding_section[:200]}, "hypothesisId": "D", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-            # #endregion
         
         # Construct meta-prompt for GPT-4o to create the edit prompt
         meta_prompt = f"""You are an expert at creating prompts for the OpenAI Image Edits API.
@@ -442,9 +421,6 @@ EXAMPLES OF GOOD EDIT PROMPTS:
 
 Write ONLY the edit prompt (under 800 chars), no explanation:
 """
-        # #region agent log
-        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_edit_prompt:meta_prompt_built", "message": "Meta prompt for GPT-4o", "data": {"meta_prompt_preview": meta_prompt[:500], "contains_branding": "BRANDING GUIDELINES" in meta_prompt, "branding_section_in_prompt": branding_section in meta_prompt if branding_section else "no_section"}, "hypothesisId": "D", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-        # #endregion
         
         try:
             response = client.chat.completions.create(
@@ -464,9 +440,6 @@ Write ONLY the edit prompt (under 800 chars), no explanation:
             )
             
             edit_prompt = response.choices[0].message.content.strip()
-            # #region agent log
-            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "ai_prompt_generator.py:generate_edit_prompt:gpt4o_response", "message": "GPT-4o returned edit prompt", "data": {"edit_prompt": edit_prompt, "edit_prompt_len": len(edit_prompt)}, "hypothesisId": "E", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-            # #endregion
             
             # Ensure it's not too long for OpenAI Edits API (1000 char limit)
             if len(edit_prompt) > 900:

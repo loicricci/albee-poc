@@ -368,16 +368,10 @@ class OrchestratorEngine:
         - Path A: Auto-answer (if confidence >= threshold OR conversational message)
         - Path E: Forward to owner (otherwise)
         """
-        # #region agent log
-        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log','a').write(_json.dumps({"hypothesisId":"H1-H3","location":"orchestrator.py:_decide_path","message":"Decision path entry","data":{"original_message":signals.original_message},"timestamp":__import__('time').time()*1000,"sessionId":"debug-session","runId":"post-fix"})+'\n')
-        # #endregion
         
         # IMPORTANT: Check for specific factual questions FIRST
         # Even if a message starts with "hey" or "hello", if it asks for specific info, escalate it
         requires_specific = self._requires_specific_knowledge(signals.original_message)
-        # #region agent log
-        open('/Users/loicricci/gabee-poc/.cursor/debug.log','a').write(_json.dumps({"hypothesisId":"H2-H4","location":"orchestrator.py:_decide_path","message":"Specific knowledge check result (FIRST)","data":{"requires_specific":requires_specific,"message":signals.original_message},"timestamp":__import__('time').time()*1000,"sessionId":"debug-session","runId":"post-fix"})+'\n')
-        # #endregion
         if requires_specific:
             return RoutingDecision(
                 path="E",
@@ -392,9 +386,6 @@ class OrchestratorEngine:
         
         # THEN check for conversational/greeting messages (only if not asking for specific info)
         is_conv = self._is_conversational(signals.original_message)
-        # #region agent log
-        open('/Users/loicricci/gabee-poc/.cursor/debug.log','a').write(_json.dumps({"hypothesisId":"H3","location":"orchestrator.py:_decide_path","message":"Conversational check result (AFTER specific check)","data":{"is_conversational":is_conv,"message":signals.original_message},"timestamp":__import__('time').time()*1000,"sessionId":"debug-session","runId":"post-fix"})+'\n')
-        # #endregion
         if is_conv:
             return RoutingDecision(
                 path="A",
@@ -521,9 +512,6 @@ class OrchestratorEngine:
         # Check if message matches any greeting pattern
         for pattern in greeting_patterns:
             if pattern in message_lower:
-                # #region agent log
-                open('/Users/loicricci/gabee-poc/.cursor/debug.log','a').write(_json2.dumps({"hypothesisId":"H3","location":"orchestrator.py:_is_conversational","message":"MATCHED greeting pattern","data":{"pattern":pattern,"message_lower":message_lower},"timestamp":__import__('time').time()*1000,"sessionId":"debug-session"})+'\n')
-                # #endregion
                 return True
         
         # Check for very short messages that are likely greetings
@@ -543,14 +531,8 @@ class OrchestratorEngine:
         
         for pattern in conversational_questions:
             if pattern in message_lower:
-                # #region agent log
-                open('/Users/loicricci/gabee-poc/.cursor/debug.log','a').write(_json2.dumps({"hypothesisId":"H3","location":"orchestrator.py:_is_conversational","message":"MATCHED conversational question","data":{"pattern":pattern,"message_lower":message_lower},"timestamp":__import__('time').time()*1000,"sessionId":"debug-session"})+'\n')
-                # #endregion
                 return True
         
-        # #region agent log
-        open('/Users/loicricci/gabee-poc/.cursor/debug.log','a').write(_json2.dumps({"hypothesisId":"H3","location":"orchestrator.py:_is_conversational","message":"NO conversational pattern matched","data":{"message_lower":message_lower},"timestamp":__import__('time').time()*1000,"sessionId":"debug-session"})+'\n')
-        # #endregion
         return False
     
     def _is_vague(self, signals: MessageSignals) -> bool:

@@ -1,0 +1,26 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-11 19:01:21
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a breathtaking, photorealistic wide-format image depicting a futuristic, sustainable Bitcoin mining facility in space, blending the worlds of industrial mining and space exploration. The scene is set on an expansive spaceship orbiting Earth, where advanced mining equipment operates seamlessly alongside medical evacuation pods, highlighting the dual focus on technological prowess and safety.
+
+The vessel's interior is illuminated by a vibrant neon lime green glow, casting dynamic reflections on the sleek, neutral medium gray surfaces of the mining rigs and control panels. The bright pure white lighting enhances the pristine, sterile environment, emphasizing cleanliness and precision. Deep pure black accents provide stark contrast, creating a visually engaging, high-tech atmosphere.
+
+In the foreground, a team of astronauts in sleek, futuristic suits, designed with geometric patterns in the lime green and gray palette, actively manage both the mining operations and a medical evacuation scenario. Their expressions are calm and focused, embodying professionalism and trustworthiness.
+
+The composition includes large geometric windows, allowing a panoramic view of Earth below, bathed in the serene glow of space. Technical illustrations, featuring grid-based designs and clean lines, are integrated into the spaceship's architecture, reinforcing a sense of order and efficiency.
+
+The overall mood is calm and institutional, reflecting Hearst Mining's commitment to energy and infrastructure. The image should convey a strong sense of innovation and responsibility, leaving viewers with a lasting impression of Hearst's dedication to sustainable and groundbreaking operations.
+
+============================================================
+IMAGE FILE: hearst_post_20260111_190119.png

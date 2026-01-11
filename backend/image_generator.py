@@ -456,9 +456,6 @@ IMAGE FILE: {os.path.basename(image_path)}
         Raises:
             Exception: If image editing or download fails
         """
-        # #region agent log
-        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "image_generator.py:generate_with_gpt_image:entry", "message": "GPT-Image-1 called with prompt", "data": {"prompt_full": prompt, "prompt_len": len(prompt), "agent_handle": agent_handle}, "hypothesisId": "E", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-        # #endregion
         print(f"[ImageGenerator] Editing image with GPT-Image-1...")
         print(f"[ImageGenerator] Using semantic editing (no mask required)")
         print(f"[ImageGenerator] Edit instruction: {prompt[:100]}...")
@@ -717,9 +714,6 @@ IMAGE FILE: {os.path.basename(image_path)}
         Raises:
             Exception: If image generation or download fails
         """
-        # #region agent log
-        import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "image_generator.py:generate_with_gpt_image_simple:entry", "message": "GPT-Image-1 SIMPLE called (no reference)", "data": {"prompt_full": prompt, "prompt_len": len(prompt), "agent_handle": agent_handle}, "hypothesisId": "E2", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-        # #endregion
         print(f"[ImageGenerator] Generating image with GPT-Image-1...")
         print(f"[ImageGenerator] Using OpenAI's newest image model")
         print(f"[ImageGenerator] Size: {size}")
@@ -733,9 +727,6 @@ IMAGE FILE: {os.path.basename(image_path)}
             
             # Note: GPT-Image-1 doesn't support 'quality' or 'response_format' parameters
             model_to_use = "gpt-image-1"
-            # #region agent log
-            import json as _json; open('/Users/loicricci/gabee-poc/.cursor/debug.log', 'a').write(_json.dumps({"location": "image_generator.py:generate_with_gpt_image_simple:api_call", "message": "Calling OpenAI images.generate API", "data": {"model": model_to_use, "size": size, "prompt_len": len(prompt)}, "hypothesisId": "MODEL_CHECK", "timestamp": __import__('time').time()*1000, "sessionId": "debug-session"}) + '\n')
-            # #endregion
             response = client.images.generate(
                 model=model_to_use,
                 prompt=prompt,

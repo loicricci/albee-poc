@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-11 18:17:24
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic, wide-format image depicting the futuristic operations of Hearst Mining as an industrial Bitcoin mining company, intertwined with the theme of space exploration and medical evacuations. The scene captures a high-tech command center reminiscent of a space mission control room, showcasing Hearst's dedication to energy efficiency and technological advancement. 
+
+In the foreground, a team of engineers and scientists, clad in sleek, minimalist uniforms, monitor various digital screens displaying real-time data on Bitcoin mining efficiency and the progress of a medical evacuation mission from the International Space Station. The screens glow with vibrant neon lime green (#A7FB90), casting an energetic aura against the backdrop of neutral medium gray (#9EB3A8) walls and deep pure black (#0E0F0F) equipment, embodying Hearst's industrial focus and core color identity.
+
+The room is illuminated by bright pure white lights (#E6F1E7, #F2F2F2), creating a stark contrast and highlighting the calm, professional mood. Geometric patterns and grid-based designs dominate the space, emphasizing precision and technical prowess. Through large windows, a view of the Earth from space provides a majestic backdrop, symbolizing Hearst's reach and influence in both the cryptocurrency and space exploration sectors.
+
+Incorporate technical illustrations of both Bitcoin mining rigs and space shuttles, seamlessly blending the themes of technology and science. The overall composition should exude calm, trustworthy energy, capturing the seamless integration of Hearst's industrial identity with cutting-edge space exploration advancements.
+
+============================================================
+IMAGE FILE: hearst_post_20260111_181723.png
