@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { clearAllCaches, setCurrentCacheUser } from "@/lib/apiCache";
@@ -24,7 +24,7 @@ const TEST_ACCOUNTS = [
   },
 ];
 
-export default function DevLoginPage() {
+function DevLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<string>("Ready");
@@ -313,6 +313,18 @@ export default function DevLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DevLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    }>
+      <DevLoginContent />
+    </Suspense>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { getMyProfile, saveMyProfile, deleteMyAccount, getTwitterConfig, initiateTwitterOAuth, disconnectTwitter } from "@/lib/api";
 import { uploadImageToBucket } from "@/lib/upload";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
@@ -1633,7 +1633,13 @@ function ProfileContent() {
 export default function ProfilePage() {
   return (
     <NewLayoutWrapper>
-      <ProfileContent />
+      <Suspense fallback={
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+        </div>
+      }>
+        <ProfileContent />
+      </Suspense>
     </NewLayoutWrapper>
   );
 }
