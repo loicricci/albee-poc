@@ -102,6 +102,10 @@ class Avee(Base):
     logo_position = Column(String, default="bottom-right")  # Corner: bottom-right, bottom-left, top-right, top-left
     logo_size = Column(String, default="10")  # Size percentage: 5-100 (legacy: small, medium, large)
 
+    # NEW (Phase 11): Auto-post topic personalization
+    preferred_topics = Column(Text)  # Comma-separated topics for article selection (e.g., "music, technology, space")
+    location = Column(String)  # Agent's location context for news personalization (e.g., "London, UK")
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

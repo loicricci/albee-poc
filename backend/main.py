@@ -173,6 +173,10 @@ app.include_router(twitter_oauth_router, tags=["twitter-oauth"])
 from backend.auto_post_api import router as auto_post_router
 app.include_router(auto_post_router, tags=["auto-post"])
 
+# Import Scheduler API router (for cron jobs / automated tasks)
+from backend.scheduler_api import router as scheduler_router
+app.include_router(scheduler_router, tags=["scheduler"])
+
 # Import AutoPost Diagnostic API router
 from backend.autopost_diagnostic_api import router as autopost_diagnostic_router
 app.include_router(autopost_diagnostic_router, tags=["autopost-diagnostic"])
@@ -219,6 +223,9 @@ class AveeUpdateIn(BaseModel):
     logo_url: str | None = None
     logo_position: str | None = None  # bottom-right, bottom-left, top-right, top-left
     logo_size: str | None = None  # 5-100 percentage (or legacy: small, medium, large)
+    # Auto-post topic personalization
+    preferred_topics: str | None = None  # Comma-separated topics for article selection
+    location: str | None = None  # Agent's location context for news personalization
 
 class ProfileUpsertIn(BaseModel):
     handle: str
@@ -2298,6 +2305,19 @@ def update_avee(
                 a.logo_size = str(size_int)
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid logo size. Must be a number between 5 and 100")
+
+    # Update auto-post topic personalization if provided
+    if payload.preferred_topics is not None:
+        pt = payload.preferred_topics.strip()
+        if pt and len(pt) > 1000:
+            raise HTTPException(status_code=400, detail="Preferred topics too long (max 1000 chars)")
+        a.preferred_topics = pt if pt else None
+    
+    if payload.location is not None:
+        loc = payload.location.strip()
+        if loc and len(loc) > 255:
+            raise HTTPException(status_code=400, detail="Location too long (max 255 chars)")
+        a.location = loc if loc else None
 
     db.commit()
 

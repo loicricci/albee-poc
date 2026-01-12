@@ -366,53 +366,27 @@ function TopNavigation() {
             </svg>
           </Link>
 
-          {/* My Agent Icon - Only for non-admin users */}
-          {!profile?.is_admin && (
-            <Link
-              href="/agent"
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
-              title="My Agent"
+          {/* My Agents Icon - All users now access the full agent editor */}
+          <Link
+            href="/my-agents"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
+            title="My Agents"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="h-5 w-5"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z"
-                />
-              </svg>
-            </Link>
-          )}
-
-          {/* My Agents Icon - Only for admin users */}
-          {profile?.is_admin && (
-            <Link
-              href="/my-agents"
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
-              title="My Agents"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z"
-                />
-              </svg>
-            </Link>
-          )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z"
+              />
+            </svg>
+          </Link>
 
           {/* Network Icon */}
           <Link
@@ -572,30 +546,16 @@ function TopNavigation() {
                 </svg>
                 Messages
               </Link>
-              {/* Only show My Agent for non-admin users */}
-              {!profile?.is_admin && (
-                <Link
-                  href="/agent"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
-                  </svg>
-                  My Agent
-                </Link>
-              )}
-              {/* Only show My Agents for admin users */}
-              {profile?.is_admin && (
-                <Link
-                  href="/my-agents"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
-                  </svg>
-                  My Agents
-                </Link>
-              )}
+              {/* My Agents - All users now access the full agent editor */}
+              <Link
+                href="/my-agents"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
+                </svg>
+                My Agents
+              </Link>
               {/* Only show Backoffice for admin users */}
               {profile?.is_admin && (
                 <Link

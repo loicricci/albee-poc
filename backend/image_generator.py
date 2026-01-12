@@ -852,7 +852,7 @@ IMAGE FILE: {os.path.basename(image_path)}
         Returns:
             Path to the image with logo overlay (overwrites original)
         """
-        from PIL import Image
+        from PIL import Image, ImageDraw
         import io
         
         print(f"[ImageGenerator] Overlaying logo at {position} ({size})...")
@@ -893,23 +893,44 @@ IMAGE FILE: {os.path.basename(image_path)}
             logo = logo.resize((new_logo_width, new_logo_height), Image.LANCZOS)
             print(f"[ImageGenerator] Logo resized to: {new_logo_width}x{new_logo_height} ({size_percent}%)")
             
-            # 4. Calculate position with 2% padding from edges
-            padding = int(base_image.width * 0.02)
+            # 3.5 Create semi-transparent backdrop for visibility on any background
+            backdrop_padding = int(new_logo_width * 0.12)  # 12% padding around logo
+            backdrop_width = new_logo_width + (backdrop_padding * 2)
+            backdrop_height = new_logo_height + (backdrop_padding * 2)
+            corner_radius = int(backdrop_height * 0.2)  # 20% rounded corners
+            
+            # Create transparent canvas for backdrop
+            backdrop = Image.new("RGBA", (backdrop_width, backdrop_height), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(backdrop)
+            
+            # Draw semi-transparent white rounded rectangle (60% opacity)
+            draw.rounded_rectangle(
+                [(0, 0), (backdrop_width - 1, backdrop_height - 1)],
+                radius=corner_radius,
+                fill=(255, 255, 255, 153)  # White @ 60% opacity
+            )
+            
+            # Paste logo centered on backdrop (preserving logo transparency)
+            backdrop.paste(logo, (backdrop_padding, backdrop_padding), logo)
+            print(f"[ImageGenerator] Backdrop created: {backdrop_width}x{backdrop_height} with {corner_radius}px corners")
+            
+            # 4. Calculate position with 2% padding from edges (using backdrop dimensions)
+            edge_padding = int(base_image.width * 0.02)
             
             positions = {
-                "bottom-right": (base_image.width - new_logo_width - padding, 
-                                 base_image.height - new_logo_height - padding),
-                "bottom-left": (padding, 
-                                base_image.height - new_logo_height - padding),
-                "top-right": (base_image.width - new_logo_width - padding, 
-                              padding),
-                "top-left": (padding, padding)
+                "bottom-right": (base_image.width - backdrop_width - edge_padding, 
+                                 base_image.height - backdrop_height - edge_padding),
+                "bottom-left": (edge_padding, 
+                                base_image.height - backdrop_height - edge_padding),
+                "top-right": (base_image.width - backdrop_width - edge_padding, 
+                              edge_padding),
+                "top-left": (edge_padding, edge_padding)
             }
             x, y = positions.get(position, positions["bottom-right"])
-            print(f"[ImageGenerator] Logo position: ({x}, {y})")
+            print(f"[ImageGenerator] Backdrop position: ({x}, {y})")
             
-            # 5. Composite using alpha channel (preserves logo transparency)
-            base_image.paste(logo, (x, y), logo)
+            # 5. Composite backdrop (with logo) using alpha channel
+            base_image.paste(backdrop, (x, y), backdrop)
             
             # 6. Convert back to RGB and save (PNG doesn't need RGB but JPEG does)
             # Keep as PNG to preserve quality

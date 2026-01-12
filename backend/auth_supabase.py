@@ -56,9 +56,11 @@ async def _verify_token_with_supabase(token: str, token_hash: str) -> str:
     user = r.json()
     user_id = user["id"]
     
-    # Cache the verified user_id
+    # Cache BOTH user_id AND full user object (we already have it!)
+    # This prevents duplicate Supabase calls when get_current_user is called later
     token_cache[token_hash] = user_id
-    print(f"[JWT Cache] ✓ Cached user_id (TTL: 5min)")
+    token_full_cache[token_hash] = user
+    print(f"[JWT Cache] ✓ Cached user_id + full user (TTL: 5min)")
     
     return user_id
 
@@ -153,10 +155,18 @@ async def get_current_user(
         print(f"[JWT Cache FULL] ✓ HIT - returning cached user object")
         return token_full_cache[token_hash]
     
-    # Check if there's already a pending verification for this token
+    # Check if there's already a pending FULL verification for this token
     if token_hash in _pending_full_verifications:
-        print(f"[JWT Cache FULL] ⏳ WAIT - joining in-flight verification")
+        print(f"[JWT Cache FULL] ⏳ WAIT - joining in-flight FULL verification")
         return await _pending_full_verifications[token_hash]
+    
+    # Also check if there's a pending REGULAR verification (it now populates full cache too!)
+    if token_hash in _pending_verifications:
+        print(f"[JWT Cache FULL] ⏳ WAIT - joining in-flight regular verification")
+        await _pending_verifications[token_hash]
+        # After waiting, check the full cache again (it should be populated now)
+        if token_hash in token_full_cache:
+            return token_full_cache[token_hash]
     
     print(f"[JWT Cache FULL] ✗ MISS - verifying with Supabase")
     

@@ -84,13 +84,15 @@ class NewsTopicFetcher:
             }
         ]
     
-    def get_safe_daily_topic(self, category: Optional[str] = None) -> Dict[str, str]:
+    def get_safe_daily_topic(self, category: Optional[str] = None, agent_context: Optional[Dict] = None) -> Dict[str, str]:
         """
         Fetch a safe, filtered news topic suitable for AI content generation.
         
         Args:
             category: Optional category filter (business, entertainment, general, 
                      health, science, sports, technology)
+            agent_context: Optional agent context dict with preferred_topics and location
+                          for personalized article selection
         
         Returns:
             Dictionary with:
@@ -99,6 +101,13 @@ class NewsTopicFetcher:
                 - category: Topic category
                 - source: Where the topic came from
         """
+        # Log agent preferences if provided
+        if agent_context:
+            preferred_topics = agent_context.get("preferred_topics", "")
+            location = agent_context.get("location", "")
+            if preferred_topics or location:
+                print(f"[NewsTopicFetcher] Agent preferences - topics: '{preferred_topics}', location: '{location}'")
+        
         print(f"[NewsTopicFetcher] Fetching safe daily topic...")
         start_time = time.time()
         
@@ -111,9 +120,9 @@ class NewsTopicFetcher:
                 print(f"[NewsTopicFetcher]   News API fetch took {fetch_duration:.2f}s")
                 
                 if articles:
-                    # Filter articles for safe topics
+                    # Filter articles for safe topics, with optional agent preferences
                     filter_start = time.time()
-                    safe_topic = self._filter_and_select_topic(articles)
+                    safe_topic = self._filter_and_select_topic(articles, agent_context)
                     filter_duration = time.time() - filter_start
                     print(f"[NewsTopicFetcher]   AI filtering took {filter_duration:.2f}s")
                     
@@ -164,7 +173,7 @@ class NewsTopicFetcher:
             print(f"[NewsTopicFetcher] Error calling News API: {e}")
             return []
     
-    def _filter_and_select_topic(self, articles: List[Dict]) -> Optional[Dict[str, str]]:
+    def _filter_and_select_topic(self, articles: List[Dict], agent_context: Optional[Dict] = None) -> Optional[Dict[str, str]]:
         """
         Use GPT-4o-mini to filter articles and select a safe topic.
         
@@ -173,6 +182,10 @@ class NewsTopicFetcher:
         - Specific companies/brands
         - Controversial/sensitive topics
         - Legal issues
+        
+        Args:
+            articles: List of articles from News API
+            agent_context: Optional agent context with preferred_topics and location
         """
         
         # Prepare article summaries for AI filtering
@@ -184,6 +197,20 @@ class NewsTopicFetcher:
                 "description": article.get("description", ""),
             }
             article_summaries.append(summary)
+        
+        # Build agent preferences section if context provided
+        agent_preferences_section = ""
+        if agent_context:
+            preferred_topics = agent_context.get("preferred_topics", "").strip()
+            location = agent_context.get("location", "").strip()
+            
+            if preferred_topics or location:
+                agent_preferences_section = "\n\nAGENT PREFERENCES (prioritize articles matching these):\n"
+                if preferred_topics:
+                    agent_preferences_section += f"- Preferred topics: {preferred_topics}\n"
+                if location:
+                    agent_preferences_section += f"- Location context: {location}\n"
+                agent_preferences_section += "\nWhen multiple articles are safe, PREFER ones that align with these preferences.\n"
         
         # Construct filtering prompt
         filter_prompt = f"""You are a content safety filter. Review these news articles and select ONE that is safe for AI-generated social media content.
@@ -205,20 +232,20 @@ IDEAL TOPICS:
 - Environmental initiatives
 - Sports events (without naming specific athletes)
 - Artistic movements and trends
-
+{agent_preferences_section}
 ARTICLES TO REVIEW:
 {json.dumps(article_summaries, indent=2)}
 
 TASK:
 1. Identify which articles meet ALL safety criteria
-2. Select the BEST one for creative content
+2. Select the BEST one for creative content{" (preferring agent's topics/location if specified)" if agent_preferences_section else ""}
 3. Return ONLY a JSON object with:
 {{
   "selected_id": <article id number or null if none are safe>,
   "topic": "<brief topic title in general terms>",
   "description": "<detailed description without names/brands>",
   "category": "<science/technology/culture/environment/sports>",
-  "reasoning": "<why this topic is safe>"
+  "reasoning": "<why this topic is safe{" and relevant to agent preferences" if agent_preferences_section else ""}>"
 }}
 
 If NO articles are safe, return {{"selected_id": null}}.
@@ -263,18 +290,33 @@ If NO articles are safe, return {{"selected_id": null}}.
 
 
 # Convenience function for easy import
-def get_safe_daily_topic(category: Optional[str] = None) -> Dict[str, str]:
+def get_safe_daily_topic(
+    category: Optional[str] = None, 
+    agent_context: Optional[Dict] = None,
+    feedback_context: Optional[str] = None
+) -> Dict[str, str]:
     """
     Get a safe daily topic for content generation.
     
     Args:
         category: Optional category filter
+        agent_context: Optional agent context dict with preferred_topics and location
+        feedback_context: Optional user feedback to refine topic selection
     
     Returns:
         Dictionary with topic, description, category, source
     """
     fetcher = NewsTopicFetcher()
-    return fetcher.get_safe_daily_topic(category)
+    topic = fetcher.get_safe_daily_topic(category, agent_context)
+    
+    # If feedback provided, add it as context to guide generation
+    if feedback_context:
+        topic["user_feedback"] = feedback_context
+        # Append feedback to description for AI context
+        if "description" in topic:
+            topic["description"] = f"{topic['description']}\n\n[User guidance for regeneration: {feedback_context}]"
+    
+    return topic
 
 
 # Testing

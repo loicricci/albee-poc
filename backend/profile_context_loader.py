@@ -93,7 +93,10 @@ class ProfileContextLoader:
             "logo_enabled": profile_data["logo_enabled"],
             "logo_url": profile_data["logo_url"],
             "logo_position": profile_data["logo_position"],
-            "logo_size": profile_data["logo_size"]
+            "logo_size": profile_data["logo_size"],
+            # Auto-post topic personalization
+            "preferred_topics": profile_data["preferred_topics"],
+            "location": profile_data["location"]
         }
         
         print(f"[ProfileContextLoader] ✅ Loaded context for {profile_data['display_name']}")
@@ -124,7 +127,9 @@ class ProfileContextLoader:
                 logo_enabled,
                 logo_url,
                 logo_position,
-                logo_size
+                logo_size,
+                preferred_topics,
+                location
             FROM avees
             WHERE handle = :handle
             LIMIT 1
@@ -151,7 +156,10 @@ class ProfileContextLoader:
             "logo_enabled": row.logo_enabled or False,
             "logo_url": row.logo_url,
             "logo_position": row.logo_position or "bottom-right",
-            "logo_size": row.logo_size or "10"
+            "logo_size": row.logo_size or "10",
+            # Auto-post topic personalization
+            "preferred_topics": row.preferred_topics or "",
+            "location": row.location or ""
         }
     
     def _load_knowledge_summary(self, avee_id: str) -> Dict[str, Any]:

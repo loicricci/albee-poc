@@ -44,6 +44,9 @@ Quick reference checklist for deploying AVEE to production.
   SUPABASE_SERVICE_ROLE_KEY=...
   OPENAI_API_KEY=sk-...
   EMBED_MODEL=text-embedding-3-small
+  SCHEDULER_SECRET_KEY=<generate-with-openssl-rand-hex-32>
+  AUTO_POST_ENABLED=true
+  AUTO_POST_DELAY_SECONDS=5
   ```
 - [ ] Generate public domain
 - [ ] Test health endpoint: `https://your-backend.railway.app/health`

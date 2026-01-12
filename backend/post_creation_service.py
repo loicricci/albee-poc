@@ -352,6 +352,131 @@ def create_post(
         )
 
 
+def create_post_from_preview(
+    agent_handle: str,
+    image_url: str,
+    title: str,
+    description: str,
+    topic: Dict[str, str],
+    image_prompt: str,
+    visibility: str = "public"
+) -> Dict[str, Any]:
+    """
+    Create a post from a preview (image already uploaded to storage).
+    
+    This is used by the post approval workflow where the image
+    has already been uploaded to temp storage and moved to permanent.
+    
+    Args:
+        agent_handle: Agent's handle
+        image_url: URL of the already-uploaded image
+        title: Post title
+        description: Post description
+        topic: Topic dictionary
+        image_prompt: Image generation prompt
+        visibility: Post visibility
+    
+    Returns:
+        Dictionary with post details
+    """
+    print(f"[PostCreationService] Creating post from preview for @{agent_handle}...")
+    
+    session = SessionLocal()
+    
+    try:
+        # Get user ID and agent ID
+        query = text("""
+            SELECT owner_user_id, id
+            FROM avees
+            WHERE handle = :handle
+            LIMIT 1
+        """)
+        
+        result = session.execute(query, {"handle": agent_handle})
+        row = result.fetchone()
+        
+        if not row:
+            raise ValueError(f"Agent @{agent_handle} not found in database")
+        
+        user_id = str(row[0])
+        agent_id = str(row[1])
+        
+        # Generate post ID
+        post_id = str(uuid.uuid4())
+        
+        # Prepare AI metadata
+        ai_metadata = {
+            "model": "DALL-E 3",
+            "generator": "OpenAI",
+            "quality": "hd",
+            "size": "1792x1024",
+            "style": "vivid",
+            "prompt": image_prompt[:500] if len(image_prompt) > 500 else image_prompt,
+            "topic": topic.get("topic", "Unknown"),
+            "topic_category": topic.get("category", "general"),
+            "topic_source": topic.get("source", "unknown"),
+            "generation_date": datetime.now().strftime('%Y-%m-%d'),
+            "automated": True,
+            "from_preview": True
+        }
+        
+        # Insert post
+        insert_query = text("""
+            INSERT INTO posts (
+                id, owner_user_id, agent_id, title, description, image_url,
+                post_type, ai_metadata, visibility,
+                like_count, comment_count, share_count,
+                created_at
+            ) VALUES (
+                :id, :owner_user_id, :agent_id, :title, :description, :image_url,
+                :post_type, :ai_metadata, :visibility,
+                0, 0, 0,
+                NOW()
+            )
+            RETURNING id, created_at
+        """)
+        
+        result = session.execute(insert_query, {
+            "id": post_id,
+            "owner_user_id": user_id,
+            "agent_id": agent_id,
+            "title": title,
+            "description": description,
+            "image_url": image_url,
+            "post_type": "ai_generated",
+            "ai_metadata": json.dumps(ai_metadata),
+            "visibility": visibility
+        })
+        
+        session.commit()
+        
+        row = result.fetchone()
+        created_at = row[1]
+        
+        print(f"[PostCreationService] ✅ Post created from preview: {post_id}")
+        
+        # Create notification
+        try:
+            create_autopost_notification(session, user_id, agent_handle, post_id)
+        except Exception as e:
+            print(f"[PostCreationService] Warning: Failed to create notification: {e}")
+        
+        return {
+            "post_id": post_id,
+            "image_url": image_url,
+            "created_at": created_at,
+            "view_url": f"/u/{agent_handle}",
+            "agent_handle": agent_handle
+        }
+        
+    except Exception as e:
+        session.rollback()
+        print(f"[PostCreationService] ❌ Error creating post from preview: {e}")
+        raise
+    finally:
+        session.close()
+
+
 # Testing
 if __name__ == "__main__":
     from dotenv import load_dotenv

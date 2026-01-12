@@ -164,7 +164,7 @@ export function ImagePost({
 
       {/* Image */}
       <div className="relative bg-black">
-        <img src={post.image_url} 
+        <img src={`${post.image_url}?v=${post.created_at}`} 
           alt={post.title || "Post image"} 
           className="w-full object-contain max-h-[600px]"
         />
@@ -183,7 +183,7 @@ export function ImagePost({
       {/* Description */}
       {post.description && (
         <div className="px-4 pt-3 pb-2">
-          <p className="text-[#001f98] whitespace-pre-wrap">{post.description}</p>
+          <p className="text-gray-900 whitespace-pre-wrap">{post.description}</p>
         </div>
       )}
 

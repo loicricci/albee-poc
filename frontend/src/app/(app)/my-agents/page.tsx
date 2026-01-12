@@ -108,10 +108,8 @@ function MyAgentsContent() {
       localStorage.setItem('my_agents_list', JSON.stringify(list || []));
       localStorage.setItem('my_agents_limit', JSON.stringify(limitData));
       
-      // 🔥 For non-admin users, redirect directly to their agent editor
-      if (limitData && !limitData.is_admin && list && list.length > 0) {
-        router.push(`/my-agents/${list[0].handle}`);
-      }
+      // Note: Removed auto-redirect to agent editor for non-admin users.
+      // All users now see the agent list page and can navigate to edit their agents.
     } catch (e: any) {
       setError(e.message || "Failed to load agents");
     } finally {

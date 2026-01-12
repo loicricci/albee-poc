@@ -131,6 +131,13 @@ export default function AgentEditorPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-post topic personalization
+  const [preferredTopics, setPreferredTopics] = useState("");
+  const [agentLocation, setAgentLocation] = useState("");
+  const [autopostPrefsSaving, setAutopostPrefsSaving] = useState(false);
+  const [autopostPrefsMsg, setAutopostPrefsMsg] = useState<string | null>(null);
+  const [showAutopostPrefsSection, setShowAutopostPrefsSection] = useState(false);
+
   const personaMeta = useMemo(() => {
     const lines = persona ? persona.split("\n").length : 0;
     return { chars: persona.length, lines };
@@ -178,6 +185,10 @@ export default function AgentEditorPage() {
       } else {
         setLogoSize(10);
       }
+      
+      // Load auto-post topic personalization settings
+      setPreferredTopics(data?.preferred_topics || "");
+      setAgentLocation(data?.location || "");
     } catch (e: any) {
       setError(e.message || "Failed to load Agent");
       setAgent(null);
@@ -426,6 +437,28 @@ export default function AgentEditorPage() {
       setLogoMsg(e.message || "Failed to save logo settings");
     } finally {
       setLogoSaving(false);
+    }
+  }
+
+  async function onSaveAutopostPrefs() {
+    if (!agent?.id) return;
+
+    setAutopostPrefsSaving(true);
+    setError(null);
+    setOkMsg(null);
+    setAutopostPrefsMsg(null);
+
+    try {
+      await updateAgent({
+        agentId: agent.id,
+        preferred_topics: preferredTopics,
+        location: agentLocation,
+      });
+      setAutopostPrefsMsg("Auto-post preferences saved successfully.");
+    } catch (e: any) {
+      setAutopostPrefsMsg(e.message || "Failed to save auto-post preferences");
+    } finally {
+      setAutopostPrefsSaving(false);
     }
   }
 
@@ -1660,6 +1693,142 @@ export default function AgentEditorPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       Save Logo Settings
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Auto-Post Preferences Card */}
+        <div className="overflow-hidden rounded-2xl border border-emerald-200/50 bg-white shadow-sm">
+          <div className="flex items-start sm:items-center justify-between border-b border-emerald-200/30 bg-gradient-to-r from-emerald-50 to-green-50 px-4 sm:px-6 py-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 shrink-0">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">Auto-Post Preferences</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">
+                  Customize topic selection for automated posts
+                  {(preferredTopics || agentLocation) && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Configured
+                  </span>}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAutopostPrefsSection(!showAutopostPrefsSection)}
+              className="rounded-lg p-2 transition-colors hover:bg-emerald-100 shrink-0 ml-2"
+            >
+              <svg
+                className={`h-5 w-5 text-[#001f98] transition-transform ${showAutopostPrefsSection ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          {showAutopostPrefsSection && (
+            <div className="p-4 sm:p-6 space-y-4">
+              {/* Info Box */}
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 text-xs">
+                <div className="flex items-start gap-2">
+                  <svg className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-emerald-800">
+                    <span className="font-medium">How it works:</span>
+                    <span className="block mt-1">
+                      When auto-posting, the AI will prioritize news articles that match your agent&apos;s preferred topics and location context.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Input */}
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">
+                  Location
+                  <span className="ml-2 text-xs font-normal text-[#001f98]/70">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  value={agentLocation}
+                  onChange={(e) => {
+                    setAgentLocation(e.target.value);
+                    setAutopostPrefsMsg(null);
+                  }}
+                  placeholder="e.g., London, UK or New York, USA"
+                />
+                <p className="mt-1 text-xs text-[#001f98]/70">
+                  Location context helps select relevant regional news topics
+                </p>
+              </div>
+
+              {/* Preferred Topics Input */}
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">
+                  Preferred Topics
+                  <span className="ml-2 text-xs font-normal text-[#001f98]/70">(optional)</span>
+                </label>
+                <textarea
+                  className="h-24 w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  value={preferredTopics}
+                  onChange={(e) => {
+                    setPreferredTopics(e.target.value);
+                    setAutopostPrefsMsg(null);
+                  }}
+                  placeholder="e.g., music, technology, space exploration, art, sports"
+                />
+                <p className="mt-1 text-xs text-[#001f98]/70">
+                  Comma-separated list of topics the agent is interested in
+                </p>
+              </div>
+
+              {autopostPrefsMsg && (
+                <div className={`rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm ${
+                  autopostPrefsMsg.includes("success") || autopostPrefsMsg.includes("saved")
+                    ? "bg-green-50 text-green-800 border border-green-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}>
+                  {autopostPrefsMsg}
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+                <div className="text-xs text-[#001f98]/70">
+                  These preferences influence which news articles are selected for auto-posts.
+                </div>
+                <button
+                  onClick={onSaveAutopostPrefs}
+                  disabled={autopostPrefsSaving}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {autopostPrefsSaving ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save Preferences
                     </>
                   )}
                 </button>

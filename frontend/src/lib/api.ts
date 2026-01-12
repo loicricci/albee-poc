@@ -211,6 +211,9 @@ export async function updateAgent(params: {
   logo_url?: string;
   logo_position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   logo_size?: string; // 5-100 percentage as string
+  // Auto-post topic personalization
+  preferred_topics?: string; // Comma-separated topics
+  location?: string; // Agent's location context
 }) {
   return apiFetch(`/avees/${params.agentId}`, {
     method: "PATCH",
@@ -226,6 +229,9 @@ export async function updateAgent(params: {
       logo_url: params.logo_url !== undefined ? params.logo_url : undefined,
       logo_position: params.logo_position !== undefined ? params.logo_position : undefined,
       logo_size: params.logo_size !== undefined ? params.logo_size : undefined,
+      // Auto-post topic personalization
+      preferred_topics: params.preferred_topics !== undefined ? params.preferred_topics : undefined,
+      location: params.location !== undefined ? params.location : undefined,
     }),
   });
 }
@@ -743,6 +749,167 @@ export async function diagnosticGeneratePost(
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) return res.json();
   throw new Error("Expected JSON response from diagnostic endpoint");
+}
+
+
+// =====================================
+// POST PREVIEW/APPROVAL API
+// =====================================
+
+export type PreviewPostRequest = {
+  avee_id: string;
+  topic?: string | null;
+  category?: string | null;
+  image_engine?: string;
+  reference_image_url?: string | null;
+  feedback?: string | null;
+  previous_preview_id?: string | null;
+};
+
+export type PreviewPostResponse = {
+  preview_id: string;
+  avee_id: string;
+  handle: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  title: string;
+  description: string;
+  image_url: string;
+  topic: {
+    topic: string;
+    description?: string;
+    category?: string;
+    source?: string;
+  };
+  image_prompt: string;
+  image_engine: string;
+  generated_at: string;
+};
+
+export type ConfirmPostRequest = {
+  preview_id: string;
+  avee_id: string;
+  title?: string;
+  description?: string;
+};
+
+export type ConfirmPostResponse = {
+  success: boolean;
+  post_id: string;
+  image_url: string;
+  view_url: string;
+};
+
+export type CancelPreviewRequest = {
+  preview_id: string;
+  avee_id: string;
+};
+
+/**
+ * Generate a post preview WITHOUT saving to database.
+ * Returns preview data for user approval.
+ * 
+ * If feedback is provided, it will be used to guide the regeneration.
+ */
+export async function previewGeneratePost(
+  request: PreviewPostRequest
+): Promise<PreviewPostResponse> {
+  if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE is not set");
+
+  const token = await getToken();
+
+  // Use 90 second timeout for preview generation (same as regular post generation)
+  const res = await fetchWithTimeout(
+    `${API_BASE}/auto-post/preview`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    },
+    90000 // 90 seconds
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const err: any = new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  return res.json();
+}
+
+/**
+ * Confirm and save a previewed post to the database.
+ * Moves image from temp to permanent storage.
+ */
+export async function confirmGeneratedPost(
+  request: ConfirmPostRequest
+): Promise<ConfirmPostResponse> {
+  if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE is not set");
+
+  const token = await getToken();
+
+  const res = await fetchWithTimeout(
+    `${API_BASE}/auto-post/confirm`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    },
+    30000 // 30 seconds
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const err: any = new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  return res.json();
+}
+
+/**
+ * Cancel a preview and cleanup temp storage.
+ */
+export async function cancelPostPreview(
+  request: CancelPreviewRequest
+): Promise<{ success: boolean; message: string }> {
+  if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE is not set");
+
+  const token = await getToken();
+
+  const res = await fetchWithTimeout(
+    `${API_BASE}/auto-post/cancel`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    },
+    15000 // 15 seconds
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const err: any = new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  return res.json();
 }
 
 

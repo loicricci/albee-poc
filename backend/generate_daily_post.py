@@ -87,9 +87,25 @@ class DailyPostGenerator:
         self._log_header(agent_handle)
         
         try:
-            # Step 1: Fetch or use topic
+            # Step 1: Load agent context (needed for personalized topic selection)
             if self.tracker:
-                self.tracker.start_step("Step 1", "Fetch/use topic")
+                self.tracker.start_step("Step 1", "Load agent context")
+            
+            self._log_step(1, f"Loading context for @{agent_handle}...")
+            agent_context = load_agent_context(agent_handle)
+            self._log_success(f"Loaded: {agent_context['display_name']}")
+            
+            if self.tracker:
+                self.tracker.stop_step({
+                    "display_name": agent_context["display_name"],
+                    "document_count": agent_context.get("document_count", 0),
+                    "preferred_topics": agent_context.get("preferred_topics", ""),
+                    "location": agent_context.get("location", "")
+                })
+            
+            # Step 2: Fetch or use topic (with agent preferences for personalization)
+            if self.tracker:
+                self.tracker.start_step("Step 2", "Fetch/use topic")
             
             if topic_override:
                 topic = {
@@ -98,28 +114,15 @@ class DailyPostGenerator:
                     "category": "custom",
                     "source": "manual_override"
                 }
-                self._log_step(1, f"Using manual topic: {topic_override}")
+                self._log_step(2, f"Using manual topic: {topic_override}")
             else:
-                self._log_step(1, "Fetching safe daily topic...")
-                topic = get_safe_daily_topic(category)
+                self._log_step(2, "Fetching safe daily topic...")
+                # Pass agent context for personalized topic selection
+                topic = get_safe_daily_topic(category, agent_context=agent_context)
                 self._log_success(f"Topic: {topic['topic']}")
             
             if self.tracker:
                 self.tracker.stop_step({"topic": topic["topic"], "source": topic.get("source")})
-            
-            # Step 2: Load agent context
-            if self.tracker:
-                self.tracker.start_step("Step 2", "Load agent context")
-            
-            self._log_step(2, f"Loading context for @{agent_handle}...")
-            agent_context = load_agent_context(agent_handle)
-            self._log_success(f"Loaded: {agent_context['display_name']}")
-            
-            if self.tracker:
-                self.tracker.stop_step({
-                    "display_name": agent_context["display_name"],
-                    "document_count": agent_context.get("document_count", 0)
-                })
             
             # Steps 3 & 4: Generate image prompt and title IN PARALLEL
             # Use different prompt generator based on image engine and reference image availability
@@ -289,6 +292,203 @@ class DailyPostGenerator:
             self._log_error(e)
             
             # Return error information instead of raising
+            return {
+                "success": False,
+                "error": str(e),
+                "image_engine": image_engine
+            }
+    
+    
+    async def generate_preview_async(
+        self,
+        agent_handle: str,
+        topic_override: Optional[str] = None,
+        category: Optional[str] = None,
+        image_engine: str = "dall-e-3",
+        reference_image_url_override: Optional[str] = None,
+        feedback: Optional[str] = None  # User feedback for regeneration
+    ) -> dict:
+        """
+        Generate a post preview WITHOUT saving to database.
+        
+        This runs Steps 1-6 (content generation) but skips Step 7 (database save).
+        Used for the approval workflow where users can review before publishing.
+        
+        Args:
+            agent_handle: Agent handle to generate for
+            topic_override: Optional topic override
+            category: Optional category filter
+            image_engine: Image generation engine
+            reference_image_url_override: Optional reference image URL
+            feedback: User feedback from a previous rejection (used to refine generation)
+        
+        Returns:
+            Dictionary with preview data (image_path, title, description, etc.)
+        """
+        start_time = datetime.now()
+        
+        # Initialize performance tracker
+        if self.enable_timing:
+            self.tracker = PerformanceTracker(f"Preview Generation for @{agent_handle}")
+            self.tracker.start()
+        
+        self._log_header(agent_handle)
+        if feedback:
+            self._log_success(f"Regenerating with user feedback: {feedback[:100]}...")
+        
+        try:
+            # Step 1: Load agent context
+            if self.tracker:
+                self.tracker.start_step("Step 1", "Load agent context")
+            
+            self._log_step(1, f"Loading context for @{agent_handle}...")
+            agent_context = load_agent_context(agent_handle)
+            self._log_success(f"Loaded: {agent_context['display_name']}")
+            
+            if self.tracker:
+                self.tracker.stop_step({
+                    "display_name": agent_context["display_name"],
+                    "document_count": agent_context.get("document_count", 0)
+                })
+            
+            # Step 2: Fetch or use topic (integrate feedback if provided)
+            if self.tracker:
+                self.tracker.start_step("Step 2", "Fetch/use topic")
+            
+            if topic_override:
+                topic = {
+                    "topic": topic_override,
+                    "description": topic_override,
+                    "category": "custom",
+                    "source": "manual_override"
+                }
+                self._log_step(2, f"Using manual topic: {topic_override}")
+            else:
+                self._log_step(2, "Fetching safe daily topic...")
+                # Pass feedback as additional context for topic selection
+                topic = get_safe_daily_topic(
+                    category, 
+                    agent_context=agent_context,
+                    feedback_context=feedback  # Pass feedback for refinement
+                )
+                self._log_success(f"Topic: {topic['topic']}")
+            
+            # If feedback provided, enhance the topic description with user guidance
+            if feedback:
+                topic["user_feedback"] = feedback
+                if "description" in topic:
+                    topic["description"] = f"{topic['description']}\n\nUser guidance: {feedback}"
+            
+            if self.tracker:
+                self.tracker.stop_step({"topic": topic["topic"], "has_feedback": bool(feedback)})
+            
+            # Steps 3 & 4: Generate image prompt and title
+            reference_image_url = reference_image_url_override or agent_context.get("reference_image_url")
+            has_reference_image = bool(reference_image_url)
+            use_edit_prompt = (image_engine == "gpt-image-1" and has_reference_image)
+            
+            if self.tracker:
+                prompt_type = "edit prompt" if use_edit_prompt else "image prompt"
+                self.tracker.start_step("Steps 3 & 4", f"Generate {prompt_type} + title")
+            
+            if use_edit_prompt:
+                self._log_step(3, "Generating image EDIT prompt and title...")
+                edit_instructions = agent_context.get("image_edit_instructions", "")
+                # Pass feedback to prompt generator for style refinement
+                image_prompt, title = await generate_edit_prompt_and_title_parallel(
+                    agent_context, topic, edit_instructions, feedback=feedback
+                )
+            else:
+                self._log_step(3, "Generating image prompt and title...")
+                # Pass feedback to prompt generator for style refinement
+                image_prompt, title = await generate_image_prompt_and_title_parallel(
+                    agent_context, topic, feedback=feedback
+                )
+            
+            self._log_success(f"Title: {title}")
+            
+            if self.tracker:
+                self.tracker.stop_step({"prompt_length": len(image_prompt), "title": title})
+            
+            # Step 5: Generate description (with feedback context)
+            if self.tracker:
+                self.tracker.start_step("Step 5", "Generate description")
+            
+            self._log_step(5, "Generating post description...")
+            description = generate_description(agent_context, topic, image_prompt, feedback=feedback)
+            self._log_success(f"Description: {len(description)} characters")
+            
+            if self.tracker:
+                self.tracker.stop_step({"description_length": len(description)})
+            
+            # Step 6: Generate image
+            if self.tracker:
+                engine_label = f"{image_engine} ({'with ref' if has_reference_image else 'pure gen'})"
+                self.tracker.start_step("Step 6", f"Generate image ({engine_label})")
+            
+            self._log_step(6, f"Generating image with {image_engine}...")
+            
+            if image_engine == "gpt-image-1":
+                if has_reference_image:
+                    image_path = await self._generate_with_gpt_image(
+                        agent_handle, image_prompt, agent_context, reference_image_url_override
+                    )
+                else:
+                    image_path = await self._generate_with_gpt_image_simple(agent_handle, image_prompt)
+            else:
+                image_path = generate_post_image(image_prompt, agent_handle)
+            
+            self._log_success(f"Image saved: {os.path.basename(image_path)}")
+            
+            if self.tracker:
+                self.tracker.stop_step({
+                    "image_file": os.path.basename(image_path),
+                    "image_size_kb": os.path.getsize(image_path) / 1024
+                })
+            
+            # Step 6.5: Apply logo overlay if enabled
+            logo_enabled = agent_context.get("logo_enabled", False)
+            logo_url = agent_context.get("logo_url")
+            
+            if logo_enabled and logo_url:
+                from .image_generator import ImageGenerator
+                generator = ImageGenerator(output_dir="generated_images")
+                
+                logo_position = agent_context.get("logo_position", "bottom-right")
+                logo_size = agent_context.get("logo_size", "medium")
+                
+                image_path = generator.overlay_logo(
+                    image_path=image_path,
+                    logo_url=logo_url,
+                    position=logo_position,
+                    size=logo_size
+                )
+                self._log_success(f"Logo applied at {logo_position}")
+            
+            # NOTE: Step 7 (save to database) is SKIPPED for preview
+            # The preview endpoint will handle uploading to temp storage
+            
+            duration = (datetime.now() - start_time).total_seconds()
+            
+            if self.tracker:
+                self.tracker.finish()
+            
+            return {
+                "success": True,
+                "image_path": image_path,
+                "title": title,
+                "description": description,
+                "topic": topic,
+                "image_prompt": image_prompt,
+                "image_engine": image_engine,
+                "duration_seconds": duration
+            }
+            
+        except Exception as e:
+            if self.tracker:
+                self.tracker.finish()
+            self._log_error(e)
+            
             return {
                 "success": False,
                 "error": str(e),

@@ -79,11 +79,60 @@ class GenerationResult(BaseModel):
 
 
 # =====================================
+# POST PREVIEW/APPROVAL MODELS
+# =====================================
+
+class PreviewPostRequest(BaseModel):
+    """Request to generate a post preview (without saving to DB)"""
+    avee_id: str
+    topic: Optional[str] = None
+    category: Optional[str] = None
+    image_engine: str = "dall-e-3"
+    reference_image_url: Optional[str] = None
+    feedback: Optional[str] = None  # User feedback for regeneration
+    previous_preview_id: Optional[str] = None  # If regenerating, cleanup old preview
+
+
+class PreviewPostResponse(BaseModel):
+    """Response containing preview data for user approval"""
+    preview_id: str  # Unique ID for this preview session
+    avee_id: str
+    handle: str
+    display_name: Optional[str]
+    avatar_url: Optional[str]
+    title: str
+    description: str
+    image_url: str  # Temp storage URL
+    topic: dict
+    image_prompt: str
+    image_engine: str
+    generated_at: str
+
+
+class ConfirmPostRequest(BaseModel):
+    """Request to confirm and save a previewed post"""
+    preview_id: str
+    avee_id: str
+    # Allow optional edits before saving
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
+class CancelPreviewRequest(BaseModel):
+    """Request to cancel and cleanup a preview"""
+    preview_id: str
+    avee_id: str
+
+
+# =====================================
 # HELPER FUNCTIONS
 # =====================================
 
 def is_admin_user(user_id: str, db: Session) -> bool:
     """Check if user is admin"""
+    # #region agent log
+    import json, time as _t; _log_start = _t.time(); open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:is_admin_user:entry", "message": "Checking admin status", "data": {"user_id": user_id}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "B"}) + "\n")
+    # #endregion
     query = text("""
         SELECT handle FROM profiles WHERE user_id = :user_id
     """)
@@ -91,15 +140,25 @@ def is_admin_user(user_id: str, db: Session) -> bool:
     row = result.fetchone()
     
     if not row:
+        # #region agent log
+        open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:is_admin_user:no_row", "message": "No profile found", "data": {"user_id": user_id}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "B"}) + "\n")
+        # #endregion
         return False
     
     # Check if handle is in admin list (same logic as backoffice)
     admin_handles = os.getenv("ADMIN_HANDLES", "loic_ricci").split(",")
-    return row[0] in admin_handles
+    is_admin = row[0] in admin_handles
+    # #region agent log
+    open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:is_admin_user:result", "message": "Admin check result", "data": {"user_id": user_id, "handle": row[0], "admin_handles": admin_handles, "is_admin": is_admin, "duration_ms": int((_t.time() - _log_start)*1000)}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "B"}) + "\n")
+    # #endregion
+    return is_admin
 
 
 def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
     """Get avees accessible to user"""
+    # #region agent log
+    import json, time as _t; _log_start = _t.time(); open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_user_avees:entry", "message": "Fetching avees", "data": {"user_id": user_id, "is_admin": is_admin}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "A,C"}) + "\n")
+    # #endregion
     
     if is_admin:
         # Admin sees all avees
@@ -134,6 +193,9 @@ def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
         result = db.execute(query, {"user_id": user_id})
     
     rows = result.fetchall()
+    # #region agent log
+    _query_time = _t.time(); open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_user_avees:main_query", "message": "Main query complete", "data": {"row_count": len(rows), "duration_ms": int((_query_time - _log_start)*1000)}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "C"}) + "\n")
+    # #endregion
     
     avees = []
     for row in rows:
@@ -172,6 +234,10 @@ def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
             "auto_post_settings": row.auto_post_settings,
             "reference_images": reference_images
         })
+    
+    # #region agent log
+    open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_user_avees:complete", "message": "All avees fetched", "data": {"total_avees": len(avees), "total_duration_ms": int((_t.time() - _log_start)*1000), "ref_image_queries": len(rows)}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "D"}) + "\n")
+    # #endregion
     
     return avees
 
@@ -723,10 +789,17 @@ def get_auto_post_status(
     Get auto post status for all agents accessible to the user.
     Admins see all agents, non-admins see only their own.
     """
+    # #region agent log
+    import json, time as _t; _log_start = _t.time(); open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_auto_post_status:entry", "message": "Status endpoint called", "data": {"user_id": user_id}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "A"}) + "\n")
+    # #endregion
     user_uuid = uuid.UUID(user_id)
     is_admin = is_admin_user(str(user_uuid), db)
     
     avees = get_user_avees(str(user_uuid), db, is_admin)
+    
+    # #region agent log
+    open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_auto_post_status:complete", "message": "Status endpoint complete", "data": {"user_id": user_id, "is_admin": is_admin, "avee_count": len(avees), "total_duration_ms": int((_t.time() - _log_start)*1000)}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "A,E"}) + "\n")
+    # #endregion
     
     return {
         "is_admin": is_admin,
@@ -1109,5 +1182,342 @@ async def generate_multiple_posts(
     
     # Could log results or send notification here
     print(f"Background generation complete: {len([r for r in results if r['success']])}/{len(results)} successful")
+
+
+# =====================================
+# POST PREVIEW/APPROVAL ENDPOINTS
+# =====================================
+
+# In-memory store for preview data (in production, use Redis or similar)
+# Preview data expires after 24 hours
+_preview_cache: dict = {}
+
+
+def _get_preview_image_path(preview_id: str, agent_handle: str) -> str:
+    """Generate temp storage path for preview images"""
+    return f"post-previews/{agent_handle}_{preview_id}.png"
+
+
+def _upload_preview_image_to_storage(local_path: str, storage_path: str) -> str:
+    """Upload image to Supabase temp storage and return URL"""
+    from supabase import create_client
+    
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase configuration missing")
+    
+    supabase = create_client(supabase_url, supabase_key)
+    bucket_name = "app-images"  # Use existing bucket with subfolder
+    
+    # Read file content
+    with open(local_path, "rb") as f:
+        file_content = f.read()
+    
+    try:
+        # Delete existing if any
+        try:
+            supabase.storage.from_(bucket_name).remove([storage_path])
+        except:
+            pass
+        
+        # Upload to temp location
+        supabase.storage.from_(bucket_name).upload(
+            storage_path,
+            file_content,
+            {"content-type": "image/png"}
+        )
+        
+        # Return public URL
+        return supabase.storage.from_(bucket_name).get_public_url(storage_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload preview image: {str(e)}")
+
+
+def _delete_preview_image(storage_path: str):
+    """Delete preview image from temp storage"""
+    from supabase import create_client
+    
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not supabase_url or not supabase_key:
+        return
+    
+    try:
+        supabase = create_client(supabase_url, supabase_key)
+        bucket_name = "app-images"  # Fixed: use correct bucket name
+        supabase.storage.from_(bucket_name).remove([storage_path])
+    except Exception as e:
+        print(f"Warning: Failed to delete preview image: {e}")
+
+
+def _move_preview_to_permanent(preview_storage_path: str, permanent_path: str) -> str:
+    """Move image from preview location to permanent storage"""
+    from supabase import create_client
+    
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase configuration missing")
+    
+    supabase = create_client(supabase_url, supabase_key)
+    bucket_name = "app-images"  # Fixed: use correct bucket name
+    
+    try:
+        # Download from preview location
+        response = supabase.storage.from_(bucket_name).download(preview_storage_path)
+        
+        # Upload to permanent location
+        supabase.storage.from_(bucket_name).upload(
+            permanent_path,
+            response,
+            {"content-type": "image/png"}
+        )
+        
+        # Delete preview
+        supabase.storage.from_(bucket_name).remove([preview_storage_path])
+        
+        # Return permanent URL
+        return supabase.storage.from_(bucket_name).get_public_url(permanent_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to move preview image: {str(e)}")
+
+
+@router.post("/preview")
+async def preview_post(
+    request: PreviewPostRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Generate a post preview WITHOUT saving to database.
+    Returns preview data for user approval.
+    
+    If feedback is provided, it will be used to guide the regeneration.
+    """
+    user_uuid = uuid.UUID(user_id)
+    avee_uuid = uuid.UUID(request.avee_id)
+    is_admin = is_admin_user(str(user_uuid), db)
+    
+    # Validate access
+    if not is_admin:
+        check_query = text("""
+            SELECT owner_user_id FROM avees WHERE id = :avee_id
+        """)
+        result = db.execute(check_query, {"avee_id": str(avee_uuid)})
+        row = result.fetchone()
+        
+        if not row or str(row[0]) != str(user_uuid):
+            raise HTTPException(status_code=403, detail="Not authorized to generate posts for this agent")
+    
+    # Get agent info
+    agent_query = text("""
+        SELECT handle, display_name, avatar_url
+        FROM avees
+        WHERE id = :avee_id
+    """)
+    result = db.execute(agent_query, {"avee_id": str(avee_uuid)})
+    row = result.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    handle = row[0]
+    display_name = row[1]
+    avatar_url = row[2]
+    
+    # Cleanup previous preview if regenerating
+    if request.previous_preview_id and request.previous_preview_id in _preview_cache:
+        old_preview = _preview_cache.pop(request.previous_preview_id)
+        if "storage_path" in old_preview:
+            _delete_preview_image(old_preview["storage_path"])
+    
+    # Generate preview ID
+    preview_id = str(uuid.uuid4())
+    
+    try:
+        # Import generator module
+        from .generate_daily_post import DailyPostGenerator
+        
+        generator = DailyPostGenerator(verbose=False)
+        
+        # Generate content (Steps 1-6) - pass feedback for regeneration context
+        result = await generator.generate_preview_async(
+            agent_handle=handle,
+            topic_override=request.topic,
+            category=request.category,
+            image_engine=request.image_engine,
+            reference_image_url_override=request.reference_image_url,
+            feedback=request.feedback  # Pass user feedback for regeneration
+        )
+        
+        if not result.get("success", True):
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("error", "Preview generation failed")
+            )
+        
+        # Upload image to temp storage
+        storage_path = _get_preview_image_path(preview_id, handle)
+        image_url = _upload_preview_image_to_storage(result["image_path"], storage_path)
+        
+        # Store preview data in cache
+        _preview_cache[preview_id] = {
+            "avee_id": str(avee_uuid),
+            "handle": handle,
+            "display_name": display_name,
+            "avatar_url": avatar_url,
+            "title": result["title"],
+            "description": result["description"],
+            "image_url": image_url,
+            "image_path": result["image_path"],  # Local path for reference
+            "storage_path": storage_path,
+            "topic": result["topic"],
+            "image_prompt": result["image_prompt"],
+            "image_engine": request.image_engine,
+            "generated_at": datetime.now().isoformat(),
+            "user_id": str(user_uuid)
+        }
+        
+        return PreviewPostResponse(
+            preview_id=preview_id,
+            avee_id=str(avee_uuid),
+            handle=handle,
+            display_name=display_name,
+            avatar_url=avatar_url,
+            title=result["title"],
+            description=result["description"],
+            image_url=image_url,
+            topic=result["topic"],
+            image_prompt=result["image_prompt"],
+            image_engine=request.image_engine,
+            generated_at=datetime.now().isoformat()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"[AutoPost Preview] ERROR: {str(e)}")
+        traceback.print_exc()
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Preview generation failed: {str(e)}")
+
+
+@router.post("/confirm")
+async def confirm_post(
+    request: ConfirmPostRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Confirm and save a previewed post to the database.
+    Moves image from temp to permanent storage.
+    """
+    user_uuid = uuid.UUID(user_id)
+    
+    # Get preview data
+    if request.preview_id not in _preview_cache:
+        raise HTTPException(status_code=404, detail="Preview not found or expired")
+    
+    preview = _preview_cache[request.preview_id]
+    
+    # Validate user owns this preview
+    if preview["user_id"] != str(user_uuid):
+        is_admin = is_admin_user(str(user_uuid), db)
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Not authorized to confirm this preview")
+    
+    # Validate avee_id matches
+    if preview["avee_id"] != request.avee_id:
+        raise HTTPException(status_code=400, detail="Agent ID mismatch")
+    
+    try:
+        # Move image to permanent storage
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        permanent_path = f"{preview['handle']}/post_{timestamp}.png"
+        permanent_url = _move_preview_to_permanent(preview["storage_path"], permanent_path)
+        
+        # Use edited title/description if provided, otherwise use generated
+        final_title = request.title if request.title else preview["title"]
+        final_description = request.description if request.description else preview["description"]
+        
+        # Create post in database
+        from .post_creation_service import create_post_from_preview
+        
+        post_result = create_post_from_preview(
+            agent_handle=preview["handle"],
+            image_url=permanent_url,
+            title=final_title,
+            description=final_description,
+            topic=preview["topic"],
+            image_prompt=preview["image_prompt"],
+            visibility="public"
+        )
+        
+        # Update last_auto_post_at
+        avee_uuid = uuid.UUID(preview["avee_id"])
+        update_query = text("""
+            UPDATE avees
+            SET last_auto_post_at = NOW()
+            WHERE id = :avee_id
+        """)
+        db.execute(update_query, {"avee_id": str(avee_uuid)})
+        db.commit()
+        
+        # Remove from cache
+        del _preview_cache[request.preview_id]
+        
+        return {
+            "success": True,
+            "post_id": post_result["post_id"],
+            "image_url": permanent_url,
+            "view_url": post_result.get("view_url", f"/posts/{post_result['post_id']}")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"[AutoPost Confirm] ERROR: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to confirm post: {str(e)}")
+
+
+@router.post("/cancel")
+async def cancel_preview(
+    request: CancelPreviewRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Cancel a preview and cleanup temp storage.
+    """
+    user_uuid = uuid.UUID(user_id)
+    
+    # Get preview data
+    if request.preview_id not in _preview_cache:
+        # Already cancelled or expired - that's OK
+        return {"success": True, "message": "Preview already cancelled or expired"}
+    
+    preview = _preview_cache[request.preview_id]
+    
+    # Validate user owns this preview
+    if preview["user_id"] != str(user_uuid):
+        is_admin = is_admin_user(str(user_uuid), db)
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Not authorized to cancel this preview")
+    
+    # Delete temp image
+    if "storage_path" in preview:
+        _delete_preview_image(preview["storage_path"])
+    
+    # Remove from cache
+    del _preview_cache[request.preview_id]
+    
+    return {"success": True, "message": "Preview cancelled"}
 
 

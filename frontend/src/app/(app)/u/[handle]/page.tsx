@@ -336,7 +336,7 @@ function ProfileContent() {
               <p className="text-lg text-[#001f98]/70 mb-4">@{handle}</p>
 
               {bio && (
-                <p className="text-[#001f98] mb-4 max-w-2xl">{bio}</p>
+                <p className="text-gray-900 mb-4 max-w-2xl">{bio}</p>
               )}
 
               {/* Stats */}
@@ -537,7 +537,7 @@ function ProfileContent() {
                       </div>
                     </div>
 
-                    <p className="text-[#001f98] whitespace-pre-wrap mb-4">{update.content}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap mb-4">{update.content}</p>
 
                     <div className="flex items-center gap-4 text-xs text-[#001f98]/70">
                       <div className="flex items-center gap-1">

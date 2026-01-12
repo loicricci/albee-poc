@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { 
+  previewGeneratePost, 
+  confirmGeneratedPost, 
+  cancelPostPreview,
+  PreviewPostResponse 
+} from '@/lib/api';
+import { PostPreviewModal } from '@/components/PostPreviewModal';
 
 interface Avee {
   avee_id: string;
@@ -40,6 +47,11 @@ export default function AutoPostGeneratorPage() {
   const [imageEngine, setImageEngine] = useState<'dall-e-3' | 'gpt-image-1'>('dall-e-3'); // Image engine selection
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null); // NEW: Selected reference image
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // Preview/Approval workflow state
+  const [previewData, setPreviewData] = useState<PreviewPostResponse | null>(null);
+  const [isProcessingPreview, setIsProcessingPreview] = useState(false);
+  const [usePreviewMode, setUsePreviewMode] = useState(true); // Toggle for preview mode
 
   useEffect(() => {
     loadStatus();
@@ -115,16 +127,19 @@ export default function AutoPostGeneratorPage() {
     }
   };
 
-  const generatePosts = async (aveeIds: string[]) => {
+  const generatePosts = async (aveeIds: string[], feedback?: string, previousPreviewId?: string) => {
     if (aveeIds.length === 0) {
       showMessage('error', 'Please select at least one agent');
       return;
     }
 
-    // Note: Reference image is now optional for GPT-Image-1
-    // - With reference: Semantic editing
-    // - Without reference: Pure text-to-image generation
-    
+    // Use preview mode for single agent generation
+    if (usePreviewMode && aveeIds.length === 1) {
+      await generateWithPreview(aveeIds[0], feedback, previousPreviewId);
+      return;
+    }
+
+    // Bulk generation (without preview)
     try {
       setGenerating(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -190,6 +205,90 @@ export default function AutoPostGeneratorPage() {
       showMessage('error', 'Failed to generate posts');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // Generate with preview for single agent
+  const generateWithPreview = async (aveeId: string, feedback?: string, previousPreviewId?: string) => {
+    try {
+      setGenerating(true);
+      
+      const preview = await previewGeneratePost({
+        avee_id: aveeId,
+        topic: topic || null,
+        category: category || null,
+        image_engine: imageEngine,
+        reference_image_url: imageEngine === 'gpt-image-1' ? selectedReferenceImage : null,
+        feedback: feedback || null,
+        previous_preview_id: previousPreviewId || null,
+      });
+      
+      setPreviewData(preview);
+    } catch (error: any) {
+      console.error('Error generating preview:', error);
+      showMessage('error', error.message || 'Failed to generate preview');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Handle preview approval
+  const handleApprovePreview = async (editedTitle?: string, editedDescription?: string) => {
+    if (!previewData) return;
+    
+    setIsProcessingPreview(true);
+    
+    try {
+      await confirmGeneratedPost({
+        preview_id: previewData.preview_id,
+        avee_id: previewData.avee_id,
+        title: editedTitle,
+        description: editedDescription,
+      });
+      
+      showMessage('success', 'Post published successfully!');
+      
+      // Clear state and reload
+      setPreviewData(null);
+      setSelectedAvees(new Set());
+      setTopic('');
+      setCategory('');
+      setImageEngine('dall-e-3');
+      setSelectedReferenceImage(null);
+      await loadStatus();
+    } catch (error: any) {
+      console.error('Error confirming post:', error);
+      showMessage('error', error.message || 'Failed to publish post');
+    } finally {
+      setIsProcessingPreview(false);
+    }
+  };
+
+  // Handle regeneration with feedback
+  const handleRegeneratePreview = async (feedback: string) => {
+    if (!previewData) return;
+    
+    setIsProcessingPreview(true);
+    await generateWithPreview(previewData.avee_id, feedback, previewData.preview_id);
+    setIsProcessingPreview(false);
+  };
+
+  // Handle preview cancellation
+  const handleCancelPreview = async () => {
+    if (!previewData) return;
+    
+    setIsProcessingPreview(true);
+    
+    try {
+      await cancelPostPreview({
+        preview_id: previewData.preview_id,
+        avee_id: previewData.avee_id,
+      });
+    } catch (error) {
+      console.error('Failed to cancel preview:', error);
+    } finally {
+      setPreviewData(null);
+      setIsProcessingPreview(false);
     }
   };
 
@@ -511,6 +610,24 @@ export default function AutoPostGeneratorPage() {
           </div>
         </div>
 
+        {/* Preview Mode Toggle */}
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={usePreviewMode}
+              onChange={(e) => setUsePreviewMode(e.target.checked)}
+              className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+            />
+            <div>
+              <span className="font-medium text-gray-900">Preview before publishing</span>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Review and approve posts before they go live (single agent only). Provide feedback to regenerate if needed.
+              </p>
+            </div>
+          </label>
+        </div>
+
         {/* Generate Buttons */}
         <div className="flex gap-3">
           <button
@@ -619,6 +736,18 @@ export default function AutoPostGeneratorPage() {
         <div className="text-center py-12 text-gray-500">
           No agents found. {status.is_admin ? 'No agents in the system.' : 'Create an agent to get started.'}
         </div>
+      )}
+
+      {/* Post Preview Modal */}
+      {previewData && (
+        <PostPreviewModal
+          preview={previewData}
+          isOpen={true}
+          isLoading={isProcessingPreview || generating}
+          onApprove={handleApprovePreview}
+          onRegenerate={handleRegeneratePreview}
+          onCancel={handleCancelPreview}
+        />
       )}
     </div>
   );

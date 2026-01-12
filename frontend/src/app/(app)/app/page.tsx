@@ -426,11 +426,11 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
       </div>
 
       {/* Image */}
-      <div className="relative w-full bg-[#f8fafc]" style={{ paddingBottom: '75%' }}>
+      <div className="relative w-full bg-black">
         <img 
-          src={item.image_url} 
+          src={`${item.image_url}?v=${item.created_at}`} 
           alt={item.title || "Post image"} 
-          className="absolute inset-0 h-full w-full object-cover"
+          className="w-full object-contain max-h-[500px]"
           loading="lazy"
           onError={(e) => {
             e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23E6E6E6" width="400" height="300"/%3E%3Ctext fill="%232E3A59" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EImage not available%3C/text%3E%3C/svg%3E';

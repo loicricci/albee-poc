@@ -535,10 +535,20 @@ def generate_image_prompt(agent_context: Dict[str, Any], topic: Dict[str, str]) 
 def generate_description(
     agent_context: Dict[str, Any], 
     topic: Dict[str, str],
-    image_prompt: str
+    image_prompt: str,
+    feedback: str = None
 ) -> str:
-    """Generate post description"""
+    """Generate post description with optional user feedback for refinement"""
     generator = AIPromptGenerator()
+    
+    # If feedback provided, inject it into the topic for context
+    if feedback:
+        enhanced_topic = topic.copy()
+        enhanced_topic["user_feedback"] = feedback
+        if "description" in enhanced_topic:
+            enhanced_topic["description"] = f"{enhanced_topic['description']}\n\nIMPORTANT USER GUIDANCE: {feedback}"
+        return generator.generate_description(agent_context, enhanced_topic, image_prompt)
+    
     return generator.generate_description(agent_context, topic, image_prompt)
 
 
@@ -574,7 +584,8 @@ def generate_edit_prompt(
 async def generate_edit_prompt_and_title_parallel(
     agent_context: Dict[str, Any],
     topic: Dict[str, str],
-    edit_instructions: str = ""
+    edit_instructions: str = "",
+    feedback: str = None
 ) -> Tuple[str, str]:
     """
     Generate edit prompt and title in parallel for OpenAI Image Edits mode.
@@ -583,12 +594,27 @@ async def generate_edit_prompt_and_title_parallel(
         agent_context: Agent profile data
         topic: Topic data
         edit_instructions: Optional custom edit instructions
+        feedback: Optional user feedback from rejection (for regeneration)
     
     Returns:
         Tuple of (edit_prompt, title)
     """
     print("[AIPromptGenerator] Generating edit prompt and title in parallel...")
+    if feedback:
+        print(f"[AIPromptGenerator] Using user feedback: {feedback[:50]}...")
     start_time = time.time()
+    
+    # Enhance topic with feedback if provided
+    enhanced_topic = topic.copy()
+    if feedback:
+        enhanced_topic["user_feedback"] = feedback
+        if "description" in enhanced_topic:
+            enhanced_topic["description"] = f"{enhanced_topic['description']}\n\nUSER GUIDANCE: {feedback}"
+    
+    # Enhance edit instructions with feedback
+    enhanced_instructions = edit_instructions
+    if feedback:
+        enhanced_instructions = f"{edit_instructions}\n\nUser refinement request: {feedback}" if edit_instructions else f"User refinement request: {feedback}"
     
     loop = asyncio.get_event_loop()
     
@@ -596,14 +622,14 @@ async def generate_edit_prompt_and_title_parallel(
         None,
         generate_edit_prompt,
         agent_context,
-        topic,
-        edit_instructions
+        enhanced_topic,
+        enhanced_instructions
     )
     
     title_task = loop.run_in_executor(
         None,
         generate_title,
-        topic,
+        enhanced_topic,
         agent_context
     )
     
@@ -618,7 +644,8 @@ async def generate_edit_prompt_and_title_parallel(
 
 async def generate_image_prompt_and_title_parallel(
     agent_context: Dict[str, Any], 
-    topic: Dict[str, str]
+    topic: Dict[str, str],
+    feedback: str = None
 ) -> Tuple[str, str]:
     """
     Generate image prompt and title in parallel using asyncio.
@@ -628,12 +655,22 @@ async def generate_image_prompt_and_title_parallel(
     Args:
         agent_context: Agent profile data
         topic: Topic data
+        feedback: Optional user feedback from rejection (for regeneration)
     
     Returns:
         Tuple of (image_prompt, title)
     """
     print("[AIPromptGenerator] Generating image prompt and title in parallel...")
+    if feedback:
+        print(f"[AIPromptGenerator] Using user feedback: {feedback[:50]}...")
     start_time = time.time()
+    
+    # Enhance topic with feedback if provided
+    enhanced_topic = topic.copy()
+    if feedback:
+        enhanced_topic["user_feedback"] = feedback
+        if "description" in enhanced_topic:
+            enhanced_topic["description"] = f"{enhanced_topic['description']}\n\nUSER GUIDANCE FOR IMAGE: {feedback}"
     
     # Run both in thread pool since OpenAI client is synchronous
     loop = asyncio.get_event_loop()
@@ -642,13 +679,13 @@ async def generate_image_prompt_and_title_parallel(
         None, 
         generate_image_prompt, 
         agent_context, 
-        topic
+        enhanced_topic
     )
     
     title_task = loop.run_in_executor(
         None,
         generate_title,
-        topic,
+        enhanced_topic,
         agent_context
     )
     
