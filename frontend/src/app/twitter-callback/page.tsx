@@ -63,7 +63,7 @@ function TwitterCallbackContent() {
   }, [searchParams]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#2E3A59] to-[#1a2332]">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#001f98] to-[#1a2332]">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
         <div className="text-center">
           {status === "connecting" && (
@@ -89,10 +89,10 @@ function TwitterCallbackContent() {
                   />
                 </svg>
               </div>
-              <h1 className="mb-2 text-2xl font-bold text-[#0B0B0C]">
+              <h1 className="mb-2 text-2xl font-bold text-gray-900">
                 Connecting Twitter
               </h1>
-              <p className="text-sm text-[#2E3A59]/70">{message}</p>
+              <p className="text-sm text-[#001f98]/70">{message}</p>
             </>
           )}
 
@@ -113,10 +113,10 @@ function TwitterCallbackContent() {
                   />
                 </svg>
               </div>
-              <h1 className="mb-2 text-2xl font-bold text-[#0B0B0C]">
+              <h1 className="mb-2 text-2xl font-bold text-gray-900">
                 Connected!
               </h1>
-              <p className="text-sm text-[#2E3A59]/70">{message}</p>
+              <p className="text-sm text-[#001f98]/70">{message}</p>
             </>
           )}
 
@@ -137,10 +137,10 @@ function TwitterCallbackContent() {
                   />
                 </svg>
               </div>
-              <h1 className="mb-2 text-2xl font-bold text-[#0B0B0C]">
+              <h1 className="mb-2 text-2xl font-bold text-gray-900">
                 Connection Failed
               </h1>
-              <p className="text-sm text-[#2E3A59]/70">{message}</p>
+              <p className="text-sm text-[#001f98]/70">{message}</p>
             </>
           )}
         </div>
@@ -152,7 +152,7 @@ function TwitterCallbackContent() {
 export default function TwitterCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#2E3A59] to-[#1a2332]">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#001f98] to-[#1a2332]">
         <div className="text-white">Loading...</div>
       </div>
     }>

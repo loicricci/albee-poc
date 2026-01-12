@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { ReactNode, useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAppData } from "@/contexts/AppDataContext";
+import { getUnreadNotificationCount, getUnreadMessagesCount } from "@/lib/api";
 
 export function NewLayoutWrapper({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-[#f8fafc] via-white to-[#f8fafc]">
       <TopNavigation />
       <div className="mx-auto max-w-7xl px-6 py-8">
         {children}
@@ -40,6 +41,7 @@ type SearchResult = {
 
 function TopNavigation() {
   const router = useRouter();
+  const pathname = usePathname();
   
   // Get shared app data from context
   const { profile, appConfig } = useAppData();
@@ -56,6 +58,57 @@ function TopNavigation() {
   // Profile dropdown state
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement | null>(null);
+  
+  // Unread counts state
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  
+  // Check if user is on notifications or messages page
+  const isOnNotificationsPage = pathname === "/notifications" || pathname.startsWith("/notifications/");
+  const isOnMessagesPage = pathname === "/messages" || pathname.startsWith("/messages/");
+  
+  // Clear notification count when visiting notifications page
+  useEffect(() => {
+    if (isOnNotificationsPage) {
+      setUnreadNotificationCount(0);
+    }
+  }, [isOnNotificationsPage]);
+  
+  // Clear message count when visiting messages page
+  useEffect(() => {
+    if (isOnMessagesPage) {
+      setUnreadMessageCount(0);
+    }
+  }, [isOnMessagesPage]);
+  
+  // Fetch unread counts on mount and when profile changes
+  useEffect(() => {
+    if (!profile) return;
+    
+    const fetchUnreadCounts = async () => {
+      try {
+        const [notifResult, msgResult] = await Promise.all([
+          getUnreadNotificationCount(),
+          getUnreadMessagesCount(),
+        ]);
+        // Only update counts if not on the respective page
+        if (!isOnNotificationsPage) {
+          setUnreadNotificationCount(notifResult?.unread_count || 0);
+        }
+        if (!isOnMessagesPage) {
+          setUnreadMessageCount(msgResult?.unread_count || 0);
+        }
+      } catch (e) {
+        console.error("Failed to fetch unread counts:", e);
+      }
+    };
+    
+    fetchUnreadCounts();
+    
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchUnreadCounts, 30000);
+    return () => clearInterval(interval);
+  }, [profile, isOnNotificationsPage, isOnMessagesPage]);
 
   // Perform search function
   const performSearch = useCallback(async (query: string) => {
@@ -196,10 +249,10 @@ function TopNavigation() {
             ) : (
               // Default fallback logo
               <>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md transition-transform group-hover:scale-105" style={{background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'}}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-lg shadow-[#001f98]/25 transition-transform group-hover:scale-105" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
                   <span className="text-lg font-bold text-white">A</span>
                 </div>
-                <span className="hidden text-xl font-bold text-[#0B0B0C] md:block">{appConfig.app_name || "AGENT"}</span>
+                <span className="hidden text-xl font-bold text-gray-900 md:block">{appConfig.app_name || "AGENT"}</span>
               </>
             )}
           </Link>
@@ -219,12 +272,12 @@ function TopNavigation() {
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <input
+                <input
                 type="text"
                 placeholder="Search Agents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 focus:border-[#001f98]"
               />
               
               {/* Search Results Dropdown */}
@@ -247,7 +300,7 @@ function TopNavigation() {
                           onClick={() => handleSearchResultClick(result.avee_handle)}
                           className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
                         >
-                          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full" style={{background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'}}>
+                          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full" style={{background: 'linear-gradient(135deg, #001f98 0%, #001670 100%)'}}>
                             {result.avee_avatar_url ? (
                               <img src={result.avee_avatar_url}
                                 alt={result.avee_display_name || result.avee_handle}
@@ -265,7 +318,7 @@ function TopNavigation() {
                                 {result.avee_display_name || result.avee_handle}
                               </div>
                               {result.is_followed && (
-                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                <span className="rounded-full bg-[#e6eaff] px-2 py-0.5 text-xs font-medium text-[#001f98]">
                                   Following
                                 </span>
                               )}
@@ -294,7 +347,7 @@ function TopNavigation() {
           {/* Home Icon */}
           <Link
             href="/app"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
             title="Home Feed"
           >
             <svg
@@ -317,7 +370,7 @@ function TopNavigation() {
           {!profile?.is_admin && (
             <Link
               href="/agent"
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-purple-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
               title="My Agent"
             >
               <svg
@@ -341,7 +394,7 @@ function TopNavigation() {
           {profile?.is_admin && (
             <Link
               href="/my-agents"
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-purple-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
               title="My Agents"
             >
               <svg
@@ -386,7 +439,7 @@ function TopNavigation() {
           {/* Messages Icon */}
           <Link
             href="/messages"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
             title="Messages"
           >
             <svg
@@ -403,12 +456,18 @@ function TopNavigation() {
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
+            {/* Messages badge - only show if there are unread messages and not on messages page */}
+            {unreadMessageCount > 0 && !isOnMessagesPage && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#001f98] text-[10px] font-bold text-white shadow-sm">
+                {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+              </span>
+            )}
           </Link>
 
           {/* Notifications Icon */}
           <Link
             href="/notifications"
-            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600"
+            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
             title="Notifications"
           >
             <svg
@@ -425,11 +484,12 @@ function TopNavigation() {
                 d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
               />
             </svg>
-            {/* Notification badge */}
-            <span className="absolute right-1 top-1 flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C8A24A] opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C8A24A]"></span>
-            </span>
+            {/* Notification badge - only show if there are unread notifications and not on notifications page */}
+            {unreadNotificationCount > 0 && !isOnNotificationsPage && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#001f98] text-[10px] font-bold text-white shadow-sm">
+                {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+              </span>
+            )}
           </Link>
 
           {/* Divider */}
@@ -439,10 +499,10 @@ function TopNavigation() {
           <div className="relative" ref={profileDropdownRef}>
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="flex h-10 items-center gap-2 rounded-lg px-3 text-gray-700 transition-all hover:bg-[#E6E6E6]/50"
+              className="flex h-10 items-center gap-2 rounded-lg px-3 text-gray-700 transition-all hover:bg-[#e6eaff]"
               title="Profile"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white overflow-hidden" style={{background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'}}>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white overflow-hidden" style={{background: 'linear-gradient(135deg, #001f98 0%, #001670 100%)'}}>
                 {profile?.avatar_url ? (
                   <img 
                     src={profile.avatar_url} 
@@ -476,16 +536,16 @@ function TopNavigation() {
             
             {/* Dropdown menu */}
             {showProfileDropdown && (
-            <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-lg border border-[#E6E6E6] bg-white py-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="border-b border-[#E6E6E6] px-4 py-3">
-                <div className="text-xs text-[#2E3A59]/70">Signed in as</div>
-                <div className="truncate text-sm font-medium text-[#0B0B0C]">
+            <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-lg border border-gray-200 bg-white py-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="border-b border-gray-200 px-4 py-3">
+                <div className="text-xs text-gray-500">Signed in as</div>
+                <div className="truncate text-sm font-medium text-gray-900">
                   {userEmail || "User"}
                 </div>
               </div>
               <Link
                 href="/profile"
-                className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -495,7 +555,7 @@ function TopNavigation() {
               {profile?.handle && (
                 <Link
                   href={`/u/${profile.handle}`}
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -505,7 +565,7 @@ function TopNavigation() {
               )}
               <Link
                 href="/messages"
-                className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -516,7 +576,7 @@ function TopNavigation() {
               {!profile?.is_admin && (
                 <Link
                   href="/agent"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
@@ -528,7 +588,7 @@ function TopNavigation() {
               {profile?.is_admin && (
                 <Link
                   href="/my-agents"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
@@ -540,7 +600,7 @@ function TopNavigation() {
               {profile?.is_admin && (
                 <Link
                   href="/backoffice"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#0B0B0C] hover:bg-[#2E3A59]/5"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-[#e6eaff]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -549,7 +609,7 @@ function TopNavigation() {
                   Backoffice
                 </Link>
               )}
-              <div className="my-1 border-t border-[#E6E6E6]"></div>
+              <div className="my-1 border-t border-gray-200"></div>
               <button
                 onClick={logout}
                 className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50/50"

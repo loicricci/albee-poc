@@ -95,14 +95,14 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
   // Render as a post
   return (
     <>
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-all hover:shadow-md">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-all hover:shadow-lg hover:border-[#001f98]/30">
         {/* Header */}
         <div className="flex items-center justify-between p-4">
           <Link 
             href={`/u/${item.agent_handle}`}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
               {item.agent_avatar_url ? (
                 <img src={item.agent_avatar_url} alt={displayName} className="h-full w-full object-cover" />
               ) : (
@@ -113,7 +113,7 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
             </div>
             <div>
               <div className="font-semibold text-gray-900 text-sm">{displayName}</div>
-              <div className="text-xs text-gray-500">@{item.agent_handle} • {formatDate(item.created_at)}</div>
+              <div className="text-xs text-gray-600">@{item.agent_handle} • {formatDate(item.created_at)}</div>
             </div>
           </Link>
         </div>
@@ -149,7 +149,7 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
         {/* Description */}
         {item.description && (
           <div className="px-4 pt-3 pb-2">
-            <p className="text-gray-700 whitespace-pre-wrap">{item.description}</p>
+            <p className="text-gray-600 whitespace-pre-wrap">{item.description}</p>
           </div>
         )}
 
@@ -159,8 +159,8 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
           <button
             onClick={handleLike}
             disabled={isLiking}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-gray-50 ${
-              liked ? "text-red-600" : "text-gray-700"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-[#e6eaff] ${
+              liked ? "text-[#C8A24A]" : "text-gray-600"
             } ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <svg 
@@ -177,7 +177,7 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
           {/* Comment */}
           <button
             onClick={handleComment}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 transition-all hover:bg-gray-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -188,7 +188,7 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
           {/* Repost */}
           <button
             onClick={() => setShowRepostModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 transition-all hover:bg-gray-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -226,9 +226,9 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
             </div>
 
             {/* Original Post Preview */}
-            <div className="mb-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
+            <div className="mb-4 p-3 border border-gray-200 rounded-lg bg-[#f8fafc]">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-8 w-8 rounded-full overflow-hidden bg-[#001f98] flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
                   {item.agent_avatar_url ? (
                     <img src={item.agent_avatar_url} alt={displayName} className="h-full w-full object-cover" />
                   ) : (
@@ -237,23 +237,23 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-gray-900">{displayName}</div>
-                  <div className="text-xs text-gray-500">@{item.agent_handle}</div>
+                  <div className="text-xs text-gray-600">@{item.agent_handle}</div>
                 </div>
               </div>
-              {item.title && <p className="text-sm font-medium text-gray-800 mb-1">{item.title}</p>}
+              {item.title && <p className="text-sm font-medium text-gray-900 mb-1">{item.title}</p>}
               {item.description && <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>}
             </div>
 
             {/* Comment Input */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
                 Add your comment (optional)
               </label>
               <textarea
                 value={repostComment}
                 onChange={(e) => setRepostComment(e.target.value)}
                 placeholder={`Reposting from @${item.agent_handle}...`}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#001f98] focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 focus:border-[#001f98] resize-none transition-all"
                 rows={3}
               />
             </div>
@@ -262,13 +262,13 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
             <div className="flex gap-3">
               <button
                 onClick={() => setShowRepostModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-full text-gray-700 font-medium hover:border-[#001f98] hover:text-[#001f98] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRepost}
-                className="flex-1 px-4 py-2 bg-[#001f98] text-white rounded-lg font-medium hover:bg-[#001670] transition-colors"
+                className="flex-1 px-4 py-2 bg-[#001f98] text-white rounded-full font-medium shadow-lg shadow-[#001f98]/25 hover:bg-[#001670] hover:shadow-[#001f98]/40 hover:scale-105 transition-all duration-300"
               >
                 Repost
               </button>

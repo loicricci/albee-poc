@@ -157,18 +157,18 @@ const MessageBubble = memo(({ msg, isCurrentUser, getMessageStatusIcon, formatTi
       <div
         className={`max-w-[70%] rounded-xl px-4 py-2 ${
           isCurrentUser
-            ? "bg-[#2E3A59] text-white"
-            : "bg-[#FAFAFA] border border-[#E6E6E6] text-[#0B0B0C]"
+            ? "bg-[#001f98] text-white"
+            : "bg-[#f8fafc] border border-[#E6E6E6] text-gray-900"
         }`}
       >
         {!isCurrentUser && msg.sender_info && (
-          <div className="mb-1 text-xs font-medium text-[#2E3A59]/70">
+          <div className="mb-1 text-xs font-medium text-[#001f98]/70">
             {msg.sender_type === "agent" && "🤖 "}
             {msg.sender_info.display_name || msg.sender_info.handle}
           </div>
         )}
         <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-        <div className={`mt-1 flex items-center gap-1.5 ${isCurrentUser ? "text-white/70" : "text-[#2E3A59]/50"}`}>
+        <div className={`mt-1 flex items-center gap-1.5 ${isCurrentUser ? "text-white/70" : "text-[#001f98]/50"}`}>
           {getMessageStatusIcon(msg)}
           <p className="text-xs">{formatTime(msg.created_at)}</p>
         </div>
@@ -656,7 +656,7 @@ export default function MessagesPage() {
         {/* =================================================================== */}
         <div className="w-80 border-r border-[#E6E6E6] bg-white flex flex-col">
           {/* Section Tabs */}
-          <div className="p-3 border-b border-[#E6E6E6] bg-[#FAFAFA]">
+          <div className="p-3 border-b border-[#E6E6E6] bg-[#f8fafc]">
             <div className="flex gap-1 bg-[#E6E6E6]/50 rounded-lg p-1">
               {/* My Chats Tab */}
               <button
@@ -667,8 +667,8 @@ export default function MessagesPage() {
                 }}
                 className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all ${
                   activeSection === "my_chats"
-                    ? "bg-white text-[#0B0B0C] shadow-sm"
-                    : "text-[#2E3A59]/70 hover:text-[#0B0B0C]"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-[#001f98]/70 hover:text-gray-900"
                 }`}
               >
                 <div className="flex items-center justify-center gap-1">
@@ -677,7 +677,7 @@ export default function MessagesPage() {
                   </svg>
                   <span>Chats</span>
                   {filteredMyConversations.length > 0 && (
-                    <span className="text-[10px] bg-[#2E3A59]/10 px-1.5 rounded-full">
+                    <span className="text-[10px] bg-[#001f98]/10 px-1.5 rounded-full">
                       {filteredMyConversations.length}
                     </span>
                   )}
@@ -693,8 +693,8 @@ export default function MessagesPage() {
                 }}
                 className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all relative ${
                   activeSection === "escalations"
-                    ? "bg-white text-[#0B0B0C] shadow-sm"
-                    : "text-[#2E3A59]/70 hover:text-[#0B0B0C]"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-[#001f98]/70 hover:text-gray-900"
                 }`}
               >
                 <div className="flex items-center justify-center gap-1">
@@ -719,8 +719,8 @@ export default function MessagesPage() {
                 }}
                 className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all ${
                   activeSection === "agent_activity"
-                    ? "bg-white text-[#0B0B0C] shadow-sm"
-                    : "text-[#2E3A59]/70 hover:text-[#0B0B0C]"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-[#001f98]/70 hover:text-gray-900"
                 }`}
               >
                 <div className="flex items-center justify-center gap-1">
@@ -759,13 +759,13 @@ export default function MessagesPage() {
 
                     {filteredMyConversations.length === 0 ? (
                       <div className="p-6 text-center">
-                        <div className="text-[#2E3A59]/30 mb-2">
+                        <div className="text-[#001f98]/30 mb-2">
                           <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
                         </div>
-                        <p className="text-sm text-[#2E3A59]/70">No conversations yet</p>
-                        <p className="text-xs text-[#2E3A59]/50 mt-1">
+                        <p className="text-sm text-[#001f98]/70">No conversations yet</p>
+                        <p className="text-xs text-[#001f98]/50 mt-1">
                           Start chatting with agents!
                         </p>
                       </div>
@@ -774,9 +774,9 @@ export default function MessagesPage() {
                         <button
                           key={conv.id}
                           onClick={() => setSelectedConversation(conv)}
-                          className={`w-full border-b border-[#E6E6E6] p-4 text-left transition-colors hover:bg-[#FAFAFA] ${
+                          className={`w-full border-b border-[#E6E6E6] p-4 text-left transition-colors hover:bg-[#f8fafc] ${
                             selectedConversation?.id === conv.id
-                              ? "bg-[#2E3A59]/5 border-l-4 border-l-[#2E3A59]"
+                              ? "bg-[#001f98]/5 border-l-4 border-l-[#001f98]"
                               : ""
                           }`}
                         >
@@ -789,7 +789,7 @@ export default function MessagesPage() {
                                   className="h-10 w-10 rounded-xl object-cover border border-[#E6E6E6]"
                                 />
                               ) : (
-                                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center text-white text-xs font-bold">
+                                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#001f98] to-[#1a2236] flex items-center justify-center text-white text-xs font-bold">
                                   {conv.target_avee?.display_name?.slice(0, 2).toUpperCase() || "??"}
                                 </div>
                               )}
@@ -801,14 +801,14 @@ export default function MessagesPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between">
-                                <h4 className="font-medium text-[#0B0B0C] truncate text-sm">
+                                <h4 className="font-medium text-gray-900 truncate text-sm">
                                   {conv.target_avee?.display_name || conv.other_participant.display_name}
                                 </h4>
-                                <span className="text-[10px] text-[#2E3A59]/50 flex-shrink-0">
+                                <span className="text-[10px] text-[#001f98]/50 flex-shrink-0">
                                   {formatTime(conv.last_message_at)}
                                 </span>
                               </div>
-                              <p className="text-xs text-[#2E3A59]/60 truncate">
+                              <p className="text-xs text-[#001f98]/60 truncate">
                                 {conv.last_message_preview || "No messages yet"}
                               </p>
                             </div>
@@ -839,8 +839,8 @@ export default function MessagesPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
-                        <p className="text-sm text-[#2E3A59]/70">All caught up!</p>
-                        <p className="text-xs text-[#2E3A59]/50">No pending questions</p>
+                        <p className="text-sm text-[#001f98]/70">All caught up!</p>
+                        <p className="text-xs text-[#001f98]/50">No pending questions</p>
                       </div>
                     ) : (
                       pendingEscalations.map((esc) => (
@@ -859,14 +859,14 @@ export default function MessagesPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between">
-                                <h4 className="font-medium text-[#0B0B0C] text-sm">
+                                <h4 className="font-medium text-gray-900 text-sm">
                                   {esc.user_info.display_name}
                                 </h4>
-                                <span className="text-[10px] text-[#2E3A59]/50">
+                                <span className="text-[10px] text-[#001f98]/50">
                                   {formatTime(esc.offered_at)}
                                 </span>
                               </div>
-                              <p className="text-xs text-[#2E3A59]/70 line-clamp-2 mt-1">
+                              <p className="text-xs text-[#001f98]/70 line-clamp-2 mt-1">
                                 &quot;{esc.original_message}&quot;
                               </p>
                             </div>
@@ -897,14 +897,14 @@ export default function MessagesPage() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-baseline justify-between">
-                                  <h4 className="font-medium text-[#0B0B0C]/60 text-sm">
+                                  <h4 className="font-medium text-gray-900/60 text-sm">
                                     {esc.user_info.display_name}
                                   </h4>
                                   <span className="text-[10px] text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
                                     Answered
                                   </span>
                                 </div>
-                                <p className="text-xs text-[#2E3A59]/50 line-clamp-1 mt-1">
+                                <p className="text-xs text-[#001f98]/50 line-clamp-1 mt-1">
                                   &quot;{esc.original_message}&quot;
                                 </p>
                               </div>
@@ -942,21 +942,21 @@ export default function MessagesPage() {
                     )}
 
                     {/* Agent Conversations (Anonymized) */}
-                    <div className="p-3 bg-[#FAFAFA] border-b border-[#E6E6E6]">
-                      <h3 className="text-xs font-semibold text-[#2E3A59]/70">
+                    <div className="p-3 bg-[#f8fafc] border-b border-[#E6E6E6]">
+                      <h3 className="text-xs font-semibold text-[#001f98]/70">
                         CONVERSATIONS WITH YOUR AGENTS
                       </h3>
                     </div>
 
                     {agentConversations.length === 0 ? (
                       <div className="p-6 text-center">
-                        <div className="text-[#2E3A59]/30 mb-2">
+                        <div className="text-[#001f98]/30 mb-2">
                           <svg className="mx-auto h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
                           </svg>
                         </div>
-                        <p className="text-sm text-[#2E3A59]/70">No conversations yet</p>
-                        <p className="text-xs text-[#2E3A59]/50">
+                        <p className="text-sm text-[#001f98]/70">No conversations yet</p>
+                        <p className="text-xs text-[#001f98]/50">
                           When people chat with your agents, it&apos;ll show here
                         </p>
                       </div>
@@ -981,17 +981,17 @@ export default function MessagesPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between">
-                                <h4 className="font-medium text-[#0B0B0C] text-sm">
+                                <h4 className="font-medium text-gray-900 text-sm">
                                   Anonymous User
                                 </h4>
-                                <span className="text-[10px] text-[#2E3A59]/50">
+                                <span className="text-[10px] text-[#001f98]/50">
                                   {formatTime(conv.last_message_at)}
                                 </span>
                               </div>
                               <p className="text-xs text-purple-600 mb-1">
                                 → {conv.target_avee.display_name}
                               </p>
-                              <p className="text-xs text-[#2E3A59]/60 truncate">
+                              <p className="text-xs text-[#001f98]/60 truncate">
                                 {conv.message_count} messages
                               </p>
                             </div>
@@ -1009,18 +1009,18 @@ export default function MessagesPage() {
         {/* =================================================================== */}
         {/* MAIN CONTENT AREA */}
         {/* =================================================================== */}
-        <div className="flex-1 flex flex-col bg-[#FAFAFA] min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col bg-[#f8fafc] min-h-0 overflow-hidden">
           {/* Empty States */}
           {activeSection === "my_chats" && !selectedConversation && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2E3A59]/10">
-                  <svg className="h-8 w-8 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#001f98]/10">
+                  <svg className="h-8 w-8 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-[#0B0B0C]">Select a conversation</h2>
-                <p className="text-sm text-[#2E3A59]/70">Choose a chat to start messaging</p>
+                <h2 className="text-lg font-semibold text-gray-900">Select a conversation</h2>
+                <p className="text-sm text-[#001f98]/70">Choose a chat to start messaging</p>
               </div>
             </div>
           )}
@@ -1033,8 +1033,8 @@ export default function MessagesPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-[#0B0B0C]">Escalation Requests</h2>
-                <p className="text-sm text-[#2E3A59]/70 mt-2">
+                <h2 className="text-lg font-semibold text-gray-900">Escalation Requests</h2>
+                <p className="text-sm text-[#001f98]/70 mt-2">
                   When users ask questions your AI agent can&apos;t answer, they appear here.
                   <br />
                   <span className="text-orange-600 font-medium">Your answers are saved as knowledge</span> so the AI can handle similar questions in the future.
@@ -1051,8 +1051,8 @@ export default function MessagesPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-[#0B0B0C]">Agent Activity</h2>
-                <p className="text-sm text-[#2E3A59]/70 mt-2">
+                <h2 className="text-lg font-semibold text-gray-900">Agent Activity</h2>
+                <p className="text-sm text-[#001f98]/70 mt-2">
                   See anonymized conversations people are having with your agents.
                   <br />
                   <span className="text-purple-600 font-medium">User identities are hidden</span> for privacy.
@@ -1064,7 +1064,7 @@ export default function MessagesPage() {
                     <h3 className="text-sm font-semibold text-purple-700 mb-3">Recent Questions</h3>
                     <div className="space-y-2">
                       {insights.recent_questions.slice(0, 5).map((q, i) => (
-                        <div key={i} className="text-xs text-[#2E3A59]/70 bg-purple-50 rounded-lg p-2">
+                        <div key={i} className="text-xs text-[#001f98]/70 bg-purple-50 rounded-lg p-2">
                           &quot;{q.content}&quot;
                         </div>
                       ))}
@@ -1088,15 +1088,15 @@ export default function MessagesPage() {
                       className="h-10 w-10 rounded-xl object-cover border border-[#E6E6E6]"
                     />
                   ) : (
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center text-white text-xs font-bold">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#001f98] to-[#1a2236] flex items-center justify-center text-white text-xs font-bold">
                       {selectedConversation.target_avee?.display_name?.slice(0, 2).toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <h2 className="font-semibold text-[#0B0B0C]">
+                    <h2 className="font-semibold text-gray-900">
                       {selectedConversation.target_avee?.display_name}
                     </h2>
-                    <p className="text-xs text-[#2E3A59]/60">
+                    <p className="text-xs text-[#001f98]/60">
                       @{selectedConversation.target_avee?.handle}
                       <span className="ml-2 text-[#C8A24A]">• Agent Chat</span>
                     </p>
@@ -1140,13 +1140,13 @@ export default function MessagesPage() {
                       }
                     }}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="flex-1 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     disabled={sending}
                   />
                   <button
                     onClick={sendMessage}
                     disabled={sending || !newMessage.trim()}
-                    className="rounded-lg bg-[#2E3A59] px-4 py-2 text-white hover:bg-[#1a2236] disabled:opacity-50"
+                    className="rounded-lg bg-[#001f98] px-4 py-2 text-white hover:bg-[#1a2236] disabled:opacity-50"
                   >
                     {sending ? (
                       <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -1175,10 +1175,10 @@ export default function MessagesPage() {
                       {selectedEscalation.user_info.display_name?.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h2 className="font-semibold text-[#0B0B0C]">
+                      <h2 className="font-semibold text-gray-900">
                         {selectedEscalation.user_info.display_name}
                       </h2>
-                      <p className="text-xs text-[#2E3A59]/60">
+                      <p className="text-xs text-[#001f98]/60">
                         @{selectedEscalation.user_info.handle} • Asked {formatTime(selectedEscalation.offered_at)}
                       </p>
                     </div>
@@ -1197,13 +1197,13 @@ export default function MessagesPage() {
                 <div className="max-w-2xl mx-auto">
                   <div className="bg-orange-50 rounded-xl p-6 border border-orange-100">
                     <h3 className="text-sm font-semibold text-orange-800 mb-3">Question:</h3>
-                    <p className="text-[#0B0B0C]">{selectedEscalation.original_message}</p>
+                    <p className="text-gray-900">{selectedEscalation.original_message}</p>
                   </div>
 
                   {selectedEscalation.context_summary && (
                     <div className="mt-4 bg-blue-50 rounded-xl p-4 border border-blue-100">
                       <h3 className="text-xs font-semibold text-blue-800 mb-2">Context:</h3>
-                      <p className="text-sm text-[#2E3A59]/70">{selectedEscalation.context_summary}</p>
+                      <p className="text-sm text-[#001f98]/70">{selectedEscalation.context_summary}</p>
                     </div>
                   )}
 
@@ -1241,7 +1241,7 @@ export default function MessagesPage() {
                           className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
                             answerLayer === layer
                               ? "bg-orange-100 text-orange-800 font-medium"
-                              : "bg-[#FAFAFA] text-[#2E3A59]/70 hover:bg-[#E6E6E6]"
+                              : "bg-[#f8fafc] text-[#001f98]/70 hover:bg-[#E6E6E6]"
                           }`}
                         >
                           {layer.charAt(0).toUpperCase() + layer.slice(1)}
@@ -1275,7 +1275,7 @@ export default function MessagesPage() {
                     {selectedAgentConversation.anonymized_user.initials}
                   </div>
                   <div>
-                    <h2 className="font-semibold text-[#0B0B0C]">Anonymous User</h2>
+                    <h2 className="font-semibold text-gray-900">Anonymous User</h2>
                     <p className="text-xs text-purple-600">
                       Chatting with {selectedAgentConversation.target_avee.display_name}
                     </p>
@@ -1323,12 +1323,12 @@ export default function MessagesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-[#0B0B0C]">Chat with an Agent</h2>
+              <h2 className="text-xl font-bold text-gray-900">Chat with an Agent</h2>
               <button
                 onClick={() => setShowNewChat(false)}
-                className="rounded-lg p-1 hover:bg-[#FAFAFA]"
+                className="rounded-lg p-1 hover:bg-[#f8fafc]"
               >
-                <svg className="h-6 w-6 text-[#2E3A59]/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-6 w-6 text-[#001f98]/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -1336,15 +1336,15 @@ export default function MessagesPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#0B0B0C] mb-1">Agent Handle</label>
+                <label className="block text-sm font-medium text-gray-900 mb-1">Agent Handle</label>
                 <input
                   type="text"
                   value={newChatHandle}
                   onChange={(e) => setNewChatHandle(e.target.value)}
                   placeholder="@eltonjohn"
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                 />
-                <p className="mt-1 text-xs text-[#2E3A59]/50">
+                <p className="mt-1 text-xs text-[#001f98]/50">
                   Enter the handle of the agent you want to chat with
                 </p>
               </div>
@@ -1357,7 +1357,7 @@ export default function MessagesPage() {
                   </svg>
                   <div>
                     <p className="text-sm font-medium text-[#C8A24A]">How it works</p>
-                    <p className="text-xs text-[#2E3A59]/70 mt-1">
+                    <p className="text-xs text-[#001f98]/70 mt-1">
                       The AI agent will respond to your messages. If it can&apos;t answer, 
                       the question is forwarded to the profile owner who can provide a response.
                     </p>
@@ -1369,7 +1369,7 @@ export default function MessagesPage() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setShowNewChat(false)}
-                className="flex-1 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#2E3A59]/70 hover:bg-[#FAFAFA]"
+                className="flex-1 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#001f98]/70 hover:bg-[#f8fafc]"
               >
                 Cancel
               </button>

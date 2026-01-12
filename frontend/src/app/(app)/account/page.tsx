@@ -14,8 +14,8 @@ export default function AccountPage() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#2E3A59] border-r-transparent"></div>
-        <p className="mt-4 text-sm text-[#2E3A59]/70">Redirecting to profile settings...</p>
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#001f98] border-r-transparent"></div>
+        <p className="mt-4 text-sm text-[#001f98]/70">Redirecting to profile settings...</p>
       </div>
     </div>
   );

@@ -53,7 +53,7 @@ function CommentItem({
     <div className="flex gap-3 py-3">
       {/* Avatar */}
       <Link href={`/u/${comment.user_handle}`} className="shrink-0">
-        <div className="h-8 w-8 rounded-full overflow-hidden bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
           {comment.user_avatar_url ? (
             <img src={comment.user_avatar_url} alt={displayName} className="h-full w-full object-cover" />
           ) : (
@@ -75,7 +75,7 @@ function CommentItem({
           <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
         </div>
         
-        <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{comment.content}</p>
+        <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">{comment.content}</p>
 
         {/* Actions */}
         <div className="flex items-center gap-4 mt-2">
@@ -159,12 +159,12 @@ export function CommentSection({
   }
 
   return (
-    <div className="border-t border-gray-200 bg-gray-50 p-4">
+    <div className="border-t border-gray-200 bg-[#f8fafc] p-4">
       {/* Comment Input */}
       <form onSubmit={handleSubmitComment} className="mb-4">
         <div className="flex gap-3">
           <div className="shrink-0">
-            <div className="h-8 w-8 rounded-full overflow-hidden bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
               {currentUserAvatar ? (
                 <img src={currentUserAvatar} alt="You" className="h-full w-full object-cover" />
               ) : (
@@ -180,7 +180,7 @@ export function CommentSection({
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a comment..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#001f98] focus:border-transparent resize-none text-sm"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 focus:border-[#001f98] resize-none text-sm transition-all"
               rows={2}
               disabled={submitting}
             />
@@ -189,7 +189,7 @@ export function CommentSection({
               <button
                 type="submit"
                 disabled={!newComment.trim() || submitting}
-                className="px-4 py-2 bg-[#001f98] text-white rounded-lg text-sm font-medium hover:bg-[#001670] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#001f98] text-white rounded-full text-sm font-medium shadow-lg shadow-[#001f98]/25 hover:bg-[#001670] hover:shadow-[#001f98]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "Posting..." : "Comment"}
               </button>

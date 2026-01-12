@@ -45,12 +45,12 @@ function pageTitle(pathname: string) {
 
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-[#f8fafc] via-white to-[#f8fafc]">
       {/* Skeleton navigation bar */}
       <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-xl shadow-sm">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           {/* Logo skeleton */}
-          <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-10 w-32 bg-[#e6eaff] rounded-lg animate-pulse" />
           
           {/* Navigation items skeleton */}
           <div className="flex gap-6">
@@ -61,7 +61,7 @@ function LoadingSkeleton() {
           </div>
           
           {/* User menu skeleton */}
-          <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse" />
+          <div className="h-10 w-10 bg-[#e6eaff] rounded-full animate-pulse" />
         </div>
       </div>
       
@@ -72,13 +72,13 @@ function LoadingSkeleton() {
           <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
           
           {/* Composer skeleton */}
-          <div className="h-32 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse" />
+          <div className="h-32 bg-[#f8fafc] rounded-2xl border border-gray-200 animate-pulse" />
           
           {/* Feed items skeleton */}
           <div className="space-y-4">
-            <div className="h-64 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse" />
-            <div className="h-64 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse" />
-            <div className="h-64 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse" />
+            <div className="h-64 bg-[#f8fafc] rounded-2xl border border-gray-200 animate-pulse" />
+            <div className="h-64 bg-[#f8fafc] rounded-2xl border border-gray-200 animate-pulse" />
+            <div className="h-64 bg-[#f8fafc] rounded-2xl border border-gray-200 animate-pulse" />
           </div>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const title = useMemo(() => pageTitle(pathname), [pathname]);
   
   // Check if we're on pages that use the new layout - if so, render without the sidebar layout
-  const usesNewLayout = pathname === "/app" || pathname === "/onboarding" || pathname === "/profile" || pathname === "/account" || pathname === "/agent" || pathname === "/my-agents" || pathname === "/my-avees" || pathname === "/network" || pathname === "/notifications" || pathname === "/messages" || pathname === "/backoffice" || pathname.startsWith("/app/") || pathname.startsWith("/onboarding/") || pathname.startsWith("/profile/") || pathname.startsWith("/account/") || pathname.startsWith("/agent/") || pathname.startsWith("/my-agents/") || pathname.startsWith("/my-avees/") || pathname.startsWith("/network/") || pathname.startsWith("/notifications/") || pathname.startsWith("/messages/") || pathname.startsWith("/backoffice/") || pathname.startsWith("/u/") || pathname.startsWith("/feed");
+  const usesNewLayout = pathname === "/app" || pathname === "/appv2" || pathname === "/onboarding" || pathname === "/profile" || pathname === "/account" || pathname === "/agent" || pathname === "/my-agents" || pathname === "/my-avees" || pathname === "/network" || pathname === "/notifications" || pathname === "/messages" || pathname === "/backoffice" || pathname.startsWith("/app/") || pathname.startsWith("/appv2/") || pathname.startsWith("/onboarding/") || pathname.startsWith("/profile/") || pathname.startsWith("/account/") || pathname.startsWith("/agent/") || pathname.startsWith("/my-agents/") || pathname.startsWith("/my-avees/") || pathname.startsWith("/network/") || pathname.startsWith("/notifications/") || pathname.startsWith("/messages/") || pathname.startsWith("/backoffice/") || pathname.startsWith("/u/") || pathname.startsWith("/feed");
 
   // Handle auth redirect in useEffect to avoid render-time side effects
   useEffect(() => {

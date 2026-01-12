@@ -796,7 +796,7 @@ export default function AgentEditorPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3 text-[#2E3A59]">
+        <div className="flex items-center gap-3 text-[#001f98]">
           <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -814,11 +814,11 @@ export default function AgentEditorPage() {
           <svg className="mx-auto h-12 w-12 text-red-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">Agent not found</h3>
-          <p className="text-sm text-[#2E3A59]/70 mb-6">The requested Agent could not be loaded.</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Agent not found</h3>
+          <p className="text-sm text-[#001f98]/70 mb-6">The requested Agent could not be loaded.</p>
           <Link
             href="/my-agents"
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
           >
             Back to My Agents
           </Link>
@@ -832,8 +832,8 @@ export default function AgentEditorPage() {
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="mb-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#0B0B0C]">Agent Editor</h1>
-          <p className="mt-2 text-sm sm:text-base text-[#2E3A59]/70">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Agent Editor</h1>
+          <p className="mt-2 text-sm sm:text-base text-[#001f98]/70">
             Configure <span className="font-semibold">@{handle}</span>
           </p>
         </div>
@@ -841,7 +841,7 @@ export default function AgentEditorPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/my-agents"
-            className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -852,7 +852,7 @@ export default function AgentEditorPage() {
           <ChatButton
             handle={handle}
             displayName={agent?.display_name || handle}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -862,7 +862,7 @@ export default function AgentEditorPage() {
           </ChatButton>
           <button
             onClick={load}
-            className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -917,8 +917,8 @@ export default function AgentEditorPage() {
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">🎙️ AI Profile Generation from Voice</h2>
-                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">🎙️ AI Profile Generation from Voice</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">
                   Record a 30-second intro and let AI create your persona
                 </p>
               </div>
@@ -928,7 +928,7 @@ export default function AgentEditorPage() {
               className="rounded-lg p-2 transition-colors hover:bg-white/50 shrink-0 ml-2"
             >
               <svg
-                className={`h-5 w-5 text-[#2E3A59] transition-transform ${
+                className={`h-5 w-5 text-[#001f98] transition-transform ${
                   showVoiceSection ? "rotate-180" : ""
                 }`}
                 fill="none"
@@ -948,8 +948,8 @@ export default function AgentEditorPage() {
                     <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z" />
                   </svg>
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-[#0B0B0C] mb-1">How it works:</div>
-                    <ol className="list-decimal list-inside space-y-1 text-[#2E3A59]/80">
+                    <div className="font-semibold text-gray-900 mb-1">How it works:</div>
+                    <ol className="list-decimal list-inside space-y-1 text-[#001f98]/80">
                       <li>Record a 30-second voice introduction talking about yourself</li>
                       <li>AI (GPT-4o) transcribes your speech using Whisper</li>
                       <li>AI generates a persona, bio, and display name based on your intro</li>
@@ -974,8 +974,8 @@ export default function AgentEditorPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Generating your profile...</div>
-                    <div className="text-xs sm:text-sm text-[#2E3A59]/70 mt-1">
+                    <div className="text-sm sm:text-base font-semibold text-gray-900">Generating your profile...</div>
+                    <div className="text-xs sm:text-sm text-[#001f98]/70 mt-1">
                       Transcribing audio and analyzing your personality with GPT-4o
                     </div>
                   </div>
@@ -985,29 +985,29 @@ export default function AgentEditorPage() {
               {voiceGenerationResult && (
                 <div className="space-y-3 sm:space-y-4 rounded-lg border border-[#C8A24A]/30 bg-white p-4 sm:p-6">
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">📝 Transcript:</div>
-                    <div className="rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs sm:text-sm text-[#2E3A59]/80 italic break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">📝 Transcript:</div>
+                    <div className="rounded-lg bg-gray-200/50 p-2 sm:p-3 text-xs sm:text-sm text-[#001f98]/80 italic break-words">
                       "{voiceGenerationResult.transcript}"
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">🎭 Generated Persona:</div>
-                    <div className="max-h-32 sm:max-h-40 overflow-y-auto rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs font-mono text-[#2E3A59]/80 break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">🎭 Generated Persona:</div>
+                    <div className="max-h-32 sm:max-h-40 overflow-y-auto rounded-lg bg-gray-200/50 p-2 sm:p-3 text-xs font-mono text-[#001f98]/80 break-words">
                       {voiceGenerationResult.persona}
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">📋 Generated Bio:</div>
-                    <div className="rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs sm:text-sm text-[#2E3A59]/80 break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">📋 Generated Bio:</div>
+                    <div className="rounded-lg bg-gray-200/50 p-2 sm:p-3 text-xs sm:text-sm text-[#001f98]/80 break-words">
                       {voiceGenerationResult.bio}
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">✨ Display Name:</div>
-                    <div className="rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs sm:text-sm text-[#2E3A59]/80 break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">✨ Display Name:</div>
+                    <div className="rounded-lg bg-gray-200/50 p-2 sm:p-3 text-xs sm:text-sm text-[#001f98]/80 break-words">
                       {voiceGenerationResult.display_name}
                     </div>
                   </div>
@@ -1027,7 +1027,7 @@ export default function AgentEditorPage() {
                         setVoiceGenerationResult(null);
                         setShowVoiceSection(false);
                       }}
-                      className="rounded-lg border border-[#E6E6E6] px-4 sm:px-6 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      className="rounded-lg border border-gray-200 px-4 sm:px-6 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                     >
                       Discard
                     </button>
@@ -1039,10 +1039,10 @@ export default function AgentEditorPage() {
         </div>
 
         {/* Agent Details Card */}
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-white px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Agent Details</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Basic information and appearance</p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#001f98]/5 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Agent Details</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Basic information and appearance</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
@@ -1057,8 +1057,8 @@ export default function AgentEditorPage() {
                   className={[
                     "group relative aspect-square cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-all",
                     dragging
-                      ? "border-[#2E3A59] bg-[#2E3A59]/5"
-                      : "border-[#E6E6E6] bg-[#E6E6E6]/50 hover:border-[#2E3A59] hover:bg-[#2E3A59]/5",
+                      ? "border-[#001f98] bg-[#001f98]/5"
+                      : "border-gray-200 bg-gray-200/50 hover:border-[#001f98] hover:bg-[#001f98]/5",
                     uploadingAvatar ? "pointer-events-none opacity-60" : "",
                   ].join(" ")}
                 >
@@ -1081,19 +1081,19 @@ export default function AgentEditorPage() {
                     <div className="flex h-full flex-col items-center justify-center p-4 text-center">
                       {uploadingAvatar ? (
                         <>
-                          <svg className="h-8 w-8 animate-spin text-[#2E3A59] mb-2" viewBox="0 0 24 24">
+                          <svg className="h-8 w-8 animate-spin text-[#001f98] mb-2" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
-                          <p className="text-sm text-[#2E3A59]/70">Uploading...</p>
+                          <p className="text-sm text-[#001f98]/70">Uploading...</p>
                         </>
                       ) : (
                         <>
-                          <svg className="h-12 w-12 text-[#2E3A59]/50 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-12 w-12 text-[#001f98]/50 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <p className="text-sm font-semibold text-[#0B0B0C] mb-1">Drop image here</p>
-                          <p className="text-xs text-[#2E3A59]/70">or click to browse</p>
+                          <p className="text-sm font-semibold text-gray-900 mb-1">Drop image here</p>
+                          <p className="text-xs text-[#001f98]/70">or click to browse</p>
                         </>
                       )}
                     </div>
@@ -1111,21 +1111,21 @@ export default function AgentEditorPage() {
               {/* Form Fields */}
               <div className="lg:col-span-2 space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Handle</label>
-                  <div className="rounded-lg border border-[#E6E6E6] bg-[#E6E6E6]/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#2E3A59]/70 font-mono break-all">
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">Handle</label>
+                  <div className="rounded-lg border border-gray-200 bg-gray-200/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#001f98]/70 font-mono break-all">
                     @{agent.handle}
                   </div>
-                  <p className="mt-1 text-xs text-[#2E3A59]/70">Handle cannot be changed</p>
+                  <p className="mt-1 text-xs text-[#001f98]/70">Handle cannot be changed</p>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">
                     Display Name
-                    <span className="ml-2 text-xs font-normal text-[#2E3A59]/70">(max 100 chars)</span>
+                    <span className="ml-2 text-xs font-normal text-[#001f98]/70">(max 100 chars)</span>
                   </label>
                   <input
                     type="text"
-                    className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={displayName}
                     onChange={(e) => {
                       setDisplayName(e.target.value);
@@ -1137,12 +1137,12 @@ export default function AgentEditorPage() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">
                     Bio
-                    <span className="ml-2 text-xs font-normal text-[#2E3A59]/70">(max 500 chars)</span>
+                    <span className="ml-2 text-xs font-normal text-[#001f98]/70">(max 500 chars)</span>
                   </label>
                   <textarea
-                    className="h-24 w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="h-24 w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={bio}
                     onChange={(e) => {
                       setBio(e.target.value);
@@ -1151,7 +1151,7 @@ export default function AgentEditorPage() {
                     placeholder="A brief description of this Agent..."
                     maxLength={500}
                   />
-                  <p className="mt-1 text-xs text-[#2E3A59]/70">{bio.length}/500 characters</p>
+                  <p className="mt-1 text-xs text-[#001f98]/70">{bio.length}/500 characters</p>
                 </div>
               </div>
             </div>
@@ -1160,7 +1160,7 @@ export default function AgentEditorPage() {
               <div className={`mt-4 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${
                 detailsMsg.includes("success") || detailsMsg.includes("saved")
                   ? "bg-green-50 text-green-800 border border-green-200"
-                  : "bg-[#2E3A59]/5 text-[#2E3A59] border border-[#2E3A59]/20"
+                  : "bg-[#001f98]/5 text-[#001f98] border border-[#001f98]/20"
               }`}>
                 {detailsMsg}
               </div>
@@ -1170,7 +1170,7 @@ export default function AgentEditorPage() {
               <button
                 onClick={onSaveDetails}
                 disabled={detailsSaving || uploadingAvatar}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-4 sm:px-6 py-2 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {detailsSaving ? (
                   <>
@@ -1306,8 +1306,8 @@ export default function AgentEditorPage() {
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">🎨 Branding Guidelines</h2>
-                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">🎨 Branding Guidelines</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">
                   Colors, fonts, and visual style for AI-generated images
                   {brandingGuidelines && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
                     <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
@@ -1323,7 +1323,7 @@ export default function AgentEditorPage() {
               className="rounded-lg p-2 transition-colors hover:bg-amber-100 shrink-0 ml-2"
             >
               <svg
-                className={`h-5 w-5 text-[#2E3A59] transition-transform ${showBrandingSection ? "rotate-180" : ""}`}
+                className={`h-5 w-5 text-[#001f98] transition-transform ${showBrandingSection ? "rotate-180" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -1357,12 +1357,12 @@ export default function AgentEditorPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                <label className="mb-2 block text-sm font-semibold text-gray-900">
                   Visual Guidelines
-                  <span className="ml-2 text-xs font-normal text-[#2E3A59]/70">(max 5,000 chars)</span>
+                  <span className="ml-2 text-xs font-normal text-[#001f98]/70">(max 5,000 chars)</span>
                 </label>
                 <textarea
-                  className="h-40 w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#C8A24A] focus:outline-none focus:ring-2 focus:ring-[#C8A24A]/20 font-mono"
+                  className="h-40 w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-[#C8A24A] focus:outline-none focus:ring-2 focus:ring-[#C8A24A]/20 font-mono"
                   value={brandingGuidelines}
                   onChange={(e) => {
                     setBrandingGuidelines(e.target.value);
@@ -1371,7 +1371,7 @@ export default function AgentEditorPage() {
                   placeholder="Colors: #hexcode (description)&#10;Fonts: Font style preferences&#10;Style: Visual style keywords&#10;Mood: Emotional tone of images"
                   maxLength={5000}
                 />
-                <p className="mt-1 text-xs text-[#2E3A59]/70">{brandingGuidelines.length}/5,000 characters</p>
+                <p className="mt-1 text-xs text-[#001f98]/70">{brandingGuidelines.length}/5,000 characters</p>
               </div>
 
               {brandingMsg && (
@@ -1385,7 +1385,7 @@ export default function AgentEditorPage() {
               )}
 
               <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="text-xs text-[#2E3A59]/70">
+                <div className="text-xs text-[#001f98]/70">
                   Used in DALL-E 3 and GPT-Image-1 prompts for autopost images.
                 </div>
                 <button
@@ -1425,8 +1425,8 @@ export default function AgentEditorPage() {
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Logo Watermark</h2>
-                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">Logo Watermark</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">
                   Add your logo to autopost images
                   {logoEnabled && logoUrl && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
                     <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
@@ -1442,7 +1442,7 @@ export default function AgentEditorPage() {
               className="rounded-lg p-2 transition-colors hover:bg-purple-100 shrink-0 ml-2"
             >
               <svg
-                className={`h-5 w-5 text-[#2E3A59] transition-transform ${showLogoSection ? "rotate-180" : ""}`}
+                className={`h-5 w-5 text-[#001f98] transition-transform ${showLogoSection ? "rotate-180" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -1487,9 +1487,9 @@ export default function AgentEditorPage() {
               {/* Logo Upload Section */}
               <div className={`space-y-4 ${!logoEnabled ? "opacity-50 pointer-events-none" : ""}`}>
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">
                     Logo Image
-                    <span className="ml-2 text-xs font-normal text-[#2E3A59]/70">(PNG with transparency)</span>
+                    <span className="ml-2 text-xs font-normal text-[#001f98]/70">(PNG with transparency)</span>
                   </label>
                   
                   {logoUrl ? (
@@ -1566,14 +1566,14 @@ export default function AgentEditorPage() {
                 {/* Position & Size Settings */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Position</label>
+                    <label className="mb-2 block text-sm font-semibold text-gray-900">Position</label>
                     <select
                       value={logoPosition}
                       onChange={(e) => {
                         setLogoPosition(e.target.value as typeof logoPosition);
                         setLogoMsg(null);
                       }}
-                      className="w-full rounded-lg border border-[#E6E6E6] px-3 py-2 text-sm text-[#0B0B0C] transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                     >
                       <option value="bottom-right">Bottom Right</option>
                       <option value="bottom-left">Bottom Left</option>
@@ -1583,7 +1583,7 @@ export default function AgentEditorPage() {
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Size</label>
+                    <label className="mb-2 block text-sm font-semibold text-gray-900">Size</label>
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-3">
                         <input
@@ -1638,7 +1638,7 @@ export default function AgentEditorPage() {
               )}
 
               <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="text-xs text-[#2E3A59]/70">
+                <div className="text-xs text-[#001f98]/70">
                   Logo will be overlaid on images generated during autopost.
                 </div>
                 <button
@@ -1842,7 +1842,7 @@ export default function AgentEditorPage() {
         </div>
 
         {/* Reference Images for AutoPost (OpenAI Image Edits) */}
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="flex items-start sm:items-center justify-between border-b border-gray-200 bg-gray-50 px-4 sm:px-6 py-4">
             <div className="flex items-start sm:items-center gap-3">
               <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-purple-600 shrink-0">
@@ -1851,8 +1851,8 @@ export default function AgentEditorPage() {
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">📸 Reference Images for AutoPost</h2>
-                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">📸 Reference Images for AutoPost</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">
                   Upload images for OpenAI Image Edits mode
                   {referenceImageUrl && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
                     <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
@@ -1868,7 +1868,7 @@ export default function AgentEditorPage() {
               className="rounded-lg p-2 transition-colors hover:bg-gray-200 shrink-0 ml-2"
             >
               <svg
-                className={`h-5 w-5 text-[#2E3A59] transition-transform ${showReferenceSection ? "rotate-180" : ""}`}
+                className={`h-5 w-5 text-[#001f98] transition-transform ${showReferenceSection ? "rotate-180" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -1902,10 +1902,10 @@ export default function AgentEditorPage() {
         )}
 
         {/* Training Data Card */}
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-white px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Training Data</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Add knowledge and context for this Agent</p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#001f98]/5 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Training Data</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Add knowledge and context for this Agent</p>
           </div>
           <div className="p-4 sm:p-6">
             {/* Tab Selection */}
@@ -1914,7 +1914,7 @@ export default function AgentEditorPage() {
                 onClick={() => setTrainingMode("text")}
                 className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                   trainingMode === "text"
-                    ? "bg-[#2E3A59] text-white"
+                    ? "bg-[#001f98] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -1924,7 +1924,7 @@ export default function AgentEditorPage() {
                 onClick={() => setTrainingMode("file")}
                 className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                   trainingMode === "file"
-                    ? "bg-[#2E3A59] text-white"
+                    ? "bg-[#001f98] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -1934,7 +1934,7 @@ export default function AgentEditorPage() {
                 onClick={() => setTrainingMode("url")}
                 className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                   trainingMode === "url"
-                    ? "bg-[#2E3A59] text-white"
+                    ? "bg-[#001f98] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -1945,9 +1945,9 @@ export default function AgentEditorPage() {
             {/* Common: Layer and Title */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-4">
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Layer</label>
                 <select
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={trainLayer}
                   onChange={(e) => setTrainLayer(e.target.value as any)}
                 >
@@ -1958,9 +1958,9 @@ export default function AgentEditorPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Title (optional)</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Title (optional)</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={trainTitle}
                   onChange={(e) => setTrainTitle(e.target.value)}
                   placeholder="e.g., Bio, FAQ, Memories"
@@ -1972,9 +1972,9 @@ export default function AgentEditorPage() {
             {trainingMode === "text" && (
               <>
                 <div className="sm:col-span-3 mb-4">
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Source (optional)</label>
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">Source (optional)</label>
                   <input
-                    className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={trainSource}
                     onChange={(e) => setTrainSource(e.target.value)}
                     placeholder="e.g., LinkedIn, website, notes"
@@ -1982,9 +1982,9 @@ export default function AgentEditorPage() {
                 </div>
 
                 <div className="sm:col-span-3 mb-4">
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Content</label>
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">Content</label>
                   <textarea
-                    className="h-32 sm:h-40 w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="h-32 sm:h-40 w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={trainContent}
                     onChange={(e) => setTrainContent(e.target.value)}
                     placeholder="Paste training content here..."
@@ -1994,7 +1994,7 @@ export default function AgentEditorPage() {
                 <button
                   onClick={onAddDoc}
                   disabled={training}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {training ? (
                     <>
@@ -2020,7 +2020,7 @@ export default function AgentEditorPage() {
             {trainingMode === "file" && (
               <>
                 <div className="mb-4">
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">
                     Upload File
                   </label>
                   <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
@@ -2039,7 +2039,7 @@ export default function AgentEditorPage() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingFile}
-                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {uploadingFile ? (
                         <>
@@ -2074,10 +2074,10 @@ export default function AgentEditorPage() {
             {trainingMode === "url" && (
               <>
                 <div className="mb-4">
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">URL</label>
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">URL</label>
                   <input
                     type="url"
-                    className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={extractUrl}
                     onChange={(e) => setExtractUrl(e.target.value)}
                     placeholder="https://example.com/article"
@@ -2087,7 +2087,7 @@ export default function AgentEditorPage() {
                 <button
                   onClick={handleExtractFromUrl}
                   disabled={extractingUrl || !extractUrl.trim()}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {extractingUrl ? (
                     <>
@@ -2143,17 +2143,17 @@ export default function AgentEditorPage() {
         </div>
 
         {/* Permissions Card */}
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#C8A24A]/10 to-white px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Permissions</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Control who can access different layers</p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#C8A24A]/10 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Permissions</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Control who can access different layers</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Viewer Handle</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Viewer Handle</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={viewerHandle}
                   onChange={(e) => setViewerHandle(e.target.value)}
                   placeholder="e.g., john-doe"
@@ -2161,9 +2161,9 @@ export default function AgentEditorPage() {
               </div>
 
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Max Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Max Layer</label>
                 <select
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={maxLayer}
                   onChange={(e) => setMaxLayer(e.target.value as any)}
                 >
@@ -2202,17 +2202,17 @@ export default function AgentEditorPage() {
         </div>
 
         {/* Test Card */}
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-white px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Test Agent</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Ask questions to test responses</p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#001f98]/5 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Test Agent</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Ask questions to test responses</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Layer</label>
                 <select
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={testLayer}
                   onChange={(e) => setTestLayer(e.target.value as any)}
                 >
@@ -2223,9 +2223,9 @@ export default function AgentEditorPage() {
               </div>
 
               <div className="sm:col-span-3">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Question</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Question</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Ask something..."
@@ -2237,7 +2237,7 @@ export default function AgentEditorPage() {
               <button
                 onClick={onAsk}
                 disabled={asking}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {asking ? (
                   <>
@@ -2261,7 +2261,7 @@ export default function AgentEditorPage() {
                 <button
                   type="button"
                   onClick={() => setAnswer(null)}
-                  className="rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                 >
                   Clear
                 </button>
@@ -2269,7 +2269,7 @@ export default function AgentEditorPage() {
             </div>
 
             {answer && (
-              <div className="mt-4 rounded-lg border border-[#E6E6E6] bg-[#E6E6E6]/50 p-3 sm:p-4 text-xs sm:text-sm text-[#0B0B0C] whitespace-pre-wrap break-words">
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-200/50 p-3 sm:p-4 text-xs sm:text-sm text-gray-900 whitespace-pre-wrap break-words">
                 {answer}
               </div>
             )}

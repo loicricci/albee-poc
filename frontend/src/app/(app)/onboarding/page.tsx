@@ -165,13 +165,13 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-[#0B0B0C] dark:via-[#0F0F10] dark:to-[#0B0B0C]">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-gray-900 dark:via-[#0F0F10] dark:to-gray-900">
         <div className="text-center">
-          <svg className="h-12 w-12 animate-spin text-[#2E3A59] dark:text-white mx-auto mb-4" viewBox="0 0 24 24">
+          <svg className="h-12 w-12 animate-spin text-[#001f98] dark:text-white mx-auto mb-4" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
-          <p className="text-[#2E3A59]/70 dark:text-zinc-400">Loading...</p>
+          <p className="text-[#001f98]/70 dark:text-zinc-400">Loading...</p>
         </div>
       </div>
     );
@@ -179,16 +179,16 @@ export default function OnboardingPage() {
 
   if (completing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-[#0B0B0C] dark:via-[#0F0F10] dark:to-[#0B0B0C]">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-gray-900 dark:via-[#0F0F10] dark:to-gray-900">
         <div className="text-center max-w-md px-4">
-          <svg className="h-12 w-12 animate-spin text-[#2E3A59] dark:text-white mx-auto mb-4" viewBox="0 0 24 24">
+          <svg className="h-12 w-12 animate-spin text-[#001f98] dark:text-white mx-auto mb-4" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
-          <h2 className="text-xl font-bold text-[#0B0B0C] dark:text-white mb-2">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             Creating your profile...
           </h2>
-          <p className="text-[#2E3A59]/70 dark:text-zinc-400">
+          <p className="text-[#001f98]/70 dark:text-zinc-400">
             Setting up your account and digital twin
           </p>
         </div>
@@ -197,7 +197,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-[#0B0B0C] dark:via-[#0F0F10] dark:to-[#0B0B0C] px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-gray-900 dark:via-[#0F0F10] dark:to-gray-900 px-4 py-12">
       <div className="w-full">
         {error && (
           <div className="max-w-2xl mx-auto mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">

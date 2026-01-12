@@ -906,6 +906,73 @@ def list_conversations(
     return result_data
 
 
+@router.get("/unread-count")
+def get_unread_messages_count(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Get total count of unread messages across all conversations.
+    Returns the sum of unread messages from all conversations where user is a participant.
+    """
+    user_uuid = _parse_uuid(user_id, "user_id")
+    
+    # Get all conversations for this user
+    conversations = (
+        db.query(DirectConversation)
+        .filter(
+            or_(
+                DirectConversation.participant1_user_id == user_uuid,
+                DirectConversation.participant2_user_id == user_uuid,
+            )
+        )
+        .all()
+    )
+    
+    if not conversations:
+        return {"unread_count": 0}
+    
+    # Build arrays for each participant type
+    participant1_conv_ids = [str(c.id) for c in conversations if c.participant1_user_id == user_uuid]
+    participant2_conv_ids = [str(c.id) for c in conversations if c.participant2_user_id == user_uuid]
+    
+    total_unread = 0
+    
+    # Count unread for participant1 conversations
+    if participant1_conv_ids:
+        conv_ids_str = ",".join([f"'{cid}'" for cid in participant1_conv_ids])
+        result1 = db.execute(
+            text(f"""
+                SELECT COUNT(*) as unread_count
+                FROM direct_messages
+                WHERE conversation_id IN ({conv_ids_str})
+                  AND read_by_participant1 = 'false'
+                  AND sender_user_id != :user_id
+            """),
+            {"user_id": str(user_uuid)}
+        ).fetchone()
+        if result1:
+            total_unread += result1[0]
+    
+    # Count unread for participant2 conversations
+    if participant2_conv_ids:
+        conv_ids_str = ",".join([f"'{cid}'" for cid in participant2_conv_ids])
+        result2 = db.execute(
+            text(f"""
+                SELECT COUNT(*) as unread_count
+                FROM direct_messages
+                WHERE conversation_id IN ({conv_ids_str})
+                  AND read_by_participant2 = 'false'
+                  AND sender_user_id != :user_id
+            """),
+            {"user_id": str(user_uuid)}
+        ).fetchone()
+        if result2:
+            total_unread += result2[0]
+    
+    return {"unread_count": total_unread}
+
+
 @router.post("/conversations")
 def start_or_get_conversation(
     payload: StartConversationRequest,

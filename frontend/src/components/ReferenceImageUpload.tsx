@@ -512,7 +512,7 @@ export function ReferenceImageUpload({
         <button
           onClick={handleUpload}
           disabled={!selectedReferenceFile || uploading}
-          className="w-full rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#001670] px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {uploading ? "Uploading..." : "Upload Reference Image"}
         </button>

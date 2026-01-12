@@ -686,7 +686,7 @@ function ProfileContent() {
       </div>
 
       {/* Skeleton Form */}
-      <div className="rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="space-y-6 p-6">
           {/* Avatar skeleton */}
           <div className="animate-pulse">
@@ -697,7 +697,7 @@ function ProfileContent() {
             </div>
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Username skeleton */}
           <div className="animate-pulse">
@@ -722,7 +722,7 @@ function ProfileContent() {
         </div>
 
         {/* Footer skeleton */}
-        <div className="flex items-center justify-between border-t border-[#E6E6E6] bg-[#FAFAFA] px-6 py-4 rounded-b-2xl animate-pulse">
+        <div className="flex items-center justify-between border-t border-gray-200 bg-[#f8fafc] px-6 py-4 rounded-b-2xl animate-pulse">
           <div className="h-4 w-40 bg-gray-200 rounded"></div>
           <div className="h-11 w-36 bg-gray-300 rounded-lg"></div>
         </div>
@@ -736,10 +736,10 @@ function ProfileContent() {
     <div className="mx-auto max-w-3xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#0B0B0C]">
+        <h1 className="text-3xl font-bold text-gray-900">
           {form.is_admin ? "Profile Settings" : "My Profile & Agent"}
         </h1>
-        <p className="mt-2 text-[#2E3A59]/70">
+        <p className="mt-2 text-[#001f98]/70">
           {!form.is_admin
             ? hasProfile 
               ? "Manage your profile and AI agent settings"
@@ -778,9 +778,9 @@ function ProfileContent() {
       )}
 
       {/* Form */}
-      <div className="rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         {/* Banner Upload Section */}
-        <div className="relative h-48 bg-gradient-to-r from-[#2E3A59] to-[#1a2236] rounded-t-2xl overflow-hidden">
+        <div className="relative h-48 bg-gradient-to-r from-[#001f98] to-[#001670] rounded-t-2xl overflow-hidden">
           {form.banner_url ? (
             <img src={form.banner_url} alt="Banner" className="h-full w-full object-cover" />
           ) : (
@@ -856,14 +856,14 @@ function ProfileContent() {
         <div className="space-y-6 p-6">
           {/* Avatar */}
           <div>
-            <label className="mb-3 block text-sm font-semibold text-[#0B0B0C]">Profile Picture</label>
+            <label className="mb-3 block text-sm font-semibold text-gray-900">Profile Picture</label>
             <div className="flex items-start gap-6">
               <div className="relative">
-                <div className="h-24 w-24 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#FAFAFA] to-[#E6E6E6] flex items-center justify-center shadow-sm">
+                <div className="h-24 w-24 overflow-hidden rounded-xl border-2 border-gray-200 bg-gradient-to-br from-[#f8fafc] to-gray-200 flex items-center justify-center shadow-sm">
                   {form.avatar_url ? (
                     <img src={form.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
                   ) : (
-                    <svg className="h-12 w-12 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-12 w-12 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   )}
@@ -881,7 +881,7 @@ function ProfileContent() {
               <label
                 className={[
                   "flex-1 cursor-pointer rounded-lg border-2 border-dashed p-6 transition-all",
-                  dragging ? "border-[#2E3A59] bg-[#2E3A59]/5" : "border-[#E6E6E6] bg-[#FAFAFA] hover:border-[#2E3A59] hover:bg-[#2E3A59]/5",
+                  dragging ? "border-[#001f98] bg-[#001f98]/5" : "border-gray-200 bg-[#f8fafc] hover:border-[#001f98] hover:bg-[#001f98]/5",
                   uploadingAvatar ? "opacity-60 cursor-not-allowed" : "",
                 ].join(" ")}
                 onDragEnter={(e) => {
@@ -918,27 +918,27 @@ function ProfileContent() {
                   }}
                 />
                 <div className="text-center">
-                  <svg className="mx-auto h-10 w-10 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="mx-auto h-10 w-10 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <div className="mt-2 text-sm font-medium text-[#0B0B0C]">
+                  <div className="mt-2 text-sm font-medium text-gray-900">
                     {uploadingAvatar ? "Uploading..." : "Drop image here, or click to upload"}
                   </div>
-                  <div className="mt-1 text-xs text-[#2E3A59]/70">PNG, JPG, WEBP up to 5MB</div>
+                  <div className="mt-1 text-xs text-[#001f98]/70">PNG, JPG, WEBP up to 5MB</div>
                 </div>
               </label>
             </div>
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Handle */}
           <div>
-            <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+            <label className="mb-2 block text-sm font-semibold text-gray-900">
               Username <span className="text-red-500">*</span>
             </label>
             <input
-              className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
               value={form.handle || ""}
               onChange={(e) => setForm((f) => ({ ...f, handle: e.target.value }))}
               onBlur={() => setForm((f) => ({ ...f, handle: normalizeHandle(f.handle || "") }))}
@@ -958,61 +958,61 @@ function ProfileContent() {
                   <svg className="h-4 w-4 shrink-0 text-green-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="text-[#2E3A59]/70">
-                    Your profile will be accessible at <span className="font-medium text-[#0B0B0C]">@{normalizedHandle}</span>
+                  <span className="text-[#001f98]/70">
+                    Your profile will be accessible at <span className="font-medium text-gray-900">@{normalizedHandle}</span>
                   </span>
                 </>
               ) : (
-                <span className="text-[#2E3A59]/70">Lowercase letters, numbers, dashes and underscores only</span>
+                <span className="text-[#001f98]/70">Lowercase letters, numbers, dashes and underscores only</span>
               )}
             </div>
           </div>
 
           {/* Display name */}
           <div>
-            <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Display Name</label>
+            <label className="mb-2 block text-sm font-semibold text-gray-900">Display Name</label>
             <input
-              className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
               value={form.display_name || ""}
               onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
               placeholder="John Doe"
               disabled={uploadingAvatar}
             />
-            <div className="mt-2 text-xs text-[#2E3A59]/70">Your full name or display name</div>
+            <div className="mt-2 text-xs text-[#001f98]/70">Your full name or display name</div>
           </div>
 
           {/* Bio */}
           <div>
-            <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Bio</label>
+            <label className="mb-2 block text-sm font-semibold text-gray-900">Bio</label>
             <textarea
-              className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
               rows={4}
               value={form.bio || ""}
               onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
               placeholder="Tell us about yourself..."
               disabled={uploadingAvatar}
             />
-            <div className="mt-2 text-xs text-[#2E3A59]/70">
+            <div className="mt-2 text-xs text-[#001f98]/70">
               {form.bio?.length || 0} / 500 characters
             </div>
           </div>
 
           {/* Import from Agent - Only for non-admin users with an agent */}
           {!form.is_admin && form.agent_id && (
-            <div className="rounded-lg border-2 border-dashed border-[#2E3A59]/30 bg-[#2E3A59]/5 p-4">
+            <div className="rounded-lg border-2 border-dashed border-[#001f98]/30 bg-[#001f98]/5 p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-[#0B0B0C] mb-1 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
                     🤖 Quick Import from Agent
                   </h3>
-                  <p className="text-xs text-[#2E3A59]/70">
+                  <p className="text-xs text-[#001f98]/70">
                     Copy your agent&apos;s display name, bio, avatar, and persona to your profile
                   </p>
                 </div>
                 <button
                   onClick={importFromAgent}
                   disabled={uploadingAvatar || uploadingBanner}
-                  className="shrink-0 flex items-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="shrink-0 flex items-center gap-2 rounded-lg bg-[#001f98] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#001670] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1026,25 +1026,25 @@ function ProfileContent() {
           {/* Persona Section - Only for non-admin users */}
           {!form.is_admin && (
             <>
-              <div className="border-t border-[#E6E6E6]"></div>
+              <div className="border-t border-gray-200"></div>
               <div>
                 <div className="mb-3">
-                  <h2 className="text-lg font-semibold text-[#0B0B0C] flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     🎭 AI Persona
                   </h2>
-                  <p className="text-xs text-[#2E3A59]/70 mt-1">
+                  <p className="text-xs text-[#001f98]/70 mt-1">
                     Define your AI agent&apos;s personality, tone, and behavior
                   </p>
                 </div>
                 <textarea
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 font-mono text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 font-mono text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   rows={8}
                   value={form.persona || ""}
                   onChange={(e) => setForm((f) => ({ ...f, persona: e.target.value }))}
                   placeholder="Example: You are a friendly and helpful assistant. You respond in a casual, conversational tone..."
                   disabled={uploadingAvatar}
                 />
-                <div className="mt-2 flex items-center justify-between text-xs text-[#2E3A59]/70">
+                <div className="mt-2 flex items-center justify-between text-xs text-[#001f98]/70">
                   <span>{form.persona?.length || 0} / 40,000 characters</span>
                   <span>This defines how your AI agent behaves in conversations</span>
                 </div>
@@ -1052,24 +1052,24 @@ function ProfileContent() {
             </>
           )}
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Personal Information Section */}
           <div>
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-[#0B0B0C] flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 👤 Personal Information
               </h2>
-              <p className="text-xs text-[#2E3A59]/70 mt-1">Basic personal details</p>
+              <p className="text-xs text-[#001f98]/70 mt-1">Basic personal details</p>
             </div>
             
             <div className="space-y-4">
               {/* Birthdate */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Date of Birth</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Date of Birth</label>
                 <input
                   type="date"
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.birthdate || ""}
                   onChange={(e) => setForm((f) => ({ ...f, birthdate: e.target.value }))}
                   disabled={uploadingAvatar}
@@ -1078,9 +1078,9 @@ function ProfileContent() {
 
               {/* Gender */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Gender</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Gender</label>
                 <select
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.gender || ""}
                   onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))}
                   disabled={uploadingAvatar}
@@ -1096,9 +1096,9 @@ function ProfileContent() {
 
               {/* Marital Status */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Marital Status</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Marital Status</label>
                 <select
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.marital_status || ""}
                   onChange={(e) => setForm((f) => ({ ...f, marital_status: e.target.value }))}
                   disabled={uploadingAvatar}
@@ -1115,9 +1115,9 @@ function ProfileContent() {
 
               {/* Nationality */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Nationality</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Nationality</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.nationality || ""}
                   onChange={(e) => setForm((f) => ({ ...f, nationality: e.target.value }))}
                   placeholder="e.g., American, French, etc."
@@ -1127,37 +1127,37 @@ function ProfileContent() {
 
               {/* Languages */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Languages</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Languages</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.languages || ""}
                   onChange={(e) => setForm((f) => ({ ...f, languages: e.target.value }))}
                   placeholder="e.g., English, French, Spanish"
                   disabled={uploadingAvatar}
                 />
-                <div className="mt-1 text-xs text-[#2E3A59]/70">Comma-separated list</div>
+                <div className="mt-1 text-xs text-[#001f98]/70">Comma-separated list</div>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Contact Information Section */}
           <div>
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-[#0B0B0C] flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 📞 Contact Information
               </h2>
-              <p className="text-xs text-[#2E3A59]/70 mt-1">How people can reach you</p>
+              <p className="text-xs text-[#001f98]/70 mt-1">How people can reach you</p>
             </div>
             
             <div className="space-y-4">
               {/* Phone */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Phone Number</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Phone Number</label>
                 <input
                   type="tel"
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.phone || ""}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                   placeholder="+1 (555) 123-4567"
@@ -1167,10 +1167,10 @@ function ProfileContent() {
 
               {/* Email */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Email</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Email</label>
                 <input
                   type="email"
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.email || ""}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   placeholder="john@example.com"
@@ -1180,10 +1180,10 @@ function ProfileContent() {
 
               {/* Website */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Website</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Website</label>
                 <input
                   type="url"
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.website || ""}
                   onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
                   placeholder="https://yourwebsite.com"
@@ -1193,23 +1193,23 @@ function ProfileContent() {
             </div>
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Professional Information Section */}
           <div>
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-[#0B0B0C] flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 💼 Professional Information
               </h2>
-              <p className="text-xs text-[#2E3A59]/70 mt-1">Your work and education</p>
+              <p className="text-xs text-[#001f98]/70 mt-1">Your work and education</p>
             </div>
             
             <div className="space-y-4">
               {/* Occupation */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Occupation</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Occupation</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.occupation || ""}
                   onChange={(e) => setForm((f) => ({ ...f, occupation: e.target.value }))}
                   placeholder="e.g., Software Engineer, Designer"
@@ -1219,9 +1219,9 @@ function ProfileContent() {
 
               {/* Company */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Company</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Company</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.company || ""}
                   onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
                   placeholder="e.g., ABC Corp"
@@ -1231,9 +1231,9 @@ function ProfileContent() {
 
               {/* Industry */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Industry</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Industry</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.industry || ""}
                   onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))}
                   placeholder="e.g., Technology, Healthcare"
@@ -1243,9 +1243,9 @@ function ProfileContent() {
 
               {/* Education */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Education</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Education</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.education || ""}
                   onChange={(e) => setForm((f) => ({ ...f, education: e.target.value }))}
                   placeholder="e.g., BS Computer Science, MIT"
@@ -1255,25 +1255,25 @@ function ProfileContent() {
             </div>
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Social Media Section */}
           <div>
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-[#0B0B0C] flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 🔗 Social Media
               </h2>
-              <p className="text-xs text-[#2E3A59]/70 mt-1">Connect your social profiles</p>
+              <p className="text-xs text-[#001f98]/70 mt-1">Connect your social profiles</p>
             </div>
             
             <div className="space-y-4">
               {/* Twitter */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Twitter / X</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Twitter / X</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#2E3A59]/70">@</span>
+                  <span className="text-[#001f98]/70">@</span>
                   <input
-                    className="flex-1 rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="flex-1 rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={form.twitter_handle || ""}
                     onChange={(e) => setForm((f) => ({ ...f, twitter_handle: e.target.value }))}
                     placeholder="username"
@@ -1284,10 +1284,10 @@ function ProfileContent() {
 
               {/* LinkedIn */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">LinkedIn</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">LinkedIn</label>
                 <input
                   type="url"
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.linkedin_url || ""}
                   onChange={(e) => setForm((f) => ({ ...f, linkedin_url: e.target.value }))}
                   placeholder="https://linkedin.com/in/username"
@@ -1297,11 +1297,11 @@ function ProfileContent() {
 
               {/* GitHub */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">GitHub</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">GitHub</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#2E3A59]/70">@</span>
+                  <span className="text-[#001f98]/70">@</span>
                   <input
-                    className="flex-1 rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="flex-1 rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={form.github_username || ""}
                     onChange={(e) => setForm((f) => ({ ...f, github_username: e.target.value }))}
                     placeholder="username"
@@ -1312,11 +1312,11 @@ function ProfileContent() {
 
               {/* Instagram */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">Instagram</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Instagram</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#2E3A59]/70">@</span>
+                  <span className="text-[#001f98]/70">@</span>
                   <input
-                    className="flex-1 rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="flex-1 rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={form.instagram_handle || ""}
                     onChange={(e) => setForm((f) => ({ ...f, instagram_handle: e.target.value }))}
                     placeholder="username"
@@ -1327,15 +1327,15 @@ function ProfileContent() {
             </div>
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Twitter OAuth Integration */}
           <div>
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-[#0B0B0C] flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 🐦 Twitter Integration
               </h2>
-              <p className="text-xs text-[#2E3A59]/70 mt-1">Connect your Twitter account to enable agent posting</p>
+              <p className="text-xs text-[#001f98]/70 mt-1">Connect your Twitter account to enable agent posting</p>
             </div>
             
             {twitterConfig?.connected ? (
@@ -1389,13 +1389,13 @@ function ProfileContent() {
             )}
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Interests Section */}
           <div>
-            <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Interests & Hobbies</label>
+            <label className="mb-2 block text-sm font-semibold text-gray-900">Interests & Hobbies</label>
             <textarea
-              className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
               rows={3}
               value={form.interests || ""}
               onChange={(e) => setForm((f) => ({ ...f, interests: e.target.value }))}
@@ -1404,62 +1404,62 @@ function ProfileContent() {
             />
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Location Section */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <label className="block text-sm font-semibold text-[#0B0B0C]">📍 Location</label>
-              <span className="text-xs text-[#2E3A59]/70">(For weather & location-based agents)</span>
+              <label className="block text-sm font-semibold text-gray-900">📍 Location</label>
+              <span className="text-xs text-[#001f98]/70">(For weather & location-based agents)</span>
             </div>
             
             <div className="space-y-4">
               {/* Location Name */}
               <div>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.location || ""}
                   onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
                   placeholder="e.g., Paris, France"
                   disabled={uploadingAvatar}
                 />
-                <div className="mt-1 text-xs text-[#2E3A59]/70">City or address</div>
+                <div className="mt-1 text-xs text-[#001f98]/70">City or address</div>
               </div>
 
               {/* Coordinates */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <input
-                    className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={form.latitude || ""}
                     onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))}
                     placeholder="Latitude (e.g., 48.8566)"
                     disabled={uploadingAvatar}
                   />
-                  <div className="mt-1 text-xs text-[#2E3A59]/70">Latitude</div>
+                  <div className="mt-1 text-xs text-[#001f98]/70">Latitude</div>
                 </div>
                 <div>
                   <input
-                    className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={form.longitude || ""}
                     onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))}
                     placeholder="Longitude (e.g., 2.3522)"
                     disabled={uploadingAvatar}
                   />
-                  <div className="mt-1 text-xs text-[#2E3A59]/70">Longitude</div>
+                  <div className="mt-1 text-xs text-[#001f98]/70">Longitude</div>
                 </div>
               </div>
 
               {/* Timezone */}
               <div>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={form.timezone || ""}
                   onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))}
                   placeholder="e.g., Europe/Paris (auto-detected if empty)"
                   disabled={uploadingAvatar}
                 />
-                <div className="mt-1 text-xs text-[#2E3A59]/70">
+                <div className="mt-1 text-xs text-[#001f98]/70">
                   Timezone (optional) • Current: {Intl.DateTimeFormat().resolvedOptions().timeZone}
                 </div>
               </div>
@@ -1477,7 +1477,7 @@ function ProfileContent() {
             </div>
           </div>
 
-          <div className="border-t border-[#E6E6E6]"></div>
+          <div className="border-t border-gray-200"></div>
 
           {/* Danger Zone */}
           <div>
@@ -1485,7 +1485,7 @@ function ProfileContent() {
               <h2 className="text-lg font-semibold text-red-600 flex items-center gap-2">
                 ⚠️ Danger Zone
               </h2>
-              <p className="text-xs text-[#2E3A59]/70 mt-1">Irreversible actions</p>
+              <p className="text-xs text-[#001f98]/70 mt-1">Irreversible actions</p>
             </div>
             
             <div className="rounded-lg border-2 border-red-200 bg-red-50 p-4">
@@ -1509,8 +1509,8 @@ function ProfileContent() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-[#E6E6E6] bg-[#FAFAFA] px-6 py-4 rounded-b-2xl">
-          <div className="text-xs text-[#2E3A59]/70">
+        <div className="flex items-center justify-between border-t border-gray-200 bg-[#f8fafc] px-6 py-4 rounded-b-2xl">
+          <div className="text-xs text-[#001f98]/70">
             {!isDirty ? (
               <span className="flex items-center gap-2">
                 <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1530,7 +1530,7 @@ function ProfileContent() {
           <button
             onClick={onSave}
             disabled={saveDisabled}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -1568,10 +1568,10 @@ function ProfileContent() {
             </div>
             
             <div className="p-6">
-              <p className="text-sm text-[#2E3A59]">
+              <p className="text-sm text-[#001f98]">
                 This will permanently delete your account, including:
               </p>
-              <ul className="mt-3 space-y-2 text-sm text-[#2E3A59]">
+              <ul className="mt-3 space-y-2 text-sm text-[#001f98]">
                 <li className="flex items-start gap-2">
                   <svg className="h-5 w-5 shrink-0 text-red-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1604,11 +1604,11 @@ function ProfileContent() {
               </div>
             </div>
 
-            <div className="flex gap-3 border-t border-[#E6E6E6] bg-[#FAFAFA] px-6 py-4">
+            <div className="flex gap-3 border-t border-gray-200 bg-[#f8fafc] px-6 py-4">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 rounded-lg border border-[#E6E6E6] bg-white px-4 py-2.5 text-sm font-semibold text-[#0B0B0C] transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>

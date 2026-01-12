@@ -149,7 +149,7 @@ export function OnboardingStepHandle({ name, onNext, onBack }: OnboardingStepHan
     <div className="w-full max-w-2xl mx-auto">
       <button
         onClick={onBack}
-        className="mb-6 flex items-center gap-2 text-sm text-[#2E3A59]/70 dark:text-zinc-400 hover:text-[#2E3A59] dark:hover:text-white transition-colors"
+        className="mb-6 flex items-center gap-2 text-sm text-[#001f98]/70 dark:text-zinc-400 hover:text-[#001f98] dark:hover:text-white transition-colors"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -158,17 +158,17 @@ export function OnboardingStepHandle({ name, onNext, onBack }: OnboardingStepHan
       </button>
 
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-[#0B0B0C] dark:text-white mb-3">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
           Choose your handle
         </h1>
-        <p className="text-[#2E3A59]/70 dark:text-zinc-400">
+        <p className="text-[#001f98]/70 dark:text-zinc-400">
           This is how others will find you
         </p>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <svg className="h-8 w-8 animate-spin text-[#2E3A59]" viewBox="0 0 24 24">
+          <svg className="h-8 w-8 animate-spin text-[#001f98]" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
@@ -188,15 +188,15 @@ export function OnboardingStepHandle({ name, onNext, onBack }: OnboardingStepHan
                 className={`
                   relative rounded-lg border-2 p-4 text-left transition-all
                   ${selectedHandle === suggestion.handle
-                    ? "border-[#2E3A59] bg-[#2E3A59]/5 dark:border-white dark:bg-white/[.08]"
+                    ? "border-[#001f98] bg-[#001f98]/5 dark:border-white dark:bg-white/[.08]"
                     : suggestion.available
-                      ? "border-[#E6E6E6] dark:border-white/[.08] hover:border-[#2E3A59]/50 dark:hover:border-white/[.20]"
-                      : "border-[#E6E6E6] dark:border-white/[.08] opacity-40 cursor-not-allowed"
+                      ? "border-gray-200 dark:border-white/[.08] hover:border-[#001f98]/50 dark:hover:border-white/[.20]"
+                      : "border-gray-200 dark:border-white/[.08] opacity-40 cursor-not-allowed"
                   }
                 `}
               >
                 <div className="flex items-center justify-between">
-                  <div className="font-mono text-lg font-semibold text-[#0B0B0C] dark:text-white">
+                  <div className="font-mono text-lg font-semibold text-gray-900 dark:text-white">
                     @{suggestion.handle}
                   </div>
                   {suggestion.available ? (
@@ -218,14 +218,14 @@ export function OnboardingStepHandle({ name, onNext, onBack }: OnboardingStepHan
             {!showCustom ? (
               <button
                 onClick={() => setShowCustom(true)}
-                className="w-full rounded-lg border-2 border-dashed border-[#E6E6E6] dark:border-white/[.20] px-4 py-3 text-sm font-medium text-[#2E3A59] dark:text-white transition-colors hover:border-[#2E3A59] dark:hover:border-white/[.30] hover:bg-[#2E3A59]/5 dark:hover:bg-white/[.05]"
+                className="w-full rounded-lg border-2 border-dashed border-gray-200 dark:border-white/[.20] px-4 py-3 text-sm font-medium text-[#001f98] dark:text-white transition-colors hover:border-[#001f98] dark:hover:border-white/[.30] hover:bg-[#001f98]/5 dark:hover:bg-white/[.05]"
               >
                 Or type your own
               </button>
             ) : (
               <div className="space-y-2">
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-mono text-[#2E3A59]/50 dark:text-zinc-500">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-mono text-[#001f98]/50 dark:text-zinc-500">
                     @
                   </span>
                   <input
@@ -237,12 +237,12 @@ export function OnboardingStepHandle({ name, onNext, onBack }: OnboardingStepHan
                       setCustomAvailable(null);
                     }}
                     placeholder="your_handle"
-                    className="w-full rounded-lg border border-[#E6E6E6] dark:border-white/[.08] bg-white dark:bg-zinc-900 pl-8 pr-12 py-3 text-lg font-mono text-[#0B0B0C] dark:text-white transition-all focus:border-[#2E3A59] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20 dark:focus:ring-white/[.10]"
+                    className="w-full rounded-lg border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 pl-8 pr-12 py-3 text-lg font-mono text-gray-900 dark:text-white transition-all focus:border-[#001f98] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 dark:focus:ring-white/[.10]"
                     autoFocus
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
                     {checkingAvailability ? (
-                      <svg className="h-5 w-5 animate-spin text-[#2E3A59]" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 animate-spin text-[#001f98]" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
@@ -257,7 +257,7 @@ export function OnboardingStepHandle({ name, onNext, onBack }: OnboardingStepHan
                     ) : null}
                   </div>
                 </div>
-                <p className="text-xs text-[#2E3A59]/60 dark:text-zinc-500">
+                <p className="text-xs text-[#001f98]/60 dark:text-zinc-500">
                   3-20 characters, letters, numbers, and underscores only
                 </p>
                 <button
@@ -266,7 +266,7 @@ export function OnboardingStepHandle({ name, onNext, onBack }: OnboardingStepHan
                     setCustomHandle("");
                     setCustomAvailable(null);
                   }}
-                  className="text-xs text-[#2E3A59]/70 dark:text-zinc-400 hover:text-[#2E3A59] dark:hover:text-white"
+                  className="text-xs text-[#001f98]/70 dark:text-zinc-400 hover:text-[#001f98] dark:hover:text-white"
                 >
                   Choose from suggestions instead
                 </button>
@@ -279,19 +279,19 @@ export function OnboardingStepHandle({ name, onNext, onBack }: OnboardingStepHan
       <button
         onClick={handleSubmit}
         disabled={!canProceed}
-        className="w-full rounded-full bg-[#2E3A59] px-6 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-[#1a2236] hover:shadow-xl hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
+        className="w-full rounded-full bg-[#001f98] px-6 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-[#001670] hover:shadow-xl hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-white dark:text-gray-900 dark:hover:bg-zinc-100"
       >
         Next
       </button>
 
       <div className="mt-8 text-center">
         <div className="flex items-center justify-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-[#E6E6E6] dark:bg-white/[.20]"></div>
-          <div className="h-2 w-2 rounded-full bg-[#2E3A59] dark:bg-white"></div>
-          <div className="h-2 w-2 rounded-full bg-[#E6E6E6] dark:bg-white/[.20]"></div>
-          <div className="h-2 w-2 rounded-full bg-[#E6E6E6] dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-[#001f98] dark:bg-white"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
         </div>
-        <p className="mt-2 text-xs text-[#2E3A59]/50 dark:text-zinc-500">
+        <p className="mt-2 text-xs text-[#001f98]/50 dark:text-zinc-500">
           Step 2 of 4
         </p>
       </div>

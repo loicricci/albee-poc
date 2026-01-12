@@ -169,13 +169,13 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:border-[#2E3A59]/20">
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:border-[#001f98]/20">
       {/* Update count badge */}
       <div className="absolute right-6 top-6 flex flex-col items-center gap-1">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A24A] text-lg font-bold text-white shadow-md">
           {item.unread_count > 0 ? item.unread_count : item.total_updates}
         </div>
-        <div className="text-xs font-medium text-[#2E3A59]/70">updates</div>
+        <div className="text-xs font-medium text-[#001f98]/70">updates</div>
       </div>
 
       {/* Own agent badge */}
@@ -188,7 +188,7 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
       {/* Main content */}
       <div className="mb-4 flex items-start gap-4" style={{ marginTop: item.is_own_agent ? '2rem' : '0' }}>
         {/* Avatar */}
-        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#FAFAFA] to-[#E6E6E6] flex items-center justify-center shadow-sm">
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-gradient-to-br from-[#f8fafc] to-gray-200 flex items-center justify-center shadow-sm">
           {item.agent_avatar_url ? (
             <img 
               src={item.agent_avatar_url} 
@@ -198,7 +198,7 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           ) : (
-            <svg className="h-8 w-8 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-8 w-8 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           )}
@@ -207,7 +207,7 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
         {/* Agent info */}
         <div className="flex-1 min-w-0 pr-20">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold text-[#0B0B0C] truncate">
+            <h3 className="text-lg font-bold text-gray-900 truncate">
               {item.agent_display_name || item.agent_handle}
             </h3>
             <button
@@ -218,14 +218,14 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
               {isStarred ? "⭐" : "☆"}
             </button>
           </div>
-          <p className="text-sm text-[#2E3A59]/70">
+          <p className="text-sm text-[#001f98]/70">
             @{item.agent_handle}
             {!item.is_own_agent && item.owner_display_name && (
               <span> · by {item.owner_display_name}</span>
             )}
           </p>
           {item.latest_update && (
-            <p className="mt-1 text-xs text-[#2E3A59]/50">
+            <p className="mt-1 text-xs text-[#001f98]/50">
               Latest update: {formatDate(item.latest_update.created_at)}
             </p>
           )}
@@ -234,23 +234,23 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
 
       {/* Latest update box */}
       {item.latest_update ? (
-        <div className="mb-4 rounded-lg border border-[#2E3A59]/20 bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 py-3">
+        <div className="mb-4 rounded-lg border border-[#001f98]/20 bg-gradient-to-r from-[#001f98]/5 to-[#f8fafc] px-4 py-3">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <p className="text-sm font-bold text-[#2E3A59]">{item.latest_update.title}</p>
+            <p className="text-sm font-bold text-[#001f98]">{item.latest_update.title}</p>
             {!item.latest_update.is_read && (
               <span className="shrink-0 inline-block h-2 w-2 rounded-full bg-[#C8A24A]" title="Unread" />
             )}
           </div>
-          <p className="text-sm text-[#0B0B0C] line-clamp-2">{item.latest_update.content}</p>
+          <p className="text-sm text-gray-900 line-clamp-2">{item.latest_update.content}</p>
           {item.latest_update.topic && (
-            <span className="mt-2 inline-block rounded-full bg-[#2E3A59]/10 px-2 py-1 text-xs text-[#2E3A59]">
+            <span className="mt-2 inline-block rounded-full bg-[#001f98]/10 px-2 py-1 text-xs text-[#001f98]">
               {item.latest_update.topic}
             </span>
           )}
         </div>
       ) : (
-        <div className="mb-4 rounded-lg border border-[#E6E6E6] bg-[#FAFAFA] px-4 py-3 text-center">
-          <p className="text-sm text-[#2E3A59]/50">No updates yet</p>
+        <div className="mb-4 rounded-lg border border-gray-200 bg-[#f8fafc] px-4 py-3 text-center">
+          <p className="text-sm text-[#001f98]/50">No updates yet</p>
         </div>
       )}
 
@@ -259,7 +259,7 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
         <ChatButton
           handle={item.agent_handle}
           displayName={item.agent_display_name || item.agent_handle}
-          className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg hover:scale-[1.02]"
+          className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#001f98] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#001670] hover:shadow-lg hover:scale-[1.02]"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -269,7 +269,7 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
         {item.unread_count > 0 && (
           <button
             onClick={handleMarkAllRead}
-            className="shrink-0 rounded-lg border border-[#2E3A59] px-4 py-3 text-sm font-medium text-[#2E3A59] transition-colors hover:bg-[#2E3A59] hover:text-white"
+            className="shrink-0 rounded-lg border border-[#001f98] px-4 py-3 text-sm font-medium text-[#001f98] transition-colors hover:bg-[#001f98] hover:text-white"
             title="Mark all as read"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -352,10 +352,10 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
 
   return (
     <>
-    <div className="group relative overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm transition-all hover:shadow-lg hover:border-[#2E3A59]/20">
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg hover:border-[#001f98]/20">
       {/* Repost Header - Show if this is a repost */}
       {isRepost && (
-        <div className="px-4 pt-4 pb-2 flex items-center gap-2 text-sm text-[#2E3A59]/80 border-b border-[#E6E6E6]/50 bg-[#FAFAFA]">
+        <div className="px-4 pt-4 pb-2 flex items-center gap-2 text-sm text-[#001f98]/80 border-b border-gray-200/50 bg-[#f8fafc]">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
@@ -368,16 +368,16 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
 
       {/* Repost Comment - Show if repost has a comment */}
       {isRepost && (item as any).repost_comment && (
-        <div className="px-4 py-3 text-sm text-[#0B0B0C] italic border-l-4 border-[#2E3A59]/30 ml-4 mr-4 mt-3 pl-3 bg-[#2E3A59]/5 rounded-r-lg">
+        <div className="px-4 py-3 text-sm text-gray-900 italic border-l-4 border-[#001f98]/30 ml-4 mr-4 mt-3 pl-3 bg-[#001f98]/5 rounded-r-lg">
           "{(item as any).repost_comment}"
         </div>
       )}
 
       {/* Header with agent/user info */}
-      <div className="p-4 border-b border-[#E6E6E6]">
+      <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
           {/* Avatar */}
-          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-[#E6E6E6] bg-gradient-to-br from-[#FAFAFA] to-[#E6E6E6] flex items-center justify-center shadow-sm">
+          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-gray-200 bg-gradient-to-br from-[#f8fafc] to-gray-200 flex items-center justify-center shadow-sm">
             {item.agent_avatar_url ? (
               <img 
                 src={item.agent_avatar_url} 
@@ -387,7 +387,7 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
             ) : (
-              <svg className="h-6 w-6 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-6 w-6 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             )}
@@ -395,38 +395,38 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
 
           {/* Agent/User info */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-[#0B0B0C] truncate">
+            <h3 className="text-sm font-bold text-gray-900 truncate">
               {item.agent_display_name || item.agent_handle}
             </h3>
-            <p className="text-xs text-[#2E3A59]/70 truncate">
+            <p className="text-xs text-[#001f98]/70 truncate">
               @{item.agent_handle}
               {item.owner_display_name && item.agent_id && (
                 <span> · by {item.owner_display_name}</span>
               )}
             </p>
             {isRepost && (
-              <p className="text-xs text-[#2E3A59]/60 mt-0.5">
+              <p className="text-xs text-[#001f98]/60 mt-0.5">
                 Originally posted by @{(item as any).owner_handle}
               </p>
             )}
           </div>
 
           {/* Post type badge */}
-          <div className="shrink-0 rounded-lg bg-[#2E3A59]/10 px-2 py-1 text-xs font-semibold text-[#2E3A59]">
+          <div className="shrink-0 rounded-lg bg-[#001f98]/10 px-2 py-1 text-xs font-semibold text-[#001f98]">
             {item.post_type === "ai_generated" ? "AI" : "Post"}
           </div>
         </div>
 
         {/* Title if exists */}
         {item.title && (
-          <h4 className="mt-3 text-base font-semibold text-[#0B0B0C]">
+          <h4 className="mt-3 text-base font-semibold text-gray-900">
             {item.title}
           </h4>
         )}
       </div>
 
       {/* Image */}
-      <div className="relative w-full bg-[#FAFAFA]" style={{ paddingBottom: '75%' }}>
+      <div className="relative w-full bg-[#f8fafc]" style={{ paddingBottom: '75%' }}>
         <img 
           src={item.image_url} 
           alt={item.title || "Post image"} 
@@ -440,20 +440,20 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
 
       {/* Description if exists */}
       {item.description && (
-        <div className="p-4 border-b border-[#E6E6E6]">
-          <p className="text-sm text-[#0B0B0C] line-clamp-3">{item.description}</p>
+        <div className="p-4 border-b border-gray-200">
+          <p className="text-sm text-gray-900 line-clamp-3">{item.description}</p>
         </div>
       )}
 
       {/* Interaction buttons */}
-      <div className="p-4 flex items-center justify-between border-b border-[#E6E6E6]">
+      <div className="p-4 flex items-center justify-between border-b border-gray-200">
         <div className="flex items-center gap-4">
           {/* Like button */}
           <button
             onClick={handleLike}
             disabled={isLiking}
             className={`flex items-center gap-1.5 text-sm transition-colors hover:text-[#C8A24A] ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
-            style={{ color: optimisticLiked ? '#C8A24A' : '#2E3A59' }}
+            style={{ color: optimisticLiked ? '#C8A24A' : '#001f98' }}
           >
             <svg 
               className={`h-5 w-5 ${isLiking ? "animate-pulse" : ""}`}
@@ -469,7 +469,7 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
           {/* Comment button */}
           <button
             onClick={handleComment}
-            className="flex items-center gap-1.5 text-sm text-[#2E3A59] transition-colors hover:text-[#C8A24A]"
+            className="flex items-center gap-1.5 text-sm text-[#001f98] transition-colors hover:text-[#C8A24A]"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -480,7 +480,7 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
           {/* Repost button */}
           <button
             onClick={() => setShowRepostModal(true)}
-            className="flex items-center gap-1.5 text-sm text-[#2E3A59] transition-colors hover:text-[#C8A24A]"
+            className="flex items-center gap-1.5 text-sm text-[#001f98] transition-colors hover:text-[#C8A24A]"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -490,7 +490,7 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
         </div>
 
         {/* Date */}
-        <span className="text-xs text-[#2E3A59]/50">
+        <span className="text-xs text-[#001f98]/50">
           {formatDate(item.created_at)}
         </span>
       </div>
@@ -526,7 +526,7 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
           {/* Original Post Preview */}
           <div className="mb-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 rounded-full overflow-hidden bg-[#2E3A59] flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full overflow-hidden bg-[#001f98] flex items-center justify-center">
                 {item.agent_avatar_url ? (
                   <img src={item.agent_avatar_url} alt={item.agent_display_name || item.agent_handle} className="h-full w-full object-cover" />
                 ) : (
@@ -551,7 +551,7 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
               value={repostComment}
               onChange={(e) => setRepostComment(e.target.value)}
               placeholder={`Reposting from @${item.agent_handle}...`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E3A59] focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#001f98] focus:border-transparent resize-none"
               rows={3}
             />
           </div>
@@ -566,7 +566,7 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
             </button>
             <button
               onClick={handleRepost}
-              className="flex-1 px-4 py-2 bg-[#2E3A59] text-white rounded-lg font-medium hover:bg-[#1a2236] transition-colors"
+              className="flex-1 px-4 py-2 bg-[#001f98] text-white rounded-lg font-medium hover:bg-[#001670] transition-colors"
             >
               Repost
             </button>
@@ -593,11 +593,11 @@ function FeedUpdateCard({ item, onMarkRead }: { item: FeedUpdateItem; onMarkRead
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:border-[#2E3A59]/20">
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:border-[#001f98]/20">
       {/* Header with agent info */}
       <div className="mb-4 flex items-start gap-4">
         {/* Avatar */}
-        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#FAFAFA] to-[#E6E6E6] flex items-center justify-center shadow-sm">
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-gradient-to-br from-[#f8fafc] to-gray-200 flex items-center justify-center shadow-sm">
           {item.agent_avatar_url ? (
             <img 
               src={item.agent_avatar_url} 
@@ -607,7 +607,7 @@ function FeedUpdateCard({ item, onMarkRead }: { item: FeedUpdateItem; onMarkRead
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           ) : (
-            <svg className="h-8 w-8 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-8 w-8 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           )}
@@ -616,17 +616,17 @@ function FeedUpdateCard({ item, onMarkRead }: { item: FeedUpdateItem; onMarkRead
         {/* Agent info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold text-[#0B0B0C] truncate">
+            <h3 className="text-lg font-bold text-gray-900 truncate">
               {item.agent_display_name || item.agent_handle}
             </h3>
           </div>
-          <p className="text-sm text-[#2E3A59]/70">
+          <p className="text-sm text-[#001f98]/70">
             @{item.agent_handle}
             {item.owner_display_name && (
               <span> · by {item.owner_display_name}</span>
             )}
           </p>
-          <p className="mt-1 text-xs text-[#2E3A59]/50">
+          <p className="mt-1 text-xs text-[#001f98]/50">
             {formatDate(item.created_at)}
           </p>
         </div>
@@ -640,13 +640,13 @@ function FeedUpdateCard({ item, onMarkRead }: { item: FeedUpdateItem; onMarkRead
       </div>
 
       {/* Update content box */}
-      <div className="mb-4 rounded-lg border border-[#2E3A59]/20 bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 py-3">
+      <div className="mb-4 rounded-lg border border-[#001f98]/20 bg-gradient-to-r from-[#001f98]/5 to-[#f8fafc] px-4 py-3">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <p className="text-base font-bold text-[#2E3A59]">{item.title}</p>
+          <p className="text-base font-bold text-[#001f98]">{item.title}</p>
         </div>
-        <p className="text-sm text-[#0B0B0C] line-clamp-4">{item.content}</p>
+        <p className="text-sm text-gray-900 line-clamp-4">{item.content}</p>
         {item.topic && (
-          <span className="mt-3 inline-block rounded-full bg-[#2E3A59]/10 px-3 py-1 text-xs font-medium text-[#2E3A59]">
+          <span className="mt-3 inline-block rounded-full bg-[#001f98]/10 px-3 py-1 text-xs font-medium text-[#001f98]">
             {item.topic}
           </span>
         )}
@@ -657,7 +657,7 @@ function FeedUpdateCard({ item, onMarkRead }: { item: FeedUpdateItem; onMarkRead
         <ChatButton
           handle={item.agent_handle}
           displayName={item.agent_display_name || item.agent_handle}
-          className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg hover:scale-[1.02]"
+          className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#001f98] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#001670] hover:shadow-lg hover:scale-[1.02]"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -667,7 +667,7 @@ function FeedUpdateCard({ item, onMarkRead }: { item: FeedUpdateItem; onMarkRead
         {!item.is_read && (
           <button
             onClick={handleMarkRead}
-            className="shrink-0 rounded-lg border border-[#2E3A59] px-4 py-3 text-sm font-medium text-[#2E3A59] transition-colors hover:bg-[#2E3A59] hover:text-white"
+            className="shrink-0 rounded-lg border border-[#001f98] px-4 py-3 text-sm font-medium text-[#001f98] transition-colors hover:bg-[#001f98] hover:text-white"
             title="Mark as read"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -719,15 +719,15 @@ function LeftSidebar({
   return (
     <div className="w-80 shrink-0 space-y-6">
       {/* Profile Card */}
-      <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-        <div className="bg-gradient-to-br from-[#2E3A59] to-[#1a2236] p-4">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="bg-gradient-to-br from-[#001f98] to-[#001670] p-4">
           <h2 className="text-sm font-semibold text-white">Your Profile</h2>
         </div>
         <div className="p-4">
           {profile ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 shrink-0 rounded-full border-2 border-[#2E3A59]/20 bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center text-white font-semibold overflow-hidden">
+                <div className="h-12 w-12 shrink-0 rounded-full border-2 border-[#001f98]/20 bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center text-white font-semibold overflow-hidden">
                   {hasValidAvatar ? (
                     <img 
                       src={profile.avatar_url!} 
@@ -745,21 +745,21 @@ function LeftSidebar({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-[#0B0B0C] truncate">
+                  <div className="font-semibold text-gray-900 truncate">
                     {profile.display_name || profile.handle}
                   </div>
-                  <div className="text-sm text-[#2E3A59]/70 truncate">
+                  <div className="text-sm text-[#001f98]/70 truncate">
                     @{profile.handle}
                   </div>
                 </div>
               </div>
               {profile.bio && (
-                <p className="text-sm text-[#2E3A59]/70 line-clamp-2">{profile.bio}</p>
+                <p className="text-sm text-[#001f98]/70 line-clamp-2">{profile.bio}</p>
               )}
               <div className="space-y-2">
                 <Link
                   href={`/u/${profile.handle}`}
-                  className="flex items-center justify-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                  className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                 >
                   View profile
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -769,7 +769,7 @@ function LeftSidebar({
                 <ChatButton
                   handle={profile.handle}
                   displayName={profile.display_name || profile.handle}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1a2236]"
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#001f98] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#001670]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -779,18 +779,18 @@ function LeftSidebar({
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[#2E3A59]/70">No profile found.</p>
+            <p className="text-sm text-[#001f98]/70">No profile found.</p>
           )}
         </div>
       </div>
 
       {/* Recommendations */}
-      <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-        <div className="border-b border-[#E6E6E6] bg-[#FAFAFA] p-4">
-          <h2 className="font-semibold text-[#0B0B0C]">Recommended</h2>
-          <p className="mt-1 text-xs text-[#2E3A59]/70">Discover new Agents</p>
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 bg-[#f8fafc] p-4">
+          <h2 className="font-semibold text-gray-900">Recommended</h2>
+          <p className="mt-1 text-xs text-[#001f98]/70">Discover new Agents</p>
         </div>
-        <div className="divide-y divide-[#E6E6E6] p-4 space-y-4">
+        <div className="divide-y divide-gray-200 p-4 space-y-4">
           {isLoadingFeed ? (
             // Skeleton loader for recommendations
             <>
@@ -815,7 +815,7 @@ function LeftSidebar({
                 <div key={rec.id} className="pt-4 first:pt-0">
                   <div className="flex items-start gap-3 mb-2">
                     {/* Avatar */}
-                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center">
+                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center">
                       {hasValidRecAvatar ? (
                         <img 
                           src={rec.avatar_url!} 
@@ -834,20 +834,20 @@ function LeftSidebar({
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm text-[#0B0B0C] truncate">
+                      <div className="font-semibold text-sm text-gray-900 truncate">
                         {rec.display_name || rec.handle}
                       </div>
-                      <div className="text-xs text-[#2E3A59]/70 truncate">@{rec.handle}</div>
+                      <div className="text-xs text-[#001f98]/70 truncate">@{rec.handle}</div>
                     </div>
                   </div>
                   {rec.bio && (
-                    <p className="text-xs text-[#2E3A59]/70 mb-3 line-clamp-2">
+                    <p className="text-xs text-[#001f98]/70 mb-3 line-clamp-2">
                       {rec.bio}
                     </p>
                   )}
                   <button 
                     onClick={() => onFollowAgent(rec.id)}
-                    className="w-full rounded-lg border border-[#2E3A59] px-3 py-2 text-xs font-medium text-[#2E3A59] transition-colors hover:bg-[#2E3A59] hover:text-white"
+                    className="w-full rounded-lg border border-[#001f98] px-3 py-2 text-xs font-medium text-[#001f98] transition-colors hover:bg-[#001f98] hover:text-white"
                   >
                     Follow
                   </button>
@@ -856,7 +856,7 @@ function LeftSidebar({
             })
           ) : (
             <div className="text-center py-4">
-              <p className="text-sm text-[#2E3A59]/70">No recommendations available</p>
+              <p className="text-sm text-[#001f98]/70">No recommendations available</p>
             </div>
           )}
         </div>
@@ -869,7 +869,7 @@ function FeedLoadingSkeleton() {
   return (
     <div className="space-y-6">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="rounded-2xl border border-[#E6E6E6] bg-white p-6 animate-pulse">
+        <div key={i} className="rounded-2xl border border-gray-200 bg-white p-6 animate-pulse">
           <div className="flex items-start gap-4 mb-4">
             <div className="h-16 w-16 rounded-xl bg-gray-200" />
             <div className="flex-1 space-y-2">
@@ -998,8 +998,8 @@ export default function AppHomePage() {
         {/* Left Sidebar - Hidden on smaller screens (< 1024px) */}
         {loading ? (
           <div className="hidden lg:block w-80 shrink-0">
-            <div className="rounded-2xl border border-[#E6E6E6] bg-white p-6">
-              <div className="flex items-center gap-2 text-sm text-[#2E3A59]/70">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="flex items-center gap-2 text-sm text-[#001f98]/70">
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -1018,8 +1018,8 @@ export default function AppHomePage() {
         <main className="flex-1">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[#0B0B0C]">Your Feed</h1>
-              <p className="mt-1 text-sm text-[#2E3A59]/70">
+              <h1 className="text-2xl font-bold text-gray-900">Your Feed</h1>
+              <p className="mt-1 text-sm text-[#001f98]/70">
                 Latest updates from your followed Agents
                 {feedData && feedData.total_unread > 0 && (
                   <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#C8A24A]/10 px-2 py-0.5 text-xs font-semibold text-[#C8A24A]">
@@ -1063,26 +1063,26 @@ export default function AppHomePage() {
               })}
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#E6E6E6] bg-white p-12 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2E3A59]/10">
-                <svg className="h-8 w-8 text-[#2E3A59]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#001f98]/10">
+                <svg className="h-8 w-8 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                 </svg>
               </div>
-              <h3 className="mb-2 text-lg font-semibold text-[#0B0B0C]">No updates yet</h3>
-              <p className="mb-6 text-sm text-[#2E3A59]/70">
+              <h3 className="mb-2 text-lg font-semibold text-gray-900">No updates yet</h3>
+              <p className="mb-6 text-sm text-[#001f98]/70">
                 Follow some agents or create your own to see updates and posts here.
               </p>
               <div className="flex justify-center gap-3">
                 <Link
                   href="/network"
-                  className="rounded-lg border border-[#2E3A59] px-4 py-2 text-sm font-medium text-[#2E3A59] transition-colors hover:bg-[#2E3A59] hover:text-white"
+                  className="rounded-lg border border-[#001f98] px-4 py-2 text-sm font-medium text-[#001f98] transition-colors hover:bg-[#001f98] hover:text-white"
                 >
                   Discover Agents
                 </Link>
                 <Link
                   href="/my-agents"
-                  className="rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a2236]"
+                  className="rounded-lg bg-[#001f98] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#001670]"
                 >
                   Create Agent
                 </Link>

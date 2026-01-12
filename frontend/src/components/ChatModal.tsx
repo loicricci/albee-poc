@@ -504,9 +504,9 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
       <div className="fixed bottom-4 right-4 z-50 w-80 animate-slide-up">
         <div
           onClick={() => minimizeChat(chatId)}
-          className="group cursor-pointer overflow-hidden rounded-xl border border-[#E6E6E6] bg-white shadow-lg transition-all hover:shadow-2xl hover:border-[#2E3A59]/30"
+          className="group cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-all hover:shadow-2xl hover:border-[#001f98]/30"
         >
-          <div className="flex items-center justify-between px-4 py-3" style={{background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'}}>
+          <div className="flex items-center justify-between px-4 py-3" style={{background: 'linear-gradient(135deg, #001f98 0%, #001670 100%)'}}>
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-transform group-hover:scale-110 overflow-hidden">
                 {agent?.avatar_url ? (
@@ -572,7 +572,7 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
           style={{ animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between gap-3 border-b border-[#E6E6E6] px-6 py-4" style={{background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'}}>
+          <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-6 py-4" style={{background: 'linear-gradient(135deg, #001f98 0%, #001670 100%)'}}>
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm overflow-hidden">
                 {agent?.avatar_url ? (
@@ -647,10 +647,10 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-[#FAFAFA] via-white to-[#FAFAFA] p-6">
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-[#f8fafc] via-white to-[#f8fafc] p-6">
             {phase === "loadingAgent" && (
-              <div className="flex items-center justify-center gap-2 rounded-lg bg-white border border-[#E6E6E6] p-4 text-sm text-gray-600">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#2E3A59] border-t-transparent" />
+              <div className="flex items-center justify-center gap-2 rounded-lg bg-white border border-gray-200 p-4 text-sm text-gray-600">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#001f98] border-t-transparent" />
                 Loading agent...
               </div>
             )}
@@ -667,15 +667,15 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
             )}
 
             {phase === "ready" && loadingMessages && messages.length === 0 && (
-              <div className="flex items-center justify-center gap-2 rounded-lg bg-white border border-[#E6E6E6] p-4 text-sm text-gray-600">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#2E3A59] border-t-transparent" />
+              <div className="flex items-center justify-center gap-2 rounded-lg bg-white border border-gray-200 p-4 text-sm text-gray-600">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#001f98] border-t-transparent" />
                 Loading history...
               </div>
             )}
 
             {phase === "ready" && !loadingMessages && messages.length === 0 && (
-              <div className="rounded-xl border border-[#E6E6E6] bg-white p-8 text-center shadow-sm">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full" style={{background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'}}>
+              <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
                   <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
@@ -701,10 +701,10 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
                         m.role === "user"
                           ? "text-white shadow-md"
                           : m.role === "assistant"
-                          ? "border border-[#E6E6E6] bg-white text-black shadow-sm"
+                          ? "border border-gray-200 bg-white text-gray-900 shadow-sm"
                           : "border border-red-200 bg-red-50 text-red-700",
                       ].join(" ")}
-                      style={m.role === "user" ? {background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'} : {}}
+                      style={m.role === "user" ? {background: 'linear-gradient(135deg, #001f98 0%, #001670 100%)'} : {}}
                     >
                       {m.content}
                     </div>
@@ -713,7 +713,7 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
                         <button
                           onClick={() => playMessageAudio(m.id, m.content)}
                           disabled={loadingTTSFor === m.id}
-                          className="flex items-center gap-1.5 rounded-lg border border-[#E6E6E6] bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all hover:bg-[#2E3A59]/5 hover:border-[#2E3A59]/30 disabled:opacity-50"
+                          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-all hover:bg-[#e6eaff] hover:border-[#001f98]/30 disabled:opacity-50"
                           title={playingAudioFor === m.id ? "Stop audio" : "Play audio"}
                         >
                           {loadingTTSFor === m.id ? (
@@ -748,9 +748,9 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
 
               {streamingMessage && (
                 <div className="flex justify-start">
-                  <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl border border-[#E6E6E6] bg-white px-4 py-2.5 text-sm leading-relaxed shadow-sm text-black">
+                  <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm leading-relaxed shadow-sm text-gray-900">
                     {streamingMessage}
-                    <span className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-[#2E3A59] rounded" />
+                    <span className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-[#001f98] rounded" />
                   </div>
                 </div>
               )}
@@ -760,12 +760,12 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
           </div>
 
           {/* Input */}
-          <div className="border-t border-[#E6E6E6] bg-white p-5">
+          <div className="border-t border-gray-200 bg-white p-5">
             {showVoiceRecorder ? (
-              <div className="mb-4 rounded-xl border border-[#E6E6E6] bg-gradient-to-br from-[#FAFAFA] to-white p-4 shadow-sm">
+              <div className="mb-4 rounded-xl border border-gray-200 bg-gradient-to-br from-[#f8fafc] to-white p-4 shadow-sm">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                    <svg className="h-4 w-4 text-[#2E3A59]" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 text-[#001f98]" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                     </svg>
@@ -786,8 +786,8 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
                 />
               </div>
             ) : transcribingAudio ? (
-              <div className="mb-4 flex items-center gap-3 rounded-xl border border-[#E6E6E6] bg-[#FAFAFA] p-4">
-                <svg className="h-5 w-5 animate-spin text-[#2E3A59]" viewBox="0 0 24 24">
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-gray-200 bg-[#f8fafc] p-4">
+                <svg className="h-5 w-5 animate-spin text-[#001f98]" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
@@ -799,7 +799,7 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
 
             <div className="mb-3 flex gap-2">
               <input
-                className="flex-1 rounded-xl border border-[#E6E6E6] px-4 py-2.5 text-sm transition-all placeholder:text-gray-400 focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-all placeholder:text-gray-400 focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={phase === "ready" ? "Type your message..." : "Loading..."}
@@ -814,7 +814,7 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
               <button
                 onClick={() => setShowVoiceRecorder(true)}
                 disabled={phase !== "ready" || isSending || showVoiceRecorder || transcribingAudio}
-                className="flex items-center justify-center rounded-xl border border-[#E6E6E6] px-3 py-2.5 text-gray-700 transition-all hover:bg-[#FAFAFA] hover:border-[#2E3A59]/30 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center justify-center rounded-xl border border-gray-200 px-3 py-2.5 text-gray-600 transition-all hover:bg-[#e6eaff] hover:border-[#001f98]/30 disabled:cursor-not-allowed disabled:opacity-50"
                 title="Record voice message"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -823,8 +823,8 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
                 </svg>
               </button>
               <button
-                className="flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-                style={{background: 'linear-gradient(135deg, #2E3A59 0%, #1a2236 100%)'}}
+                className="flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 transition-all hover:shadow-[#001f98]/40 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                style={{background: 'linear-gradient(135deg, #001f98 0%, #001670 100%)'}}
                 onClick={onSubmit}
                 disabled={phase !== "ready" || isSending || !input.trim() || showVoiceRecorder || transcribingAudio}
               >
@@ -851,14 +851,14 @@ export function ChatModal({ chatId, handle, displayName }: ChatModalProps) {
               </div>
               <div className="flex gap-3">
                 <button
-                  className="font-medium text-gray-600 transition-colors hover:text-[#2E3A59] disabled:opacity-50"
+                  className="font-medium text-gray-600 transition-colors hover:text-[#001f98] disabled:opacity-50"
                   onClick={cancel}
                   disabled={!isSending}
                 >
                   Stop
                 </button>
                 <button
-                  className="font-medium text-gray-600 transition-colors hover:text-[#2E3A59] disabled:opacity-50"
+                  className="font-medium text-gray-600 transition-colors hover:text-[#001f98] disabled:opacity-50"
                   onClick={retryLast}
                   disabled={!lastUserText || isSending || phase !== "ready"}
                 >

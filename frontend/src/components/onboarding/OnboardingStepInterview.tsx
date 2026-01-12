@@ -119,7 +119,7 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
     <div className="w-full max-w-2xl mx-auto flex flex-col h-[calc(100vh-12rem)]">
       <button
         onClick={onBack}
-        className="mb-6 flex items-center gap-2 text-sm text-[#2E3A59]/70 dark:text-zinc-400 hover:text-[#2E3A59] dark:hover:text-white transition-colors"
+        className="mb-6 flex items-center gap-2 text-sm text-[#001f98]/70 dark:text-zinc-400 hover:text-[#001f98] dark:hover:text-white transition-colors"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -131,13 +131,13 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
         <h1 className="text-3xl font-bold text-[#0B0B0C] dark:text-white mb-3">
           Meet your AI interviewer
         </h1>
-        <p className="text-[#2E3A59]/70 dark:text-zinc-400">
+        <p className="text-[#001f98]/70 dark:text-zinc-400">
           Let's create your digital twin persona together
         </p>
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto rounded-2xl border border-[#E6E6E6] dark:border-white/[.08] bg-white dark:bg-zinc-950 p-4 mb-4">
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-950 p-4 mb-4">
         <div className="space-y-4">
           {messages.map((msg, idx) => (
             <div
@@ -147,7 +147,7 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                   msg.role === "user"
-                    ? "bg-[#2E3A59] text-white dark:bg-white dark:text-[#0B0B0C]"
+                    ? "bg-[#001f98] text-white dark:bg-white dark:text-[#0B0B0C]"
                     : "bg-[#F5F5F5] text-[#0B0B0C] dark:bg-zinc-900 dark:text-white"
                 }`}
               >
@@ -160,9 +160,9 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
             <div className="flex justify-start">
               <div className="bg-[#F5F5F5] dark:bg-zinc-900 rounded-2xl px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-[#2E3A59]/50 dark:bg-white/[.50] animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                  <div className="h-2 w-2 rounded-full bg-[#2E3A59]/50 dark:bg-white/[.50] animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                  <div className="h-2 w-2 rounded-full bg-[#2E3A59]/50 dark:bg-white/[.50] animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                  <div className="h-2 w-2 rounded-full bg-[#001f98]/50 dark:bg-white/[.50] animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                  <div className="h-2 w-2 rounded-full bg-[#001f98]/50 dark:bg-white/[.50] animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                  <div className="h-2 w-2 rounded-full bg-[#001f98]/50 dark:bg-white/[.50] animate-bounce" style={{ animationDelay: "300ms" }}></div>
                 </div>
               </div>
             </div>
@@ -180,23 +180,23 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
 
       {/* Persona Review Section */}
       {interviewComplete && suggestedPersona && (
-        <div className="mb-4 rounded-2xl border-2 border-[#2E3A59] dark:border-white bg-[#2E3A59]/5 dark:bg-white/[.05] p-4">
+        <div className="mb-4 rounded-2xl border-2 border-[#001f98] dark:border-white bg-[#001f98]/5 dark:bg-white/[.05] p-4">
           <h3 className="text-lg font-semibold text-[#0B0B0C] dark:text-white mb-2">
             Your Persona:
           </h3>
-          <p className="text-sm text-[#2E3A59] dark:text-zinc-300 whitespace-pre-wrap mb-4">
+          <p className="text-sm text-[#001f98] dark:text-zinc-300 whitespace-pre-wrap mb-4">
             {suggestedPersona}
           </p>
           <div className="flex gap-2">
             <button
               onClick={handleAcceptPersona}
-              className="flex-1 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-[#1a2236] dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
+              className="flex-1 rounded-lg bg-[#001f98] px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-[#001670] dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
             >
               This looks great!
             </button>
             <button
               onClick={handleRefine}
-              className="flex-1 rounded-lg border border-[#2E3A59] dark:border-white px-4 py-2 text-sm font-medium text-[#2E3A59] dark:text-white transition-colors hover:bg-[#2E3A59]/10 dark:hover:bg-white/[.10]"
+              className="flex-1 rounded-lg border border-[#001f98] dark:border-white px-4 py-2 text-sm font-medium text-[#001f98] dark:text-white transition-colors hover:bg-[#001f98]/10 dark:hover:bg-white/[.10]"
             >
               Let's refine it
             </button>
@@ -213,12 +213,12 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your response..."
             disabled={loading}
-            className="flex-1 rounded-lg border border-[#E6E6E6] dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-[#0B0B0C] dark:text-white transition-all focus:border-[#2E3A59] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20 dark:focus:ring-white/[.10] disabled:opacity-50"
+            className="flex-1 rounded-lg border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-[#0B0B0C] dark:text-white transition-all focus:border-[#001f98] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 dark:focus:ring-white/[.10] disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="rounded-lg bg-[#2E3A59] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#1a2236] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
+            className="rounded-lg bg-[#001f98] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#001670] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
           >
             Send
           </button>
@@ -228,19 +228,19 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
       <button
         onClick={onSkip}
         disabled={loading}
-        className="w-full rounded-full border-2 border-[#E6E6E6] dark:border-white/[.20] px-6 py-3 text-sm font-medium text-[#0B0B0C] dark:text-white transition-all hover:border-[#2E3A59] dark:hover:border-white/[.30] hover:bg-[#E6E6E6]/50 dark:hover:bg-white/[.08] disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-full border-2 border-gray-200 dark:border-white/[.20] px-6 py-3 text-sm font-medium text-[#0B0B0C] dark:text-white transition-all hover:border-[#001f98] dark:hover:border-white/[.30] hover:bg-gray-200/50 dark:hover:bg-white/[.08] disabled:cursor-not-allowed disabled:opacity-50"
       >
         Skip & Use Basic Persona
       </button>
 
       <div className="mt-6 text-center">
         <div className="flex items-center justify-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-[#E6E6E6] dark:bg-white/[.20]"></div>
-          <div className="h-2 w-2 rounded-full bg-[#E6E6E6] dark:bg-white/[.20]"></div>
-          <div className="h-2 w-2 rounded-full bg-[#E6E6E6] dark:bg-white/[.20]"></div>
-          <div className="h-2 w-2 rounded-full bg-[#2E3A59] dark:bg-white"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-[#001f98] dark:bg-white"></div>
         </div>
-        <p className="mt-2 text-xs text-[#2E3A59]/50 dark:text-zinc-500">
+        <p className="mt-2 text-xs text-[#001f98]/50 dark:text-zinc-500">
           Step 4 of 4
         </p>
       </div>

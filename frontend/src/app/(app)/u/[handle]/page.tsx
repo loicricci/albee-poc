@@ -231,7 +231,7 @@ function ProfileContent() {
           <p className="text-red-700 mb-6">{error || "The profile you're looking for doesn't exist."}</p>
           <Link
             href="/network"
-            className="inline-flex items-center gap-2 rounded-lg bg-[#2E3A59] px-6 py-3 text-white font-semibold hover:bg-[#1a2236] transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#001f98] px-6 py-3 text-white font-semibold hover:bg-[#001670] transition-colors"
           >
             Browse Network
           </Link>
@@ -251,12 +251,12 @@ function ProfileContent() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       {/* Sticky CTA Bar for Mobile */}
       {!profileData.is_own_profile && displayAgent?.handle && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E6E6E6] shadow-lg p-4 md:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg p-4 md:hidden">
           <div className="flex gap-3">
             <ChatButton
               handle={displayAgent.handle}
               displayName={displayName}
-              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236]"
+              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#001f98] px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#001670]"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -269,8 +269,8 @@ function ProfileContent() {
               disabled={isFollowLoading}
               className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-md transition-all ${
                 profileData.is_following
-                  ? "border-2 border-[#2E3A59] text-[#2E3A59] bg-white"
-                  : "bg-[#2E3A59] text-white hover:bg-[#1a2236]"
+                  ? "border-2 border-[#001f98] text-[#001f98] bg-white"
+                  : "bg-[#001f98] text-white hover:bg-[#001670]"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isFollowLoading ? (
@@ -301,9 +301,9 @@ function ProfileContent() {
       )}
 
       {/* Header Section */}
-      <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+      <div className="mb-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
         {/* Banner */}
-        <div className="relative h-48 bg-gradient-to-r from-[#2E3A59] to-[#1a2236] overflow-hidden">
+        <div className="relative h-48 bg-gradient-to-r from-[#001f98] to-[#001670] overflow-hidden">
           {profileData?.profile?.banner_url ? (
             <img src={profileData.profile.banner_url} 
               alt="Profile Banner" 
@@ -311,14 +311,14 @@ function ProfileContent() {
             />
           ) : (
             /* Default gradient if no banner */
-            <div className="h-full w-full bg-gradient-to-r from-[#2E3A59] to-[#1a2236]"></div>
+            <div className="h-full w-full bg-gradient-to-r from-[#001f98] to-[#001670]"></div>
           )}
         </div>
 
         <div className="relative px-6 pb-6">
           {/* Avatar */}
           <div className="relative -mt-20 mb-4">
-            <div className="h-32 w-32 overflow-hidden rounded-2xl border-4 border-white bg-gradient-to-br from-[#2E3A59] to-[#1a2236] shadow-lg flex items-center justify-center">
+            <div className="h-32 w-32 overflow-hidden rounded-2xl border-4 border-white bg-gradient-to-br from-[#001f98] to-[#001670] shadow-lg flex items-center justify-center">
               {avatarUrl ? (
                 <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
               ) : (
@@ -333,10 +333,10 @@ function ProfileContent() {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-[#0B0B0C] mb-1">{displayName}</h1>
-              <p className="text-lg text-[#2E3A59]/70 mb-4">@{handle}</p>
+              <p className="text-lg text-[#001f98]/70 mb-4">@{handle}</p>
 
               {bio && (
-                <p className="text-[#2E3A59] mb-4 max-w-2xl">{bio}</p>
+                <p className="text-[#001f98] mb-4 max-w-2xl">{bio}</p>
               )}
 
               {/* Stats */}
@@ -344,11 +344,11 @@ function ProfileContent() {
                 {displayAgent && (
                   <div className="text-sm">
                     <span className="font-bold text-[#0B0B0C]">{displayAgent.follower_count || 0}</span>
-                    <span className="text-[#2E3A59]/70 ml-1">followers</span>
+                    <span className="text-[#001f98]/70 ml-1">followers</span>
                   </div>
                 )}
                 {createdAt && (
-                  <div className="text-sm text-[#2E3A59]/70">
+                  <div className="text-sm text-[#001f98]/70">
                     Joined {formatDate(createdAt)}
                   </div>
                 )}
@@ -362,7 +362,7 @@ function ProfileContent() {
                       href={displayProfile.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-[#2E3A59] hover:text-[#1a2236] transition-colors"
+                      className="flex items-center gap-2 text-sm text-[#001f98] hover:text-[#001670] transition-colors"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
@@ -375,7 +375,7 @@ function ProfileContent() {
                       href={`https://twitter.com/${displayProfile.twitter_handle}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-[#2E3A59] hover:text-[#1a2236] transition-colors"
+                      className="flex items-center gap-2 text-sm text-[#001f98] hover:text-[#001670] transition-colors"
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
@@ -388,7 +388,7 @@ function ProfileContent() {
                       href={`https://github.com/${displayProfile.github_username}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-[#2E3A59] hover:text-[#1a2236] transition-colors"
+                      className="flex items-center gap-2 text-sm text-[#001f98] hover:text-[#001670] transition-colors"
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
@@ -397,7 +397,7 @@ function ProfileContent() {
                     </a>
                   )}
                   {displayProfile.location && (
-                    <div className="flex items-center gap-2 text-sm text-[#2E3A59]/70">
+                    <div className="flex items-center gap-2 text-sm text-[#001f98]/70">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -415,7 +415,7 @@ function ProfileContent() {
                 <ChatButton
                   handle={displayAgent.handle}
                   displayName={displayName}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:shadow-xl hover:scale-105 ring-2 ring-[#2E3A59]/20"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#001f98] to-[#001670] px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:shadow-xl hover:scale-105 ring-2 ring-[#001f98]/20"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -428,8 +428,8 @@ function ProfileContent() {
                   disabled={isFollowLoading}
                   className={`flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-base font-bold shadow-lg transition-all hover:shadow-xl hover:scale-105 ${
                     profileData.is_following
-                      ? "border-2 border-[#2E3A59] text-[#2E3A59] bg-white hover:bg-gray-50 ring-2 ring-[#2E3A59]/20"
-                      : "bg-gradient-to-r from-[#2E3A59] to-[#1a2236] text-white ring-2 ring-[#2E3A59]/20"
+                      ? "border-2 border-[#001f98] text-[#001f98] bg-white hover:bg-gray-50 ring-2 ring-[#001f98]/20"
+                      : "bg-gradient-to-r from-[#001f98] to-[#001670] text-white ring-2 ring-[#001f98]/20"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isFollowLoading ? (
@@ -463,7 +463,7 @@ function ProfileContent() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/profile"
-                  className="flex items-center justify-center gap-2 rounded-xl border-2 border-[#2E3A59] px-8 py-4 text-base font-bold text-[#2E3A59] bg-white transition-all hover:bg-[#2E3A59]/5 shadow-lg hover:shadow-xl hover:scale-105 ring-2 ring-[#2E3A59]/20"
+                  className="flex items-center justify-center gap-2 rounded-xl border-2 border-[#001f98] px-8 py-4 text-base font-bold text-[#001f98] bg-white transition-all hover:bg-[#001f98]/5 shadow-lg hover:shadow-xl hover:scale-105 ring-2 ring-[#001f98]/20"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -472,7 +472,7 @@ function ProfileContent() {
                 </Link>
                 <Link
                   href="/my-agents"
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:shadow-xl hover:scale-105 ring-2 ring-[#2E3A59]/20"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#001f98] to-[#001670] px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:shadow-xl hover:scale-105 ring-2 ring-[#001f98]/20"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -492,7 +492,7 @@ function ProfileContent() {
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-[#0B0B0C]">Updates</h2>
             {updates.length > 0 && (
-              <span className="text-sm text-[#2E3A59]/70">
+              <span className="text-sm text-[#001f98]/70">
                 {updates.length} update{updates.length !== 1 ? "s" : ""}
               </span>
             )}
@@ -513,7 +513,7 @@ function ProfileContent() {
               {updates.map((update) => (
                 <div
                   key={update.id}
-                  className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm transition-all hover:shadow-md"
+                  className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md"
                 >
                   <div className="p-6">
                     <div className="flex items-start justify-between gap-4 mb-3">
@@ -527,7 +527,7 @@ function ProfileContent() {
                       </h3>
                       <div className="flex items-center gap-2">
                         {update.topic && (
-                          <span className="rounded-full bg-[#2E3A59]/10 px-3 py-1 text-xs font-medium text-[#2E3A59]">
+                          <span className="rounded-full bg-[#001f98]/10 px-3 py-1 text-xs font-medium text-[#001f98]">
                             {update.topic}
                           </span>
                         )}
@@ -537,9 +537,9 @@ function ProfileContent() {
                       </div>
                     </div>
 
-                    <p className="text-[#2E3A59] whitespace-pre-wrap mb-4">{update.content}</p>
+                    <p className="text-[#001f98] whitespace-pre-wrap mb-4">{update.content}</p>
 
-                    <div className="flex items-center gap-4 text-xs text-[#2E3A59]/70">
+                    <div className="flex items-center gap-4 text-xs text-[#001f98]/70">
                       <div className="flex items-center gap-1">
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -560,12 +560,12 @@ function ProfileContent() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#E6E6E6] bg-white p-12 text-center">
+            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
               <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">No updates yet</h3>
-              <p className="text-[#2E3A59]/70">
+              <p className="text-[#001f98]/70">
                 {profileData.is_own_profile
                   ? "Start sharing updates with your followers"
                   : "This agent hasn't posted any updates yet"}

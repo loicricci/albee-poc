@@ -256,8 +256,8 @@ function MyAgentsContent() {
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#0B0B0C]">My Agents</h1>
-          <p className="mt-2 text-[#2E3A59]/70">
+          <h1 className="text-3xl font-bold text-gray-900">My Agents</h1>
+          <p className="mt-2 text-[#001f98]/70">
             Create and manage your AI personalities
             {limitStatus && !limitStatus.is_admin && (
               <span className="ml-2 text-sm">
@@ -274,7 +274,7 @@ function MyAgentsContent() {
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
           disabled={limitStatus ? !limitStatus.can_create_more : false}
-          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           title={limitStatus && !limitStatus.can_create_more ? "You've reached the maximum number of agents" : ""}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -319,39 +319,39 @@ function MyAgentsContent() {
 
       {/* Create Form */}
       {showCreateForm && (
-        <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-md animate-slide-up">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-6 py-4">
-            <h2 className="font-semibold text-[#0B0B0C]">Create New Agent</h2>
-            <p className="mt-1 text-sm text-[#2E3A59]/70">Set up a new AI personality</p>
+        <div className="mb-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md animate-slide-up">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#001f98]/5 to-[#f8fafc] px-6 py-4">
+            <h2 className="font-semibold text-gray-900">Create New Agent</h2>
+            <p className="mt-1 text-sm text-[#001f98]/70">Set up a new AI personality</p>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                <label className="mb-2 block text-sm font-semibold text-gray-900">
                   Handle <span className="text-red-500">*</span>
                 </label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   placeholder="my-agent"
                   value={newHandle}
                   onChange={(e) => setNewHandle(e.target.value)}
                 />
-                <div className="mt-2 text-xs text-[#2E3A59]/70">
+                <div className="mt-2 text-xs text-[#001f98]/70">
                   Lowercase letters, numbers, hyphens, and underscores only
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                <label className="mb-2 block text-sm font-semibold text-gray-900">
                   Display Name
                 </label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   placeholder="My Agent"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                 />
-                <div className="mt-2 text-xs text-[#2E3A59]/70">
+                <div className="mt-2 text-xs text-[#001f98]/70">
                   Optional friendly name
                 </div>
               </div>
@@ -364,7 +364,7 @@ function MyAgentsContent() {
                   <svg className="h-5 w-5 text-[#C8A24A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <h3 className="font-semibold text-[#0B0B0C]">Automatic Web Research</h3>
+                  <h3 className="font-semibold text-gray-900">Automatic Web Research</h3>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -377,29 +377,29 @@ function MyAgentsContent() {
                 </label>
               </div>
               
-              <p className="mb-3 text-xs text-[#2E3A59]/70">
+              <p className="mb-3 text-xs text-[#001f98]/70">
                 Automatically gather initial knowledge from the web about a person or topic when creating the agent.
               </p>
               
               {autoResearch && (
                 <div className="space-y-4 animate-slide-up">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">
+                    <label className="mb-2 block text-sm font-medium text-gray-900">
                       Research Topic
                     </label>
                     <input
-                      className="w-full rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#C8A24A] focus:outline-none focus:ring-2 focus:ring-[#C8A24A]/20"
+                      className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#C8A24A] focus:outline-none focus:ring-2 focus:ring-[#C8A24A]/20"
                       placeholder="e.g., Elon Musk, Artificial Intelligence, etc."
                       value={researchTopic}
                       onChange={(e) => setResearchTopic(e.target.value)}
                     />
-                    <div className="mt-1 text-xs text-[#2E3A59]/70">
+                    <div className="mt-1 text-xs text-[#001f98]/70">
                       Leave blank to use the agent&apos;s display name or handle
                     </div>
                   </div>
                   
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-[#0B0B0C]">
+                    <label className="mb-2 block text-sm font-medium text-gray-900">
                       Max Sources: {researchMaxSources}
                     </label>
                     <input
@@ -411,13 +411,13 @@ function MyAgentsContent() {
                       onChange={(e) => setResearchMaxSources(parseInt(e.target.value))}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#C8A24A]"
                     />
-                    <div className="mt-1 flex justify-between text-xs text-[#2E3A59]/70">
+                    <div className="mt-1 flex justify-between text-xs text-[#001f98]/70">
                       <span>Fewer sources (faster)</span>
                       <span>More sources (comprehensive)</span>
                     </div>
                   </div>
                   
-                  <div className="rounded-lg bg-white p-3 text-xs text-[#2E3A59] border border-[#C8A24A]/30">
+                  <div className="rounded-lg bg-white p-3 text-xs text-[#001f98] border border-[#C8A24A]/30">
                     <strong className="text-[#C8A24A]">Note:</strong> Web research may take 30-60 seconds depending on the number of sources. The agent will be created first, and research will happen automatically.
                   </div>
                 </div>
@@ -452,7 +452,7 @@ function MyAgentsContent() {
               <button
                 onClick={onCreate}
                 disabled={creating || !newHandle.trim()}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {creating ? (
                   <>
@@ -482,15 +482,15 @@ function MyAgentsContent() {
                   setCreationResult(null);
                 }}
                 disabled={creating}
-                className="rounded-lg border border-[#E6E6E6] px-6 py-3 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
+                className="rounded-lg border border-gray-200 px-6 py-3 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5 disabled:opacity-50"
               >
                 Cancel
               </button>
             </div>
 
             <div className="mt-4 space-y-2">
-              <div className="rounded-lg bg-[#2E3A59]/5 border border-[#2E3A59]/20 p-4 text-xs text-[#2E3A59]">
-                <strong>Tip:</strong> Handles become part of the URL, like <code className="rounded bg-white px-1.5 py-0.5 border border-[#E6E6E6]">/my-agents/my-agent</code>
+              <div className="rounded-lg bg-[#001f98]/5 border border-[#001f98]/20 p-4 text-xs text-[#001f98]">
+                <strong>Tip:</strong> Handles become part of the URL, like <code className="rounded bg-white px-1.5 py-0.5 border border-gray-200">/my-agents/my-agent</code>
               </div>
               {autoResearch && (
                 <div className="rounded-lg bg-[#C8A24A]/5 border border-[#C8A24A]/30 p-4 text-xs text-[#C8A24A]">
@@ -503,18 +503,18 @@ function MyAgentsContent() {
       )}
 
       {/* Agents List */}
-      <div className="rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#E6E6E6] px-6 py-4">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div>
-            <h2 className="font-semibold text-[#0B0B0C]">Your Agents</h2>
-            <p className="mt-1 text-sm text-[#2E3A59]/70">
+            <h2 className="font-semibold text-gray-900">Your Agents</h2>
+            <p className="mt-1 text-sm text-[#001f98]/70">
               {loading ? "Loading..." : `${agents.length} Agent${agents.length !== 1 ? "s" : ""}`}
             </p>
           </div>
           <button
             onClick={() => load(true)}
             disabled={loading}
-            className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-all hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-900 transition-all hover:border-[#001f98] hover:bg-[#001f98]/5 disabled:opacity-50"
           >
             <svg className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -535,16 +535,16 @@ function MyAgentsContent() {
           </div>
         ) : agents.length === 0 ? (
           <div className="py-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2E3A59]/10">
-              <svg className="h-8 w-8 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#001f98]/10">
+              <svg className="h-8 w-8 text-[#001f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-[#0B0B0C]">No Agents yet</h3>
-            <p className="mt-2 text-sm text-[#2E3A59]/70">Get started by creating your first AI personality</p>
+            <h3 className="text-lg font-semibold text-gray-900">No Agents yet</h3>
+            <p className="mt-2 text-sm text-[#001f98]/70">Get started by creating your first AI personality</p>
             <button
               onClick={() => setShowCreateForm(true)}
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -553,31 +553,31 @@ function MyAgentsContent() {
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-[#E6E6E6]">
+          <div className="divide-y divide-gray-200">
             {agents.map((a) => (
-              <div key={a.handle} className="group px-4 sm:px-6 py-4 sm:py-5 transition-colors hover:bg-[#2E3A59]/5">
+              <div key={a.handle} className="group px-4 sm:px-6 py-4 sm:py-5 transition-colors hover:bg-[#001f98]/5">
                   <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {a.avatar_url ? (
                       <img src={a.avatar_url}
                         alt={a.display_name || a.handle}
-                        className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl border-2 border-[#E6E6E6] object-cover shadow-sm"
+                        className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl border-2 border-gray-200 object-cover shadow-sm"
                       />
                     ) : (
-                      <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center text-white font-bold shadow-sm text-sm sm:text-base">
+                      <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center text-white font-bold shadow-sm text-sm sm:text-base">
                         {(a.display_name || a.handle)[0].toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-[#0B0B0C] truncate text-sm sm:text-base">{a.display_name || a.handle}</h3>
-                      <p className="text-xs sm:text-sm text-[#2E3A59]/70 truncate">@{a.handle}</p>
+                      <h3 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{a.display_name || a.handle}</h3>
+                      <p className="text-xs sm:text-sm text-[#001f98]/70 truncate">@{a.handle}</p>
                     </div>
                   </div>
 
                   {/* Desktop: Full buttons with text */}
                   <div className="hidden sm:flex shrink-0 items-center gap-2">
                     <Link
-                      className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                       href={`/my-agents/${a.handle}`}
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -589,7 +589,7 @@ function MyAgentsContent() {
                     <ChatButton
                       handle={a.handle}
                       displayName={a.display_name || a.handle}
-                      className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:scale-105"
+                      className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:scale-105"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -611,7 +611,7 @@ function MyAgentsContent() {
                   {/* Mobile: Icon-only buttons in vertical layout */}
                   <div className="flex sm:hidden shrink-0 items-center gap-1.5">
                     <Link
-                      className="flex items-center justify-center rounded-lg border border-[#E6E6E6] p-2.5 text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      className="flex items-center justify-center rounded-lg border border-gray-200 p-2.5 text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                       href={`/my-agents/${a.handle}`}
                       title="Edit"
                     >
@@ -623,7 +623,7 @@ function MyAgentsContent() {
                     <ChatButton
                       handle={a.handle}
                       displayName={a.display_name || a.handle}
-                      className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] p-2.5 text-white shadow-sm transition-all hover:shadow-md"
+                      className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] p-2.5 text-white shadow-sm transition-all hover:shadow-md"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />

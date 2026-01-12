@@ -471,7 +471,7 @@ function AgentEditorContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3 text-[#2E3A59]">
+        <div className="flex items-center gap-3 text-[#001f98]">
           <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -492,13 +492,13 @@ function AgentEditorContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="mb-2 text-xl font-semibold text-[#0B0B0C]">Admin User</h2>
-          <p className="mb-4 text-[#2E3A59]/70">
+          <h2 className="mb-2 text-xl font-semibold text-gray-900">Admin User</h2>
+          <p className="mb-4 text-[#001f98]/70">
             As an admin user, you manage agents through the <strong>My Agents</strong> page.
           </p>
           <Link
             href="/my-agents"
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -517,11 +517,11 @@ function AgentEditorContent() {
           <svg className="mx-auto h-12 w-12 text-red-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">Profile not found</h3>
-          <p className="text-sm text-[#2E3A59]/70 mb-6">Please create your profile first.</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile not found</h3>
+          <p className="text-sm text-[#001f98]/70 mb-6">Please create your profile first.</p>
           <Link
             href="/profile"
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
           >
             Go to Account Settings
           </Link>
@@ -535,23 +535,23 @@ function AgentEditorContent() {
     return (
       <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#0B0B0C] mb-3">Create Your AI Agent</h1>
-          <p className="text-base sm:text-lg text-[#2E3A59]/70">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Create Your AI Agent</h1>
+          <p className="text-base sm:text-lg text-[#001f98]/70">
             Set up your personal AI agent to interact with others
           </p>
         </div>
 
-        <div className="rounded-3xl border-2 border-[#E6E6E6] bg-gradient-to-br from-white via-[#FAFAFA] to-white p-8 sm:p-12 shadow-lg">
+        <div className="rounded-3xl border-2 border-gray-200 bg-gradient-to-br from-white via-[#f8fafc] to-white p-8 sm:p-12 shadow-lg">
           {/* Illustration */}
-          <div className="mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-[#2E3A59]/10 to-[#C8A24A]/10">
-            <svg className="h-16 w-16 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-[#001f98]/10 to-[#C8A24A]/10">
+            <svg className="h-16 w-16 text-[#001f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
 
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-[#0B0B0C] mb-4">You don't have an AI agent yet</h2>
-            <p className="text-[#2E3A59]/70 max-w-2xl mx-auto mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">You don't have an AI agent yet</h2>
+            <p className="text-[#001f98]/70 max-w-2xl mx-auto mb-6">
               An AI agent is your personal digital assistant that can interact with others on your behalf. 
               Create one to define its personality, train it with your knowledge, and let it represent you.
             </p>
@@ -565,8 +565,8 @@ function AgentEditorContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                 </svg>
               </div>
-              <h3 className="font-semibold text-[#0B0B0C] mb-1">Custom Personality</h3>
-              <p className="text-xs text-[#2E3A59]/70">Define how your agent thinks and responds</p>
+              <h3 className="font-semibold text-gray-900 mb-1">Custom Personality</h3>
+              <p className="text-xs text-[#001f98]/70">Define how your agent thinks and responds</p>
             </div>
 
             <div className="text-center p-4">
@@ -575,8 +575,8 @@ function AgentEditorContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
-              <h3 className="font-semibold text-[#0B0B0C] mb-1">Knowledge Base</h3>
-              <p className="text-xs text-[#2E3A59]/70">Train it with your documents and information</p>
+              <h3 className="font-semibold text-gray-900 mb-1">Knowledge Base</h3>
+              <p className="text-xs text-[#001f98]/70">Train it with your documents and information</p>
             </div>
 
             <div className="text-center p-4">
@@ -585,20 +585,20 @@ function AgentEditorContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="font-semibold text-[#0B0B0C] mb-1">Smart Interactions</h3>
-              <p className="text-xs text-[#2E3A59]/70">Let others chat with your AI agent</p>
+              <h3 className="font-semibold text-gray-900 mb-1">Smart Interactions</h3>
+              <p className="text-xs text-[#001f98]/70">Let others chat with your AI agent</p>
             </div>
           </div>
 
           {/* CTA */}
           <div className="text-center">
-            <p className="text-sm text-[#2E3A59]/70 mb-4">
+            <p className="text-sm text-[#001f98]/70 mb-4">
               <strong>First step:</strong> Make sure you've completed your profile with a username
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/profile"
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-105"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -607,7 +607,7 @@ function AgentEditorContent() {
               </Link>
               <button
                 onClick={load}
-                className="inline-flex items-center gap-2 rounded-lg border-2 border-[#E6E6E6] px-6 py-4 text-base font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                className="inline-flex items-center gap-2 rounded-lg border-2 border-gray-200 px-6 py-4 text-base font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -643,8 +643,8 @@ function AgentEditorContent() {
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="mb-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#0B0B0C]">My Agent</h1>
-          <p className="mt-2 text-sm sm:text-base text-[#2E3A59]/70">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Agent</h1>
+          <p className="mt-2 text-sm sm:text-base text-[#001f98]/70">
             Configure your AI agent <span className="font-semibold">@{profile.handle}</span>
           </p>
         </div>
@@ -654,7 +654,7 @@ function AgentEditorContent() {
             <ChatButton
               handle={profile.handle}
               displayName={profile?.display_name || profile.handle}
-              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -665,7 +665,7 @@ function AgentEditorContent() {
           )}
           <button
             onClick={load}
-            className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -720,8 +720,8 @@ function AgentEditorContent() {
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">🎙️ AI Profile Generation from Voice</h2>
-                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">🎙️ AI Profile Generation from Voice</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">
                   Record a 30-second intro and let AI create your persona
                 </p>
               </div>
@@ -731,7 +731,7 @@ function AgentEditorContent() {
               className="rounded-lg p-2 transition-colors hover:bg-white/50 shrink-0 ml-2"
             >
               <svg
-                className={`h-5 w-5 text-[#2E3A59] transition-transform ${
+                className={`h-5 w-5 text-[#001f98] transition-transform ${
                   showVoiceSection ? "rotate-180" : ""
                 }`}
                 fill="none"
@@ -751,8 +751,8 @@ function AgentEditorContent() {
                     <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z" />
                   </svg>
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-[#0B0B0C] mb-1">How it works:</div>
-                    <ol className="list-decimal list-inside space-y-1 text-[#2E3A59]/80">
+                    <div className="font-semibold text-gray-900 mb-1">How it works:</div>
+                    <ol className="list-decimal list-inside space-y-1 text-[#001f98]/80">
                       <li>Record a 30-second voice introduction talking about yourself</li>
                       <li>AI (GPT-4o) transcribes your speech using Whisper</li>
                       <li>AI generates a persona based on your intro</li>
@@ -777,8 +777,8 @@ function AgentEditorContent() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Generating your profile...</div>
-                    <div className="text-xs sm:text-sm text-[#2E3A59]/70 mt-1">
+                    <div className="text-sm sm:text-base font-semibold text-gray-900">Generating your profile...</div>
+                    <div className="text-xs sm:text-sm text-[#001f98]/70 mt-1">
                       Transcribing audio and analyzing your personality with GPT-4o
                     </div>
                   </div>
@@ -788,15 +788,15 @@ function AgentEditorContent() {
               {voiceGenerationResult && (
                 <div className="space-y-3 sm:space-y-4 rounded-lg border border-[#C8A24A]/30 bg-white p-4 sm:p-6">
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">📝 Transcript:</div>
-                    <div className="rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs sm:text-sm text-[#2E3A59]/80 italic break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">📝 Transcript:</div>
+                    <div className="rounded-lg bg-gray-200/50 p-2 sm:p-3 text-xs sm:text-sm text-[#001f98]/80 italic break-words">
                       "{voiceGenerationResult.transcript}"
                     </div>
                   </div>
 
                   <div>
-                    <div className="mb-2 text-xs sm:text-sm font-semibold text-[#0B0B0C]">🎭 Generated Persona:</div>
-                    <div className="max-h-32 sm:max-h-40 overflow-y-auto rounded-lg bg-[#E6E6E6]/50 p-2 sm:p-3 text-xs font-mono text-[#2E3A59]/80 break-words">
+                    <div className="mb-2 text-xs sm:text-sm font-semibold text-gray-900">🎭 Generated Persona:</div>
+                    <div className="max-h-32 sm:max-h-40 overflow-y-auto rounded-lg bg-gray-200/50 p-2 sm:p-3 text-xs font-mono text-[#001f98]/80 break-words">
                       {voiceGenerationResult.persona}
                     </div>
                   </div>
@@ -816,7 +816,7 @@ function AgentEditorContent() {
                         setVoiceGenerationResult(null);
                         setShowVoiceSection(false);
                       }}
-                      className="rounded-lg border border-[#E6E6E6] px-4 sm:px-6 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      className="rounded-lg border border-gray-200 px-4 sm:px-6 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                     >
                       Discard
                     </button>
@@ -941,10 +941,10 @@ function AgentEditorContent() {
         )}
 
         {/* Training Data Card */}
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-white px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Training Data</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Add knowledge and context for this Agent</p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#001f98]/5 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Training Data</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Add knowledge and context for this Agent</p>
           </div>
           <div className="p-4 sm:p-6">
             {/* Tab Selection */}
@@ -953,7 +953,7 @@ function AgentEditorContent() {
                 onClick={() => setTrainingMode("text")}
                 className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                   trainingMode === "text"
-                    ? "bg-[#2E3A59] text-white"
+                    ? "bg-[#001f98] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -963,7 +963,7 @@ function AgentEditorContent() {
                 onClick={() => setTrainingMode("file")}
                 className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                   trainingMode === "file"
-                    ? "bg-[#2E3A59] text-white"
+                    ? "bg-[#001f98] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -973,7 +973,7 @@ function AgentEditorContent() {
                 onClick={() => setTrainingMode("url")}
                 className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                   trainingMode === "url"
-                    ? "bg-[#2E3A59] text-white"
+                    ? "bg-[#001f98] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -984,9 +984,9 @@ function AgentEditorContent() {
             {/* Common: Layer and Title */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-4">
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Layer</label>
                 <select
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={trainLayer}
                   onChange={(e) => setTrainLayer(e.target.value as any)}
                 >
@@ -997,9 +997,9 @@ function AgentEditorContent() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Title (optional)</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Title (optional)</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={trainTitle}
                   onChange={(e) => setTrainTitle(e.target.value)}
                   placeholder="e.g., Bio, FAQ, Memories"
@@ -1011,9 +1011,9 @@ function AgentEditorContent() {
             {trainingMode === "text" && (
               <>
                 <div className="sm:col-span-3 mb-4">
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Source (optional)</label>
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">Source (optional)</label>
                   <input
-                    className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={trainSource}
                     onChange={(e) => setTrainSource(e.target.value)}
                     placeholder="e.g., LinkedIn, website, notes"
@@ -1021,9 +1021,9 @@ function AgentEditorContent() {
                 </div>
 
                 <div className="sm:col-span-3 mb-4">
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Content</label>
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">Content</label>
                   <textarea
-                    className="h-32 sm:h-40 w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="h-32 sm:h-40 w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={trainContent}
                     onChange={(e) => setTrainContent(e.target.value)}
                     placeholder="Paste training content here..."
@@ -1033,7 +1033,7 @@ function AgentEditorContent() {
                 <button
                   onClick={onAddDoc}
                   disabled={training}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {training ? (
                     <>
@@ -1059,7 +1059,7 @@ function AgentEditorContent() {
             {trainingMode === "file" && (
               <>
                 <div className="mb-4">
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">
                     Upload File
                   </label>
                   <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
@@ -1078,7 +1078,7 @@ function AgentEditorContent() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingFile}
-                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {uploadingFile ? (
                         <>
@@ -1113,10 +1113,10 @@ function AgentEditorContent() {
             {trainingMode === "url" && (
               <>
                 <div className="mb-4">
-                  <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">URL</label>
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">URL</label>
                   <input
                     type="url"
-                    className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                    className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                     value={extractUrl}
                     onChange={(e) => setExtractUrl(e.target.value)}
                     placeholder="https://example.com/article"
@@ -1126,7 +1126,7 @@ function AgentEditorContent() {
                 <button
                   onClick={handleExtractFromUrl}
                   disabled={extractingUrl || !extractUrl.trim()}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {extractingUrl ? (
                     <>
@@ -1182,17 +1182,17 @@ function AgentEditorContent() {
         </div>
 
         {/* Permissions Card */}
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#C8A24A]/10 to-white px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Permissions</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Control who can access different layers</p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#C8A24A]/10 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Permissions</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Control who can access different layers</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Viewer Handle</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Viewer Handle</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={viewerHandle}
                   onChange={(e) => setViewerHandle(e.target.value)}
                   placeholder="e.g., john-doe"
@@ -1200,9 +1200,9 @@ function AgentEditorContent() {
               </div>
 
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Max Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Max Layer</label>
                 <select
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={maxLayer}
                   onChange={(e) => setMaxLayer(e.target.value as any)}
                 >
@@ -1241,17 +1241,17 @@ function AgentEditorContent() {
         </div>
 
         {/* Test Card */}
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-white px-4 sm:px-6 py-4">
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Test Agent</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Ask questions to test responses</p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#001f98]/5 to-white px-4 sm:px-6 py-4">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Test Agent</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Ask questions to test responses</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div className="sm:col-span-1">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Layer</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Layer</label>
                 <select
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={testLayer}
                   onChange={(e) => setTestLayer(e.target.value as any)}
                 >
@@ -1262,9 +1262,9 @@ function AgentEditorContent() {
               </div>
 
               <div className="sm:col-span-3">
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Question</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Question</label>
                 <input
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Ask something..."
@@ -1276,7 +1276,7 @@ function AgentEditorContent() {
               <button
                 onClick={onAsk}
                 disabled={asking}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#001670] px-4 sm:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {asking ? (
                   <>
@@ -1300,7 +1300,7 @@ function AgentEditorContent() {
                 <button
                   type="button"
                   onClick={() => setAnswer(null)}
-                  className="rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                 >
                   Clear
                 </button>
@@ -1308,7 +1308,7 @@ function AgentEditorContent() {
             </div>
 
             {answer && (
-              <div className="mt-4 rounded-lg border border-[#E6E6E6] bg-[#E6E6E6]/50 p-3 sm:p-4 text-xs sm:text-sm text-[#0B0B0C] whitespace-pre-wrap break-words">
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-200/50 p-3 sm:p-4 text-xs sm:text-sm text-gray-900 whitespace-pre-wrap break-words">
                 {answer}
               </div>
             )}

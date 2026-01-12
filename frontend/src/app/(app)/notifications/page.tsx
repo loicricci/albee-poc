@@ -225,7 +225,7 @@ function NotificationCard({
   const getNotificationColor = (type: string) => {
     switch (type) {
       case "agent_update":
-        return "from-[#2E3A59] to-[#1a2236]";
+        return "from-[#001f98] to-[#1a2236]";
       case "post_like":
         return "from-[#C8A24A] to-[#b8923a]";
       case "post_comment":
@@ -237,14 +237,14 @@ function NotificationCard({
       case "new_message":
         return "from-purple-600 to-purple-700";
       default:
-        return "from-[#2E3A59]/70 to-[#2E3A59]/50";
+        return "from-[#001f98]/70 to-[#001f98]/50";
     }
   };
   
   return (
     <div
       className={`group border-b border-[#E6E6E6] p-5 transition-all ${
-        !notification.is_read ? "bg-[#2E3A59]/5" : "bg-white hover:bg-[#FAFAFA]"
+        !notification.is_read ? "bg-[#001f98]/5" : "bg-white hover:bg-[#f8fafc]"
       }`}
     >
       <div className="flex items-start gap-4">
@@ -256,7 +256,7 @@ function NotificationCard({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-semibold text-[#0B0B0C]">{notification.title}</h3>
+            <h3 className="font-semibold text-gray-900">{notification.title}</h3>
             {!notification.is_read && (
               <span className="flex h-2 w-2 shrink-0 mt-2">
                 <span className="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-[#C8A24A] opacity-75"></span>
@@ -264,11 +264,11 @@ function NotificationCard({
               </span>
             )}
           </div>
-          <p className="text-sm text-[#2E3A59]/70 mb-3">{notification.message}</p>
+          <p className="text-sm text-[#001f98]/70 mb-3">{notification.message}</p>
           
           {/* Related entity preview */}
           {notification.related_user && (
-            <div className="flex items-center gap-2 mb-3 text-xs text-[#2E3A59]/60">
+            <div className="flex items-center gap-2 mb-3 text-xs text-[#001f98]/60">
               {notification.related_user.avatar_url && (
                 <img 
                   src={notification.related_user.avatar_url} 
@@ -281,7 +281,7 @@ function NotificationCard({
           )}
           
           {notification.related_agent && (
-            <div className="flex items-center gap-2 mb-3 text-xs text-[#2E3A59]/60">
+            <div className="flex items-center gap-2 mb-3 text-xs text-[#001f98]/60">
               {notification.related_agent.avatar_url && (
                 <img 
                   src={notification.related_agent.avatar_url} 
@@ -294,7 +294,7 @@ function NotificationCard({
           )}
           
           <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1 text-[#2E3A59]/70">
+            <span className="flex items-center gap-1 text-[#001f98]/70">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -304,7 +304,7 @@ function NotificationCard({
             {notification.link && (
               <Link
                 href={notification.link}
-                className="font-medium text-[#2E3A59] hover:text-[#1a2236] transition-colors"
+                className="font-medium text-[#001f98] hover:text-[#1a2236] transition-colors"
               >
                 View
               </Link>
@@ -313,7 +313,7 @@ function NotificationCard({
             {notification.related_agent?.handle && (
               <ChatButton
                 handle={notification.related_agent.handle}
-                className="font-medium text-[#2E3A59] hover:text-[#1a2236] transition-colors"
+                className="font-medium text-[#001f98] hover:text-[#1a2236] transition-colors"
               >
                 Chat
               </ChatButton>
@@ -322,7 +322,7 @@ function NotificationCard({
             {!notification.is_read && (
               <button
                 onClick={() => onMarkAsRead(notification.id)}
-                className="font-medium text-[#2E3A59]/70 hover:text-[#0B0B0C] transition-colors"
+                className="font-medium text-[#001f98]/70 hover:text-gray-900 transition-colors"
               >
                 Mark as read
               </button>
@@ -425,8 +425,8 @@ function NotificationsContent() {
       <div className="mb-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#0B0B0C]">Notifications</h1>
-            <p className="mt-2 text-[#2E3A59]/70">
+            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+            <p className="mt-2 text-[#001f98]/70">
               Stay updated with your Agents and network activity
             </p>
           </div>
@@ -443,7 +443,7 @@ function NotificationsContent() {
             <button
               onClick={loadNotifications}
               disabled={loading}
-              className="rounded-lg border border-[#E6E6E6] px-3 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
+              className="rounded-lg border border-[#E6E6E6] px-3 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5 disabled:opacity-50"
               title="Refresh notifications"
             >
               <svg className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -479,8 +479,8 @@ function NotificationsContent() {
             onClick={() => setFilter("all")}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
               filter === "all" 
-                ? "bg-[#2E3A59] text-white shadow-md" 
-                : "bg-[#FAFAFA] text-[#0B0B0C] hover:bg-[#E6E6E6]"
+                ? "bg-[#001f98] text-white shadow-md" 
+                : "bg-[#f8fafc] text-gray-900 hover:bg-[#E6E6E6]"
             }`}
           >
             All <span className="ml-1.5 rounded-full bg-white/20 px-2 py-0.5 text-xs">{notifications.length}</span>
@@ -489,8 +489,8 @@ function NotificationsContent() {
             onClick={() => setFilter("unread")}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
               filter === "unread" 
-                ? "bg-[#2E3A59] text-white shadow-md" 
-                : "bg-[#FAFAFA] text-[#0B0B0C] hover:bg-[#E6E6E6]"
+                ? "bg-[#001f98] text-white shadow-md" 
+                : "bg-[#f8fafc] text-gray-900 hover:bg-[#E6E6E6]"
             }`}
           >
             Unread <span className="ml-1.5 rounded-full bg-white/20 px-2 py-0.5 text-xs">{unreadCount}</span>
@@ -500,7 +500,7 @@ function NotificationsContent() {
         {unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
-            className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+            className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -514,7 +514,7 @@ function NotificationsContent() {
       <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="flex items-center gap-3 text-[#2E3A59]">
+            <div className="flex items-center gap-3 text-[#001f98]">
               <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -524,14 +524,14 @@ function NotificationsContent() {
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#2E3A59]/10 to-[#2E3A59]/5">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#001f98]/10 to-[#001f98]/5">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={2}
                 stroke="currentColor"
-                className="h-10 w-10 text-[#2E3A59]"
+                className="h-10 w-10 text-[#001f98]"
               >
                 <path
                   strokeLinecap="round"
@@ -540,17 +540,17 @@ function NotificationsContent() {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {filter === "unread" ? "All caught up!" : "No notifications yet"}
             </h3>
-            <p className="text-sm text-[#2E3A59]/70 mb-4">
+            <p className="text-sm text-[#001f98]/70 mb-4">
               {filter === "unread" 
                 ? "You have no unread notifications."
                 : "Follow some Agents to start receiving updates."}
             </p>
             <Link
               href="/network"
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#001f98] to-[#1a2236] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -572,24 +572,24 @@ function NotificationsContent() {
 
       {/* Info section */}
       {!loading && notifications.length > 0 && (
-        <div className="mt-6 overflow-hidden rounded-xl border border-[#2E3A59]/20 bg-gradient-to-br from-[#2E3A59]/5 to-[#FAFAFA] shadow-sm">
+        <div className="mt-6 overflow-hidden rounded-xl border border-[#001f98]/20 bg-gradient-to-br from-[#001f98]/5 to-[#f8fafc] shadow-sm">
           <div className="p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#0B0B0C]">
-              <svg className="h-5 w-5 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <svg className="h-5 w-5 text-[#001f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               About Notifications
             </h3>
             <div className="space-y-3">
               <div className="flex items-start gap-3 rounded-lg bg-white/50 border border-[#E6E6E6]/50 p-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2E3A59] to-[#1a2236] text-white">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#001f98] to-[#1a2236] text-white">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-[#0B0B0C]">Agent Updates</div>
-                  <div className="text-xs text-[#2E3A59]/70">Get notified when agents you follow post new updates. Click to chat with them about the update!</div>
+                  <div className="text-sm font-semibold text-gray-900">Agent Updates</div>
+                  <div className="text-xs text-[#001f98]/70">Get notified when agents you follow post new updates. Click to chat with them about the update!</div>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-white/50 border border-[#E6E6E6]/50 p-3">
@@ -599,8 +599,8 @@ function NotificationsContent() {
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-[#0B0B0C]">Real-time Updates</div>
-                  <div className="text-xs text-[#2E3A59]/70">Notifications are pulled from your personalized feed. Click refresh to check for new updates.</div>
+                  <div className="text-sm font-semibold text-gray-900">Real-time Updates</div>
+                  <div className="text-xs text-[#001f98]/70">Notifications are pulled from your personalized feed. Click refresh to check for new updates.</div>
                 </div>
               </div>
             </div>

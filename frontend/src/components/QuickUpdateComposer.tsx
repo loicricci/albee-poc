@@ -165,17 +165,17 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
 
   if (agents.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[#E6E6E6] bg-[#FAFAFA] p-6 md:p-8 text-center">
-        <svg className="mx-auto h-10 w-10 md:h-12 md:w-12 text-[#2E3A59]/40 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-[#f8fafc] p-6 md:p-8 text-center">
+        <svg className="mx-auto h-10 w-10 md:h-12 md:w-12 text-[#001f98]/40 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
-        <h3 className="text-base md:text-lg font-semibold text-[#0B0B0C] mb-2">No agents yet</h3>
-        <p className="text-sm text-[#2E3A59]/70 mb-4">
+        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2">No agents yet</h3>
+        <p className="text-sm text-gray-600 mb-4">
           Create an agent to start posting updates
         </p>
         <a
           href="/my-agents"
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 md:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105"
+          className="inline-flex items-center gap-2 rounded-full bg-[#001f98] px-4 md:px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 transition-all hover:shadow-[#001f98]/40 hover:scale-105"
         >
           Create Agent
         </a>
@@ -209,19 +209,19 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:border-[#001f98]/30 transition-all">
         {/* Header */}
-        <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 md:px-6 py-3 md:py-4">
+        <div className="border-b border-gray-200 bg-gradient-to-r from-[#e6eaff] to-[#f8fafc] px-4 md:px-6 py-3 md:py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
-              <div className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#2E3A59] to-[#1a2236]">
+              <div className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full shadow-lg shadow-[#001f98]/25" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
                 <svg className="h-4 w-4 md:h-5 md:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </div>
               <div className="min-w-0">
-                <h2 className="font-semibold text-sm md:text-base text-[#0B0B0C]">What's new?</h2>
-                <p className="text-xs md:text-sm text-[#2E3A59]/70 hidden sm:block">Share an update with your followers</p>
+                <h2 className="font-semibold text-sm md:text-base text-gray-900">What's new?</h2>
+                <p className="text-xs md:text-sm text-gray-600 hidden sm:block">Share an update with your followers</p>
               </div>
             </div>
             {!expanded && (
@@ -229,7 +229,7 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
                 <button
                   onClick={handleGeneratePost}
                   disabled={generating || !agents.length}
-                  className="flex items-center gap-1.5 md:gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                  className="flex items-center gap-1.5 md:gap-2 rounded-full bg-gradient-to-r from-[#3366cc] to-[#001f98] px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 transition-all hover:shadow-[#001f98]/40 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 >
                   {generating ? (
                     <>
@@ -252,7 +252,7 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
                 </button>
                 <button
                   onClick={() => setExpanded(true)}
-                  className="flex items-center gap-1.5 md:gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 shrink-0"
+                  className="flex items-center gap-1.5 md:gap-2 rounded-full bg-[#001f98] px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 transition-all hover:shadow-[#001f98]/40 hover:scale-105 shrink-0"
                 >
                   <svg className="h-3.5 w-3.5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -280,13 +280,13 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
 
             {/* Agent Selector */}
             <div className="mb-4">
-              <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+              <label className="mb-2 block text-sm font-semibold text-gray-900">
                 Post as <span className="text-red-600">*</span>
               </label>
               <select
                 value={selectedAgent}
                 onChange={(e) => setSelectedAgent(e.target.value)}
-                className="w-full rounded-lg border border-[#E6E6E6] px-4 py-2.5 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                 required
               >
                 <option value="">Select an agent...</option>
@@ -300,8 +300,8 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
 
             {/* Selected Agent Preview */}
             {selectedAgentData && (
-              <div className="mb-4 flex items-center gap-3 rounded-lg border border-[#2E3A59]/20 bg-[#2E3A59]/5 p-3">
-                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-[#2E3A59]/30 bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center">
+              <div className="mb-4 flex items-center gap-3 rounded-lg border border-[#001f98]/20 bg-[#e6eaff] p-3">
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-[#001f98]/30 flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
                   {selectedAgentData.avatar_url ? (
                     <img src={selectedAgentData.avatar_url} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -311,10 +311,10 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-[#0B0B0C] truncate">
+                  <div className="font-medium text-sm text-gray-900 truncate">
                     {selectedAgentData.display_name || selectedAgentData.handle}
                   </div>
-                  <div className="text-xs text-[#2E3A59]/70">
+                  <div className="text-xs text-[#001f98]">
                     Posting to followers of @{selectedAgentData.handle}
                   </div>
                 </div>
@@ -323,18 +323,18 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
 
             {/* Content */}
             <div className="mb-4">
-              <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">
+              <label className="mb-2 block text-sm font-semibold text-gray-900">
                 What's happening? <span className="text-red-600">*</span>
               </label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Share an update, announcement, or thought..."
-                className="h-32 w-full rounded-lg border border-[#E6E6E6] px-4 py-3 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20 resize-none"
+                className="h-32 w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 resize-none"
                 maxLength={10000}
                 required
               />
-              <div className="mt-1 flex items-center justify-between text-xs text-[#2E3A59]/70">
+              <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
                 <span>This will become part of your agent's knowledge</span>
                 <span>{content.length} / 10,000</span>
               </div>
@@ -343,11 +343,11 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
             {/* Options */}
             <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Topic</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Topic</label>
                 <select
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                 >
                   {TOPIC_PRESETS.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -358,11 +358,11 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#0B0B0C]">Visibility</label>
+                <label className="mb-2 block text-sm font-semibold text-gray-900">Visibility</label>
                 <select
                   value={layer}
                   onChange={(e) => setLayer(e.target.value as any)}
-                  className="w-full rounded-lg border border-[#E6E6E6] px-3 py-2 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                 >
                   <option value="public">🌍 Public - Everyone</option>
                   <option value="friends">👥 Friends Only</option>
@@ -380,14 +380,14 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
                   setContent("");
                   setError(null);
                 }}
-                className="rounded-lg border border-[#E6E6E6] px-4 md:px-6 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                className="rounded-full border border-gray-300 px-4 md:px-6 py-2 text-sm font-medium text-gray-700 transition-all hover:border-[#001f98] hover:text-[#001f98]"
                 disabled={submitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2E3A59] to-[#1a2236] px-4 md:px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-full bg-[#001f98] px-4 md:px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 transition-all hover:shadow-[#001f98]/40 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={submitting || !content.trim() || !selectedAgent}
               >
                 {submitting ? (
@@ -417,13 +417,13 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
             <div className="flex flex-col gap-3">
               {/* Agent selector for quick generate */}
               <div className="flex items-center gap-3">
-                <label className="text-xs md:text-sm text-[#0B0B0C] font-medium shrink-0">
+                <label className="text-xs md:text-sm text-gray-900 font-medium shrink-0">
                   Select agent:
                 </label>
                 <select
                   value={selectedAgent}
                   onChange={(e) => setSelectedAgent(e.target.value)}
-                  className="flex-1 rounded-lg border border-[#E6E6E6] px-3 py-1.5 text-xs md:text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                  className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs md:text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                 >
                   <option value="">Choose an agent...</option>
                   {agents.map((agent) => (
@@ -436,8 +436,8 @@ export function QuickUpdateComposer({ agents, onUpdatePosted }: QuickUpdateCompo
 
               {/* Info text */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-                <span className="text-xs md:text-sm text-[#2E3A59]/70">Generate AI-powered posts or write your own updates</span>
-                <span className="text-xs text-[#2E3A59]/50 shrink-0">{agents.length} agent{agents.length !== 1 ? "s" : ""} available</span>
+                <span className="text-xs md:text-sm text-gray-600">Generate AI-powered posts or write your own updates</span>
+                <span className="text-xs text-gray-500 shrink-0">{agents.length} agent{agents.length !== 1 ? "s" : ""} available</span>
               </div>
             </div>
           </div>

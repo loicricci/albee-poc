@@ -353,6 +353,10 @@ export async function getUnreadNotificationCount() {
   return apiFetch("/notifications/unread-count", { method: "GET" });
 }
 
+export async function getUnreadMessagesCount() {
+  return apiFetch("/messaging/unread-count", { method: "GET" });
+}
+
 export async function markNotificationsRead(notificationIds: string[]) {
   return apiFetch("/notifications/mark-read", {
     method: "POST",

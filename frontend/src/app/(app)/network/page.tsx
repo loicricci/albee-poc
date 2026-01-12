@@ -370,8 +370,8 @@ function NetworkContent() {
     <div className="mx-auto max-w-5xl">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#0B0B0C]">Network</h1>
-        <p className="mt-2 text-sm sm:text-base text-[#2E3A59]/70">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Network</h1>
+        <p className="mt-2 text-sm sm:text-base text-gray-600">
           Follow agents to chat with them
         </p>
       </div>
@@ -395,19 +395,19 @@ function NetworkContent() {
 
       {/* Suggested Agents */}
       {(suggestedAgents.length > 0 || suggestedPage > 0) && (
-        <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-          <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 sm:px-6 py-3 sm:py-4">
+        <div className="mb-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gradient-to-r from-[#001f98]/5 to-[#f8fafc] px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Suggested Agents</h2>
-                <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Discover agents you might like to follow</p>
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">Suggested Agents</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Discover agents you might like to follow</p>
               </div>
               <div className="flex items-center gap-2">
                 {/* Refresh button */}
                 <button
                   onClick={handleRefreshSuggested}
                   disabled={loadingSuggested}
-                  className="flex items-center justify-center rounded-lg p-2 text-[#2E3A59]/70 transition-colors hover:bg-[#2E3A59]/10 hover:text-[#2E3A59] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center rounded-lg p-2 text-[#001f98]/70 transition-colors hover:bg-[#001f98]/10 hover:text-[#001f98] disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Shuffle suggestions"
                 >
                   <svg className={`h-4 w-4 ${loadingSuggested ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -418,7 +418,7 @@ function NetworkContent() {
                 <button
                   onClick={handlePreviousSuggested}
                   disabled={suggestedPage === 0 || loadingSuggested}
-                  className="flex items-center justify-center rounded-lg p-2 text-[#2E3A59]/70 transition-colors hover:bg-[#2E3A59]/10 hover:text-[#2E3A59] disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center rounded-lg p-2 text-[#001f98]/70 transition-colors hover:bg-[#001f98]/10 hover:text-[#001f98] disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Previous suggestions"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -429,7 +429,7 @@ function NetworkContent() {
                 <button
                   onClick={handleNextSuggested}
                   disabled={!hasMoreSuggested || loadingSuggested}
-                  className="flex items-center justify-center rounded-lg p-2 text-[#2E3A59]/70 transition-colors hover:bg-[#2E3A59]/10 hover:text-[#2E3A59] disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center rounded-lg p-2 text-[#001f98]/70 transition-colors hover:bg-[#001f98]/10 hover:text-[#001f98] disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Next suggestions"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -452,14 +452,14 @@ function NetworkContent() {
               </div>
             ) : suggestedAgents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <svg className="h-12 w-12 text-[#2E3A59]/30 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-12 w-12 text-[#001f98]/30 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <p className="text-sm text-[#2E3A59]/70 mb-2">No more suggestions available</p>
+                <p className="text-sm text-[#001f98]/70 mb-2">No more suggestions available</p>
                 {suggestedPage > 0 && (
                   <button
                     onClick={handlePreviousSuggested}
-                    className="text-sm text-[#2E3A59] hover:underline"
+                    className="text-sm text-[#001f98] hover:underline"
                   >
                     ← Go back to previous suggestions
                   </button>
@@ -470,12 +470,12 @@ function NetworkContent() {
               {suggestedAgents.map((agent) => (
                 <div
                   key={agent.avee_id}
-                  className="group relative flex flex-col overflow-hidden rounded-xl border border-[#E6E6E6] bg-gradient-to-br from-white to-[#FAFAFA] p-3 sm:p-4 transition-all hover:border-[#2E3A59] hover:shadow-md"
+                  className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-white to-[#f8fafc] p-3 sm:p-4 transition-all hover:border-[#001f98] hover:shadow-md"
                 >
                   <div className="flex-1 flex flex-col">
                     <div className="flex items-start gap-3 mb-3">
                       {/* Avatar */}
-                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center shadow-sm">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center shadow-sm">
                         {agent.avee_avatar_url ? (
                           <img src={agent.avee_avatar_url} alt="" className="h-full w-full object-cover" />
                         ) : (
@@ -487,11 +487,11 @@ function NetworkContent() {
 
                       {/* Agent Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-[#0B0B0C] truncate text-sm">
+                        <h3 className="font-semibold text-gray-900 truncate text-sm">
                           {agent.avee_display_name || agent.avee_handle}
                         </h3>
-                        <p className="text-xs text-[#2E3A59]/70 truncate">@{agent.avee_handle}</p>
-                        <p className="mt-0.5 text-xs text-[#2E3A59]/50 truncate">
+                        <p className="text-xs text-[#001f98]/70 truncate">@{agent.avee_handle}</p>
+                        <p className="mt-0.5 text-xs text-[#001f98]/50 truncate">
                           by {agent.owner_display_name || agent.owner_handle}
                         </p>
                       </div>
@@ -500,7 +500,7 @@ function NetworkContent() {
                     {/* Bio - with minimum height to ensure alignment */}
                     <div className="min-h-[40px] mb-3 flex items-start">
                       {agent.avee_bio && (
-                        <p className="text-xs text-[#2E3A59]/70 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-[#001f98]/70 line-clamp-2 leading-relaxed">
                           {agent.avee_bio}
                         </p>
                       )}
@@ -511,7 +511,7 @@ function NetworkContent() {
                   <button
                     onClick={() => selectAgent(agent)}
                     disabled={followingAgentIds.has(agent.avee_id)}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#1a2236] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#001f98] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#001670] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {followingAgentIds.has(agent.avee_id) ? (
                       <>
@@ -539,10 +539,10 @@ function NetworkContent() {
       )}
 
       {/* Follow box */}
-      <div className="mb-6 overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-        <div className="border-b border-[#E6E6E6] bg-gradient-to-r from-[#2E3A59]/5 to-[#FAFAFA] px-4 sm:px-6 py-3 sm:py-4">
-          <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Follow an Agent</h2>
-          <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">Find and follow agents by their handle</p>
+      <div className="mb-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 bg-gradient-to-r from-[#001f98]/5 to-[#f8fafc] px-4 sm:px-6 py-3 sm:py-4">
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900">Follow an Agent</h2>
+          <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">Find and follow agents by their handle</p>
         </div>
         <div className="p-4 sm:p-6">
           <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
@@ -561,7 +561,7 @@ function NetworkContent() {
                 />
               </svg>
               <input
-                className="w-full rounded-lg border border-[#E6E6E6] py-2.5 sm:py-3 pl-9 sm:pl-10 pr-10 text-sm text-[#0B0B0C] transition-all focus:border-[#2E3A59] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20"
+                className="w-full rounded-lg border border-gray-200 py-2.5 sm:py-3 pl-9 sm:pl-10 pr-10 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
                 placeholder="Search agents..."
                 value={handleInput}
                 onChange={(e) => setHandleInput(e.target.value)}
@@ -574,7 +574,7 @@ function NetworkContent() {
                 disabled={followingAgentIds.size > 0}
               />
               {isSearching && (
-                <svg className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#2E3A59]" viewBox="0 0 24 24">
+                <svg className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#001f98]" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
@@ -582,17 +582,17 @@ function NetworkContent() {
               
               {/* Dropdown with search results */}
               {showDropdown && searchResults.length > 0 && (
-                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-[#E6E6E6] bg-white shadow-lg">
+                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
                   <div className="max-h-96 overflow-y-auto">
                     {searchResults.map((agent) => (
                       <button
                         key={agent.avee_id}
                         onClick={() => selectAgent(agent)}
-                        className="w-full border-b border-[#E6E6E6] px-4 py-3 text-left transition-colors hover:bg-[#2E3A59]/5 last:border-b-0"
+                        className="w-full border-b border-gray-200 px-4 py-3 text-left transition-colors hover:bg-[#001f98]/5 last:border-b-0"
                         disabled={followingAgentIds.has(agent.avee_id)}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center">
+                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center">
                             {agent.avee_avatar_url ? (
                               <img src={agent.avee_avatar_url} alt="" className="h-full w-full object-cover" />
                             ) : (
@@ -602,18 +602,18 @@ function NetworkContent() {
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-[#0B0B0C] truncate">
+                            <div className="font-medium text-gray-900 truncate">
                               {agent.avee_display_name || agent.avee_handle}
-                              <span className="ml-2 text-sm text-[#2E3A59]/70 font-normal">@{agent.avee_handle}</span>
+                              <span className="ml-2 text-sm text-[#001f98]/70 font-normal">@{agent.avee_handle}</span>
                             </div>
                             {agent.avee_bio && (
-                              <p className="text-xs text-[#2E3A59]/70 truncate">{agent.avee_bio}</p>
+                              <p className="text-xs text-[#001f98]/70 truncate">{agent.avee_bio}</p>
                             )}
-                            <p className="text-xs text-[#2E3A59]/50">
+                            <p className="text-xs text-[#001f98]/50">
                               by {agent.owner_display_name || agent.owner_handle}
                             </p>
                           </div>
-                          <svg className="h-5 w-5 shrink-0 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-5 w-5 shrink-0 text-[#001f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                         </div>
@@ -625,8 +625,8 @@ function NetworkContent() {
 
               {/* No results message */}
               {showDropdown && !isSearching && searchResults.length === 0 && handleInput.trim().length >= 2 && (
-                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-[#E6E6E6] bg-white shadow-lg">
-                  <div className="px-4 py-6 text-center text-sm text-[#2E3A59]/70">
+                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+                  <div className="px-4 py-6 text-center text-sm text-[#001f98]/70">
                     <svg className="mx-auto mb-2 h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -636,7 +636,7 @@ function NetworkContent() {
               )}
             </div>
             <button
-              className="flex items-center justify-center gap-2 rounded-lg bg-[#2E3A59] px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#1a2236] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg bg-[#001f98] px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#001670] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!normalizedHandle || followingAgentIds.size > 0}
               onClick={() => follow()}
               title="Follow"
@@ -659,7 +659,7 @@ function NetworkContent() {
               )}
             </button>
             <button
-              className="flex items-center justify-center gap-2 rounded-lg border border-[#E6E6E6] px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5 disabled:opacity-50"
               disabled={phase === "loading"}
               onClick={() => load(true)}
               title="Refresh"
@@ -670,18 +670,18 @@ function NetworkContent() {
               <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
-          <div className="mt-3 rounded-lg bg-[#2E3A59]/5 border border-[#2E3A59]/20 p-3 text-xs text-[#2E3A59]">
+          <div className="mt-3 rounded-lg bg-[#001f98]/5 border border-[#001f98]/20 p-3 text-xs text-[#001f98]">
             <strong>Tip:</strong> Follow agents directly to interact with them. Access levels are controlled by the agent owner.
           </div>
         </div>
       </div>
 
       {/* List */}
-      <div className="overflow-hidden rounded-2xl border border-[#E6E6E6] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#E6E6E6] px-4 sm:px-6 py-3 sm:py-4">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
           <div>
-            <h2 className="text-sm sm:text-base font-semibold text-[#0B0B0C]">Following</h2>
-            <p className="mt-1 text-xs sm:text-sm text-[#2E3A59]/70">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Following</h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">
               {phase === "loading" ? "Loading..." : `${items.length} agent${items.length !== 1 ? "s" : ""}`}
             </p>
           </div>
@@ -722,23 +722,23 @@ function NetworkContent() {
 
         {phase === "ready" && items.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#2E3A59]/10 to-[#2E3A59]/5">
-              <svg className="h-10 w-10 text-[#2E3A59]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#001f98]/10 to-[#001f98]/5">
+              <svg className="h-10 w-10 text-[#001f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-[#0B0B0C] mb-2">No agents followed yet</h3>
-            <p className="text-sm text-[#2E3A59]/70 mb-6">Follow an agent to start chatting</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No agents followed yet</h3>
+            <p className="text-sm text-[#001f98]/70 mb-6">Follow an agent to start chatting</p>
           </div>
         ) : null}
 
         {phase === "ready" && items.length > 0 && (
-          <div className="divide-y divide-[#E6E6E6]">
+          <div className="divide-y divide-gray-200">
             {items.map((x) => (
-              <div key={x.avee_id} className="group px-4 sm:px-6 py-4 sm:py-5 transition-colors hover:bg-[#2E3A59]/5">
+              <div key={x.avee_id} className="group px-4 sm:px-6 py-4 sm:py-5 transition-colors hover:bg-[#001f98]/5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl border-2 border-[#E6E6E6] bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center shadow-sm">
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center shadow-sm">
                       {x.avee_avatar_url ? (
                         <img src={x.avee_avatar_url} alt="" className="h-full w-full object-cover" />
                       ) : (
@@ -749,18 +749,18 @@ function NetworkContent() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-sm sm:text-base font-semibold text-[#0B0B0C] truncate">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                         {x.avee_display_name || x.avee_handle}
-                        <span className="ml-2 text-xs sm:text-sm text-[#2E3A59]/70 font-normal hidden sm:inline">@{x.avee_handle}</span>
+                        <span className="ml-2 text-xs sm:text-sm text-[#001f98]/70 font-normal hidden sm:inline">@{x.avee_handle}</span>
                       </h3>
-                      <p className="text-xs sm:text-sm text-[#2E3A59]/70 truncate sm:hidden">
+                      <p className="text-xs sm:text-sm text-[#001f98]/70 truncate sm:hidden">
                         @{x.avee_handle}
                       </p>
-                      <p className="text-xs sm:text-sm text-[#2E3A59]/70 truncate hidden sm:block">
-                        Owner: {x.owner_display_name || x.owner_handle} <span className="text-[#2E3A59]/50">(@{x.owner_handle})</span>
+                      <p className="text-xs sm:text-sm text-[#001f98]/70 truncate hidden sm:block">
+                        Owner: {x.owner_display_name || x.owner_handle} <span className="text-[#001f98]/50">(@{x.owner_handle})</span>
                       </p>
                       {x.avee_bio && (
-                        <p className="text-xs text-[#2E3A59]/70 mt-1 line-clamp-1 hidden sm:block">{x.avee_bio}</p>
+                        <p className="text-xs text-[#001f98]/70 mt-1 line-clamp-1 hidden sm:block">{x.avee_bio}</p>
                       )}
                     </div>
                   </div>
@@ -770,7 +770,7 @@ function NetworkContent() {
                     <ChatButton
                       handle={x.avee_handle}
                       displayName={x.avee_display_name || x.avee_handle}
-                      className="flex items-center gap-2 rounded-lg bg-[#2E3A59] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#1a2236] hover:shadow-md"
+                      className="flex items-center gap-2 rounded-lg bg-[#001f98] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#001670] hover:shadow-md"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -779,7 +779,7 @@ function NetworkContent() {
                     </ChatButton>
 
                     <Link
-                      className="flex items-center gap-2 rounded-lg border border-[#E6E6E6] px-4 py-2 text-sm font-medium text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                       href={`/u/${encodeURIComponent(x.avee_handle)}`}
                       title="View profile"
                     >
@@ -819,7 +819,7 @@ function NetworkContent() {
                     <ChatButton
                       handle={x.avee_handle}
                       displayName={x.avee_display_name || x.avee_handle}
-                      className="flex items-center justify-center rounded-lg bg-[#2E3A59] p-2.5 text-white shadow-sm transition-all hover:bg-[#1a2236]"
+                      className="flex items-center justify-center rounded-lg bg-[#001f98] p-2.5 text-white shadow-sm transition-all hover:bg-[#001670]"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -827,7 +827,7 @@ function NetworkContent() {
                     </ChatButton>
 
                     <Link
-                      className="flex items-center justify-center rounded-lg border border-[#E6E6E6] p-2.5 text-[#0B0B0C] transition-colors hover:border-[#2E3A59] hover:bg-[#2E3A59]/5"
+                      className="flex items-center justify-center rounded-lg border border-gray-200 p-2.5 text-gray-900 transition-colors hover:border-[#001f98] hover:bg-[#001f98]/5"
                       href={`/u/${encodeURIComponent(x.avee_handle)}`}
                       title="View profile"
                     >
@@ -862,29 +862,29 @@ function NetworkContent() {
       </div>
 
       {/* Notes */}
-      <div className="mt-6 overflow-hidden rounded-xl border border-[#2E3A59]/20 bg-gradient-to-br from-[#2E3A59]/5 to-[#FAFAFA] shadow-sm">
+      <div className="mt-6 overflow-hidden rounded-xl border border-[#001f98]/20 bg-gradient-to-br from-[#001f98]/5 to-[#f8fafc] shadow-sm">
         <div className="p-4 sm:p-6">
-          <h3 className="mb-3 flex items-center gap-2 text-sm sm:text-base font-semibold text-[#0B0B0C]">
-            <svg className="h-5 w-5 text-[#2E3A59] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <h3 className="mb-3 flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900">
+            <svg className="h-5 w-5 text-[#001f98] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             How It Works
           </h3>
-          <ul className="space-y-2 text-xs sm:text-sm text-[#2E3A59]">
+          <ul className="space-y-2 text-xs sm:text-sm text-[#001f98]">
             <li className="flex items-start gap-2">
-              <svg className="h-5 w-5 shrink-0 text-[#2E3A59] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 shrink-0 text-[#001f98] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span><strong>Follow agents directly:</strong> You now follow agents themselves, not their owners</span>
             </li>
             <li className="flex items-start gap-2">
-              <svg className="h-5 w-5 shrink-0 text-[#2E3A59] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 shrink-0 text-[#001f98] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span><strong>Chat instantly:</strong> Once you follow an agent, you can chat with it</span>
             </li>
             <li className="flex items-start gap-2">
-              <svg className="h-5 w-5 shrink-0 text-[#2E3A59] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 shrink-0 text-[#001f98] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span><strong>Access controlled by owner:</strong> The agent owner determines your access level (public/friends/intimate)</span>

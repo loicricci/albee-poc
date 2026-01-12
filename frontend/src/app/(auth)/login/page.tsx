@@ -93,7 +93,7 @@ export default function LoginPage() {
   
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-[#0B0B0C] dark:via-[#0F0F10] dark:to-[#0B0B0C] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#f8fafc] to-white dark:from-[#0B0B0C] dark:via-[#0F0F10] dark:to-[#0B0B0C] px-4">
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="mb-8 text-center">
@@ -110,32 +110,32 @@ export default function LoginPage() {
                     e.currentTarget.style.display = 'none';
                   }}
                 />
-                <div className="text-2xl font-bold tracking-tight text-[#0B0B0C] dark:text-white">
+                <div className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                   {appConfig.app_name || "AGENT"}
                 </div>
               </>
             ) : (
               <>
-                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#2E3A59] to-[#1a2236] shadow-lg dark:from-white dark:to-zinc-200" />
-                <div className="text-2xl font-bold tracking-tight text-[#0B0B0C] dark:text-white">
+                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#001f98] to-[#001670] shadow-lg dark:from-white dark:to-zinc-200" />
+                <div className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                   {appConfig.app_name || "AGENT"}
                 </div>
               </>
             )}
           </Link>
-          <h1 className="mt-6 text-3xl font-bold text-[#0B0B0C] dark:text-white">Welcome back</h1>
-          <p className="mt-2 text-[#2E3A59]/70 dark:text-zinc-400">Sign in to your {appConfig.app_name || "AGENT"} account</p>
+          <h1 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">Welcome back</h1>
+          <p className="mt-2 text-[#001f98]/70 dark:text-zinc-400">Sign in to your {appConfig.app_name || "AGENT"} account</p>
         </div>
 
         <form
           onSubmit={onSubmit}
-          className="rounded-2xl border border-[#E6E6E6] dark:border-white/[.08] bg-white dark:bg-zinc-950 p-8 shadow-xl"
+          className="rounded-2xl border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-950 p-8 shadow-xl"
         >
           <div className="mb-5">
-            <label className="mb-2 block text-sm font-medium text-[#0B0B0C] dark:text-zinc-300">Email address</label>
+            <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-zinc-300">Email address</label>
             <input
               type="email"
-              className="w-full rounded-lg border border-[#E6E6E6] dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-[#0B0B0C] dark:text-white transition-all focus:border-[#2E3A59] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20 dark:focus:ring-white/[.10]"
+              className="w-full rounded-lg border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-gray-900 dark:text-white transition-all focus:border-[#001f98] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 dark:focus:ring-white/[.10]"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -145,17 +145,17 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <div className="mb-2 flex items-center justify-between">
-              <label className="block text-sm font-medium text-[#0B0B0C] dark:text-zinc-300">Password</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-zinc-300">Password</label>
               <Link
                 href="/reset-password"
-                className="text-sm font-medium text-[#2E3A59] dark:text-white transition-colors hover:text-[#1a2236] dark:hover:text-zinc-300"
+                className="text-sm font-medium text-[#001f98] dark:text-white transition-colors hover:text-[#001670] dark:hover:text-zinc-300"
               >
                 Forgot password?
               </Link>
             </div>
             <input
               type="password"
-              className="w-full rounded-lg border border-[#E6E6E6] dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-[#0B0B0C] dark:text-white transition-all focus:border-[#2E3A59] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/20 dark:focus:ring-white/[.10]"
+              className="w-full rounded-lg border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-gray-900 dark:text-white transition-all focus:border-[#001f98] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 dark:focus:ring-white/[.10]"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -185,7 +185,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="group relative w-full overflow-hidden rounded-full bg-[#2E3A59] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#1a2236] hover:shadow-xl hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
+            className="group relative w-full overflow-hidden rounded-full bg-[#001f98] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#001670] hover:shadow-xl hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-zinc-100"
           >
             <span className="relative z-10">
               {loading ? (
@@ -214,11 +214,11 @@ export default function LoginPage() {
             </span>
           </button>
 
-          <div className="mt-6 text-center text-sm text-[#2E3A59]/70 dark:text-zinc-400">
+          <div className="mt-6 text-center text-sm text-[#001f98]/70 dark:text-zinc-400">
             Don't have an account?{" "}
             <Link
               href="/signup"
-              className="font-semibold text-[#2E3A59] dark:text-white transition-colors hover:text-[#1a2236] dark:hover:text-zinc-300"
+              className="font-semibold text-[#001f98] dark:text-white transition-colors hover:text-[#001670] dark:hover:text-zinc-300"
             >
               Sign up
             </Link>

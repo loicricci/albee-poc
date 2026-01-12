@@ -120,14 +120,14 @@ export function ImagePost({
   const isAIGenerated = post.post_type === "ai_generated";
 
   return (
-    <div className="rounded-2xl border border-[#E6E6E6] bg-white shadow-sm overflow-hidden transition-all hover:shadow-md">
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-all hover:shadow-md">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <Link 
           href={`/u/${post.owner_handle}`}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-[#2E3A59] to-[#1a2236] flex items-center justify-center">
+          <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center">
             {post.owner_avatar_url ? (
               <img src={post.owner_avatar_url} alt={displayName} className="h-full w-full object-cover" />
             ) : (
@@ -137,15 +137,15 @@ export function ImagePost({
             )}
           </div>
           <div>
-            <div className="font-semibold text-[#0B0B0C] text-sm">{displayName}</div>
-            <div className="text-xs text-[#2E3A59]/70">@{post.owner_handle} • {formatDate(post.created_at)}</div>
+            <div className="font-semibold text-gray-900 text-sm">{displayName}</div>
+            <div className="text-xs text-[#001f98]/70">@{post.owner_handle} • {formatDate(post.created_at)}</div>
           </div>
         </Link>
 
         {isOwnPost && onDelete && (
           <button
             onClick={() => onDelete(post.id)}
-            className="p-2 text-[#2E3A59]/70 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 text-[#001f98]/70 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Delete post"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -158,7 +158,7 @@ export function ImagePost({
       {/* Title */}
       {post.title && (
         <div className="px-4 pb-2">
-          <h3 className="text-lg font-semibold text-[#0B0B0C]">{post.title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{post.title}</h3>
         </div>
       )}
 
@@ -183,15 +183,15 @@ export function ImagePost({
       {/* Description */}
       {post.description && (
         <div className="px-4 pt-3 pb-2">
-          <p className="text-[#2E3A59] whitespace-pre-wrap">{post.description}</p>
+          <p className="text-[#001f98] whitespace-pre-wrap">{post.description}</p>
         </div>
       )}
 
       {/* AI Metadata (if available) */}
       {isAIGenerated && post.ai_metadata && Object.keys(post.ai_metadata).length > 0 && (
         <div className="px-4 pb-3">
-          <details className="text-xs text-[#2E3A59]/70">
-            <summary className="cursor-pointer hover:text-[#2E3A59] flex items-center gap-1">
+          <details className="text-xs text-[#001f98]/70">
+            <summary className="cursor-pointer hover:text-[#001f98] flex items-center gap-1">
               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -207,13 +207,13 @@ export function ImagePost({
       )}
 
       {/* Interaction Buttons */}
-      <div className="flex items-center border-t border-[#E6E6E6] px-4 py-2 gap-1">
+      <div className="flex items-center border-t border-gray-200 px-4 py-2 gap-1">
         {/* Like */}
         <button
           onClick={handleLike}
           disabled={isLiking}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-[#2E3A59]/5 ${
-            liked ? "text-red-600" : "text-[#2E3A59]"
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-[#001f98]/5 ${
+            liked ? "text-red-600" : "text-[#001f98]"
           } ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <svg 
@@ -230,7 +230,7 @@ export function ImagePost({
         {/* Comment */}
         <button
           onClick={handleComment}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#2E3A59] transition-all hover:bg-[#2E3A59]/5"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#001f98] transition-all hover:bg-[#001f98]/5"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -242,7 +242,7 @@ export function ImagePost({
         <div className="relative">
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#2E3A59] transition-all hover:bg-[#2E3A59]/5"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#001f98] transition-all hover:bg-[#001f98]/5"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -252,14 +252,14 @@ export function ImagePost({
 
           {/* Share Menu */}
           {showShareMenu && (
-            <div className="absolute bottom-full mb-2 left-0 bg-white border border-[#E6E6E6] rounded-lg shadow-lg py-1 min-w-[180px] z-10">
+            <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px] z-10">
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.origin + `/posts/${post.id}`);
                   setShowShareMenu(false);
                   alert("Link copied!");
                 }}
-                className="w-full px-4 py-2 text-left text-sm text-[#2E3A59] hover:bg-[#2E3A59]/5 flex items-center gap-2"
+                className="w-full px-4 py-2 text-left text-sm text-[#001f98] hover:bg-[#001f98]/5 flex items-center gap-2"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -271,7 +271,7 @@ export function ImagePost({
                   onShare?.(post.id);
                   setShowShareMenu(false);
                 }}
-                className="w-full px-4 py-2 text-left text-sm text-[#2E3A59] hover:bg-[#2E3A59]/5 flex items-center gap-2"
+                className="w-full px-4 py-2 text-left text-sm text-[#001f98] hover:bg-[#001f98]/5 flex items-center gap-2"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -285,8 +285,8 @@ export function ImagePost({
 
       {/* Comments Section */}
       {showComments && (
-        <div className="border-t border-[#E6E6E6] bg-[#FAFAFA] p-4">
-          <div className="text-sm text-[#2E3A59]/70 mb-4">
+        <div className="border-t border-gray-200 bg-[#FAFAFA] p-4">
+          <div className="text-sm text-[#001f98]/70 mb-4">
             Comments feature coming soon!
           </div>
           {/* TODO: Add comment list and input */}
