@@ -65,7 +65,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 import os
 
+# #region agent log
 def _get_allowed_origins() -> list[str]:
+    import json as _json
+    _log_path = "/tmp/debug.log"
     # Comma-separated list in Railway, ex:
     # ALLOWED_ORIGINS="https://myapp.vercel.app,https://myapp.com"
     raw = os.getenv("ALLOWED_ORIGINS", "")
@@ -85,7 +88,15 @@ def _get_allowed_origins() -> list[str]:
         if o not in seen:
             seen.add(o)
             origins.append(o)
+    
+    _payload = {"location": "main.py:_get_allowed_origins", "message": "cors_origins_computed", "data": {"raw_env": repr(raw), "env_origins": env_origins, "final_origins": origins}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "B"}
+    try:
+        with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+    except: pass
+    print(f"[DEBUG] CORS allowed origins: {origins}")
+    
     return origins
+# #endregion
 
 app.add_middleware(
     CORSMiddleware,
@@ -107,17 +118,32 @@ class SelectiveGZipMiddleware:
         self.app = app
         self.gzip = GZipMiddleware(app, minimum_size=1000)
     
+    # #region agent log
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "http":
-            # Check if this is a streaming endpoint
-            path = scope.get("path", "")
-            if "/stream" in path:
-                # Skip GZip for streaming endpoints - go directly to app
-                await self.app(scope, receive, send)
-                return
-        
-        # Use GZip for all other requests
-        await self.gzip(scope, receive, send)
+        import json as _json
+        _log_path = "/tmp/debug.log"
+        _payload = {"location": "main.py:SelectiveGZipMiddleware", "message": "middleware_entry", "data": {"scope_type": scope.get("type"), "method": scope.get("method"), "path": scope.get("path")}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "A"}
+        try:
+            with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+        except: pass
+        try:
+            if scope["type"] == "http":
+                # Check if this is a streaming endpoint
+                path = scope.get("path", "")
+                if "/stream" in path:
+                    # Skip GZip for streaming endpoints - go directly to app
+                    await self.app(scope, receive, send)
+                    return
+            
+            # Use GZip for all other requests
+            await self.gzip(scope, receive, send)
+        except Exception as _e:
+            _err_payload = {"location": "main.py:SelectiveGZipMiddleware", "message": "middleware_error", "data": {"error": str(_e), "scope_type": scope.get("type"), "method": scope.get("method"), "path": scope.get("path")}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "A"}
+            try:
+                with open(_log_path, "a") as _f: _f.write(_json.dumps(_err_payload) + "\n")
+            except: pass
+            raise
+    # #endregion
 
 app.add_middleware(SelectiveGZipMiddleware)
 
@@ -128,26 +154,47 @@ import time
 logging.basicConfig(level=logging.INFO)
 http_logger = logging.getLogger("http.access")
 
+# #region agent log
 @app.middleware("http")
 async def log_http_requests(request, call_next):
     """Log all HTTP requests with method, path, status, and duration."""
+    import json as _json
+    _log_path = "/tmp/debug.log"
     start_time = time.time()
     
-    # Get client IP (handle proxy headers)
-    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
-    if "," in client_ip:
-        client_ip = client_ip.split(",")[0].strip()
+    _entry_payload = {"location": "main.py:log_http_requests", "message": "http_middleware_entry", "data": {"method": request.method, "path": str(request.url.path), "origin": request.headers.get("origin", "no-origin")}, "timestamp": time.time(), "sessionId": "debug-session", "hypothesisId": "C"}
+    try:
+        with open(_log_path, "a") as _f: _f.write(_json.dumps(_entry_payload) + "\n")
+    except: pass
     
-    response = await call_next(request)
-    
-    duration_ms = (time.time() - start_time) * 1000
-    
-    # Log format: IP - "METHOD /path" STATUS DURATIONms
-    http_logger.info(
-        f'{client_ip} - "{request.method} {request.url.path}" {response.status_code} {duration_ms:.1f}ms'
-    )
-    
-    return response
+    try:
+        # Get client IP (handle proxy headers)
+        client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+        if "," in client_ip:
+            client_ip = client_ip.split(",")[0].strip()
+        
+        response = await call_next(request)
+        
+        duration_ms = (time.time() - start_time) * 1000
+        
+        # Log format: IP - "METHOD /path" STATUS DURATIONms
+        http_logger.info(
+            f'{client_ip} - "{request.method} {request.url.path}" {response.status_code} {duration_ms:.1f}ms'
+        )
+        
+        _exit_payload = {"location": "main.py:log_http_requests", "message": "http_middleware_exit", "data": {"method": request.method, "path": str(request.url.path), "status": response.status_code, "duration_ms": duration_ms}, "timestamp": time.time(), "sessionId": "debug-session", "hypothesisId": "C"}
+        try:
+            with open(_log_path, "a") as _f: _f.write(_json.dumps(_exit_payload) + "\n")
+        except: pass
+        
+        return response
+    except Exception as _e:
+        _err_payload = {"location": "main.py:log_http_requests", "message": "http_middleware_error", "data": {"error": str(_e), "error_type": type(_e).__name__, "method": request.method, "path": str(request.url.path)}, "timestamp": time.time(), "sessionId": "debug-session", "hypothesisId": "C"}
+        try:
+            with open(_log_path, "a") as _f: _f.write(_json.dumps(_err_payload) + "\n")
+        except: pass
+        raise
+# #endregion
 
 # Add HTTP cache headers middleware for performance
 # This allows browsers to cache static/semi-static data and reduces API load
@@ -319,6 +366,31 @@ def get_db():
 @app.get("/health")
 def health():
     return {"ok": True}
+
+# #region agent log
+@app.get("/debug/cors")
+def debug_cors():
+    """Debug endpoint to check CORS configuration."""
+    import json as _json
+    _log_path = "/tmp/debug.log"
+    origins = _get_allowed_origins()
+    raw = os.getenv("ALLOWED_ORIGINS", "")
+    _payload = {"location": "main.py:debug_cors", "message": "cors_debug_called", "data": {"raw": repr(raw), "origins": origins}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "B"}
+    try:
+        with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+    except: pass
+    return {"raw_env": repr(raw), "parsed_origins": origins, "count": len(origins)}
+
+@app.options("/debug/options-test")
+def debug_options_test():
+    """Debug endpoint to test OPTIONS requests."""
+    return {"ok": True, "method": "OPTIONS"}
+
+@app.get("/debug/options-test")
+def debug_options_test_get():
+    """Debug endpoint to test OPTIONS requests - GET version."""
+    return {"ok": True, "method": "GET"}
+# #endregion
 
 
 @app.get("/performance/metrics")
