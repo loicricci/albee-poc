@@ -121,6 +121,34 @@ class SelectiveGZipMiddleware:
 
 app.add_middleware(SelectiveGZipMiddleware)
 
+# HTTP request logging middleware
+import logging
+import time
+
+logging.basicConfig(level=logging.INFO)
+http_logger = logging.getLogger("http.access")
+
+@app.middleware("http")
+async def log_http_requests(request, call_next):
+    """Log all HTTP requests with method, path, status, and duration."""
+    start_time = time.time()
+    
+    # Get client IP (handle proxy headers)
+    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+    if "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    
+    response = await call_next(request)
+    
+    duration_ms = (time.time() - start_time) * 1000
+    
+    # Log format: IP - "METHOD /path" STATUS DURATIONms
+    http_logger.info(
+        f'{client_ip} - "{request.method} {request.url.path}" {response.status_code} {duration_ms:.1f}ms'
+    )
+    
+    return response
+
 # Add HTTP cache headers middleware for performance
 # This allows browsers to cache static/semi-static data and reduces API load
 @app.middleware("http")
