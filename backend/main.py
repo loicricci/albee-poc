@@ -69,15 +69,9 @@ async def startup_event():
     This eliminates 5-7 second cold-start delay for first user requests.
     """
     import asyncio
-    # Log all PORT-related env vars for debugging Railway connection issues
-    print(f"[STARTUP] PORT env var: {os.getenv('PORT', 'NOT SET')}", flush=True)
-    print(f"[STARTUP] RAILWAY_TCP_PROXY_PORT: {os.getenv('RAILWAY_TCP_PROXY_PORT', 'NOT SET')}", flush=True)
-    print(f"[STARTUP] All PORT* env vars: {[k for k in os.environ.keys() if 'PORT' in k]}", flush=True)
-    print(f"[STARTUP] Startup complete - app ready for requests", flush=True)
-    # TEMPORARILY DISABLED DB warmup to test if Railway health check times out
     # Run in thread pool to not block startup
-    # loop = asyncio.get_event_loop()
-    # await loop.run_in_executor(None, warmup_connection_pool, 3)
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, warmup_connection_pool, 3)
 
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -129,32 +123,20 @@ class SelectiveGZipMiddleware:
     def __init__(self, app):
         self.app = app
         self.gzip = GZipMiddleware(app, minimum_size=1000)
-        print("[GZIP-MW] SelectiveGZipMiddleware initialized", flush=True)
     
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
             method = scope.get("method", "")
             path = scope.get("path", "")
-            print(f"[GZIP-MW] {method} {path}", flush=True)
             
             # Skip GZip for OPTIONS (CORS preflight) and streaming endpoints
             # OPTIONS requests have no body and GZipMiddleware doesn't handle them well
             if method == "OPTIONS" or "/stream" in path:
-                print(f"[GZIP-MW] Skipping GZip for {method} {path}", flush=True)
-                try:
-                    await self.app(scope, receive, send)
-                    print(f"[GZIP-MW] self.app completed for {method} {path}", flush=True)
-                except Exception as e:
-                    print(f"[GZIP-MW] ERROR in self.app for {method} {path}: {e}", flush=True)
-                    raise
+                await self.app(scope, receive, send)
                 return
         
         # Use GZip for all other requests
-        try:
-            await self.gzip(scope, receive, send)
-        except Exception as e:
-            print(f"[GZIP-MW] ERROR in self.gzip: {e}", flush=True)
-            raise
+        await self.gzip(scope, receive, send)
 
 app.add_middleware(SelectiveGZipMiddleware)
 
@@ -168,7 +150,6 @@ http_logger = logging.getLogger("http.access")
 @app.middleware("http")
 async def log_http_requests(request, call_next):
     """Log all HTTP requests with method, path, status, and duration."""
-    print(f"[HTTP-MW] ENTRY {request.method} {request.url.path}", flush=True)
     start_time = time.time()
     
     try:
@@ -185,11 +166,9 @@ async def log_http_requests(request, call_next):
         http_logger.info(
             f'{client_ip} - "{request.method} {request.url.path}" {response.status_code} {duration_ms:.1f}ms'
         )
-        print(f"[HTTP-MW] EXIT {request.method} {request.url.path} status={response.status_code}", flush=True)
         
         return response
     except Exception as e:
-        print(f"[HTTP-MW] ERROR {request.method} {request.url.path}: {e}", flush=True)
         http_logger.error(f'{request.method} {request.url.path} error={e}')
         raise
 
@@ -197,28 +176,22 @@ async def log_http_requests(request, call_next):
 # This allows browsers to cache static/semi-static data and reduces API load
 @app.middleware("http")
 async def add_cache_headers(request, call_next):
-    print(f"[CACHE-MW] ENTRY {request.method} {request.url.path}", flush=True)
-    try:
-        response = await call_next(request)
-        
-        # Cache static config for 5 minutes
-        if request.url.path == "/config":
-            response.headers["Cache-Control"] = "public, max-age=300"
-        
-        # CRITICAL: Do NOT cache user-specific profile data in browser
-        # This was causing data from one user to appear for another user on the same browser
-        elif request.url.path == "/me/profile":
-            response.headers["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
-        
-        # CRITICAL: Do NOT cache user-specific onboarding status in browser
-        elif request.url.path == "/onboarding/status":
-            response.headers["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
-        
-        print(f"[CACHE-MW] EXIT {request.method} {request.url.path} status={response.status_code}", flush=True)
-        return response
-    except Exception as e:
-        print(f"[CACHE-MW] ERROR {request.method} {request.url.path}: {e}", flush=True)
-        raise
+    response = await call_next(request)
+    
+    # Cache static config for 5 minutes
+    if request.url.path == "/config":
+        response.headers["Cache-Control"] = "public, max-age=300"
+    
+    # CRITICAL: Do NOT cache user-specific profile data in browser
+    # This was causing data from one user to appear for another user on the same browser
+    elif request.url.path == "/me/profile":
+        response.headers["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
+    
+    # CRITICAL: Do NOT cache user-specific onboarding status in browser
+    elif request.url.path == "/onboarding/status":
+        response.headers["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
+    
+    return response
 
 from dotenv import load_dotenv
 load_dotenv("backend/.env")
