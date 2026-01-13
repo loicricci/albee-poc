@@ -65,10 +65,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 import os
 
-# #region agent log
 def _get_allowed_origins() -> list[str]:
-    import json as _json
-    _log_path = "/tmp/debug.log"
     # Comma-separated list in Railway, ex:
     # ALLOWED_ORIGINS="https://myapp.vercel.app,https://myapp.com"
     raw = os.getenv("ALLOWED_ORIGINS", "")
@@ -89,14 +86,8 @@ def _get_allowed_origins() -> list[str]:
             seen.add(o)
             origins.append(o)
     
-    _payload = {"location": "main.py:_get_allowed_origins", "message": "cors_origins_computed", "data": {"raw_env": repr(raw), "env_origins": env_origins, "final_origins": origins}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "B"}
-    try:
-        with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
-    except: pass
-    print(f"[DEBUG] CORS allowed origins: {origins}")
-    
+    print(f"[DEBUG] CORS allowed origins: {origins}", flush=True)
     return origins
-# #endregion
 
 app.add_middleware(
     CORSMiddleware,
@@ -107,43 +98,32 @@ app.add_middleware(
     expose_headers=["Content-Type"],
 )
 
-# Custom GZip middleware that excludes streaming responses
+# Custom GZip middleware that excludes streaming responses and OPTIONS requests
 # Standard GZipMiddleware buffers responses, which breaks SSE streaming
+# Also skips OPTIONS to avoid interfering with CORS preflight handling
 class SelectiveGZipMiddleware:
     """
-    GZip middleware that excludes streaming (text/event-stream) responses.
-    Streaming responses need to be sent immediately without buffering.
+    GZip middleware that excludes:
+    - Streaming (text/event-stream) responses - need immediate unbuffered delivery
+    - OPTIONS requests - CORS preflight must be handled cleanly by CORSMiddleware
     """
     def __init__(self, app):
         self.app = app
         self.gzip = GZipMiddleware(app, minimum_size=1000)
     
-    # #region agent log
     async def __call__(self, scope, receive, send):
-        import json as _json
-        _log_path = "/tmp/debug.log"
-        _payload = {"location": "main.py:SelectiveGZipMiddleware", "message": "middleware_entry", "data": {"scope_type": scope.get("type"), "method": scope.get("method"), "path": scope.get("path")}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "A"}
-        try:
-            with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
-        except: pass
-        try:
-            if scope["type"] == "http":
-                # Check if this is a streaming endpoint
-                path = scope.get("path", "")
-                if "/stream" in path:
-                    # Skip GZip for streaming endpoints - go directly to app
-                    await self.app(scope, receive, send)
-                    return
+        if scope["type"] == "http":
+            method = scope.get("method", "")
+            path = scope.get("path", "")
             
-            # Use GZip for all other requests
-            await self.gzip(scope, receive, send)
-        except Exception as _e:
-            _err_payload = {"location": "main.py:SelectiveGZipMiddleware", "message": "middleware_error", "data": {"error": str(_e), "scope_type": scope.get("type"), "method": scope.get("method"), "path": scope.get("path")}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "A"}
-            try:
-                with open(_log_path, "a") as _f: _f.write(_json.dumps(_err_payload) + "\n")
-            except: pass
-            raise
-    # #endregion
+            # Skip GZip for OPTIONS (CORS preflight) and streaming endpoints
+            # OPTIONS requests have no body and GZipMiddleware doesn't handle them well
+            if method == "OPTIONS" or "/stream" in path:
+                await self.app(scope, receive, send)
+                return
+        
+        # Use GZip for all other requests
+        await self.gzip(scope, receive, send)
 
 app.add_middleware(SelectiveGZipMiddleware)
 
@@ -154,18 +134,10 @@ import time
 logging.basicConfig(level=logging.INFO)
 http_logger = logging.getLogger("http.access")
 
-# #region agent log
 @app.middleware("http")
 async def log_http_requests(request, call_next):
     """Log all HTTP requests with method, path, status, and duration."""
-    import json as _json
-    _log_path = "/tmp/debug.log"
     start_time = time.time()
-    
-    _entry_payload = {"location": "main.py:log_http_requests", "message": "http_middleware_entry", "data": {"method": request.method, "path": str(request.url.path), "origin": request.headers.get("origin", "no-origin")}, "timestamp": time.time(), "sessionId": "debug-session", "hypothesisId": "C"}
-    try:
-        with open(_log_path, "a") as _f: _f.write(_json.dumps(_entry_payload) + "\n")
-    except: pass
     
     try:
         # Get client IP (handle proxy headers)
@@ -182,19 +154,10 @@ async def log_http_requests(request, call_next):
             f'{client_ip} - "{request.method} {request.url.path}" {response.status_code} {duration_ms:.1f}ms'
         )
         
-        _exit_payload = {"location": "main.py:log_http_requests", "message": "http_middleware_exit", "data": {"method": request.method, "path": str(request.url.path), "status": response.status_code, "duration_ms": duration_ms}, "timestamp": time.time(), "sessionId": "debug-session", "hypothesisId": "C"}
-        try:
-            with open(_log_path, "a") as _f: _f.write(_json.dumps(_exit_payload) + "\n")
-        except: pass
-        
         return response
-    except Exception as _e:
-        _err_payload = {"location": "main.py:log_http_requests", "message": "http_middleware_error", "data": {"error": str(_e), "error_type": type(_e).__name__, "method": request.method, "path": str(request.url.path)}, "timestamp": time.time(), "sessionId": "debug-session", "hypothesisId": "C"}
-        try:
-            with open(_log_path, "a") as _f: _f.write(_json.dumps(_err_payload) + "\n")
-        except: pass
+    except Exception as e:
+        http_logger.error(f'{request.method} {request.url.path} error={e}')
         raise
-# #endregion
 
 # Add HTTP cache headers middleware for performance
 # This allows browsers to cache static/semi-static data and reduces API load

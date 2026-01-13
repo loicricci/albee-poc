@@ -77,4 +77,3 @@ def warmup_connection_pool(num_connections: int = 5):
         # Return connections to the pool
         for conn in connections:
             conn.close()
-

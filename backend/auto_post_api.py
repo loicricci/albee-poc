@@ -1520,4 +1520,3 @@ async def cancel_preview(
     
     return {"success": True, "message": "Preview cancelled"}
 
-
