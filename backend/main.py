@@ -47,6 +47,19 @@ from backend.models import (
 
 app = FastAPI()
 
+# Add a simple health check endpoint that bypasses all middleware
+# This responds immediately to help Railway detect the app is alive
+@app.get("/health", include_in_schema=False)
+async def health_check():
+    """Ultra-simple health check for Railway's proxy to detect the app."""
+    return {"status": "ok", "service": "albee-poc"}
+
+# Root endpoint for basic connectivity test
+@app.get("/")
+async def root():
+    """Basic root endpoint to test connectivity."""
+    return {"message": "Albee POC API", "status": "running"}
+
 
 # Startup event: warm up database connection pool
 @app.on_event("startup")
