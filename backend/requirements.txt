@@ -1,3 +1,7 @@
+# Use CPU-only PyTorch to avoid downloading 4GB+ of CUDA libraries
+# Railway doesn't have GPUs, so CUDA is useless and wastes ~10min of build time
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 python-dotenv==1.0.1
@@ -7,6 +11,7 @@ psycopg[binary]==3.2.13
 httpx==0.27.2
 PyJWT>=2.10.1
 openai==1.57.0
+torch>=2.0.0
 sentence-transformers>=2.2.2
 cachetools>=5.3.0  # For JWT token caching
 numpy>=1.24.0  # For cosine similarity calculations
@@ -21,4 +26,3 @@ Pillow>=10.0.0  # For image processing
 tweepy>=4.14.0  # For Twitter API integration
 newsapi-python>=0.2.7  # For News API integration
 supabase>=2.27.0  # For Supabase storage integration
-
