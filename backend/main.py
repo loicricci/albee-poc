@@ -56,6 +56,10 @@ async def startup_event():
     This eliminates 5-7 second cold-start delay for first user requests.
     """
     import asyncio
+    # Log all PORT-related env vars for debugging Railway connection issues
+    print(f"[STARTUP] PORT env var: {os.getenv('PORT', 'NOT SET')}", flush=True)
+    print(f"[STARTUP] RAILWAY_TCP_PROXY_PORT: {os.getenv('RAILWAY_TCP_PROXY_PORT', 'NOT SET')}", flush=True)
+    print(f"[STARTUP] All PORT* env vars: {[k for k in os.environ.keys() if 'PORT' in k]}", flush=True)
     # Run in thread pool to not block startup
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, warmup_connection_pool, 3)
