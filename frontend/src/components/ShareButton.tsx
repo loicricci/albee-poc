@@ -144,7 +144,7 @@ export function ShareButton({
       case "facebook":
       case "twitter":
         const platformConfig = PLATFORMS.find(p => p.id === platform);
-        if (platformConfig && "getUrl" in platformConfig) {
+        if (platformConfig && platformConfig.getUrl) {
           const shareUrl = platformConfig.getUrl(url, shareText);
           window.open(shareUrl, "_blank", "noopener,noreferrer,width=600,height=400");
         }
