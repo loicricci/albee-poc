@@ -61,8 +61,9 @@ class DailyPostGenerator:
         agent_handle: str,
         topic_override: Optional[str] = None,
         category: Optional[str] = None,
-        image_engine: str = "dall-e-3",  # NEW: Image generation engine selection
-        reference_image_url_override: Optional[str] = None  # NEW: User-selected reference image URL
+        image_engine: str = "dall-e-3",  # Image generation engine selection
+        image_style: Optional[str] = None,  # Image style: realistic, cartoon, anime, futuristic, illustration, 3d_render, sketch, fantasy
+        reference_image_url_override: Optional[str] = None  # User-selected reference image URL
     ) -> dict:
         """
         Generate and post a daily AI-generated post (async version with parallelization).
@@ -71,7 +72,8 @@ class DailyPostGenerator:
             agent_handle: Agent handle to post for
             topic_override: Optional topic override (skips news fetch)
             category: Optional category filter for news
-            image_engine: Image generation engine ("dall-e-3" or "openai-edits")
+            image_engine: Image generation engine ("dall-e-3" or "gpt-image-1")
+            image_style: Optional image style (realistic, cartoon, anime, futuristic, illustration, 3d_render, sketch, fantasy)
             reference_image_url_override: Optional user-selected reference image URL (overrides agent default)
         
         Returns:
@@ -160,13 +162,15 @@ class DailyPostGenerator:
                 self._log_step(3, "Generating image EDIT prompt and title in parallel...")
                 edit_instructions = agent_context.get("image_edit_instructions", "")
                 image_prompt, title = await generate_edit_prompt_and_title_parallel(
-                    agent_context, topic, edit_instructions
+                    agent_context, topic, edit_instructions, image_style=image_style
                 )
                 self._log_success(f"Edit prompt: {image_prompt[:80]}...")
             else:
                 # Generate standard prompt for creating new images (DALL-E 3 or GPT-Image-1 without reference)
                 self._log_step(3, "Generating image prompt and title in parallel...")
-                image_prompt, title = await generate_image_prompt_and_title_parallel(agent_context, topic)
+                image_prompt, title = await generate_image_prompt_and_title_parallel(
+                    agent_context, topic, image_style=image_style
+                )
                 self._log_success(f"Image prompt: {image_prompt[:80]}...")
             
             self._log_success(f"Title: {title}")
@@ -318,6 +322,7 @@ class DailyPostGenerator:
         topic_override: Optional[str] = None,
         category: Optional[str] = None,
         image_engine: str = "dall-e-3",
+        image_style: Optional[str] = None,  # Image style: realistic, cartoon, anime, etc.
         reference_image_url_override: Optional[str] = None,
         feedback: Optional[str] = None  # User feedback for regeneration
     ) -> dict:
@@ -332,6 +337,7 @@ class DailyPostGenerator:
             topic_override: Optional topic override
             category: Optional category filter
             image_engine: Image generation engine
+            image_style: Optional image style (realistic, cartoon, anime, futuristic, etc.)
             reference_image_url_override: Optional reference image URL
             feedback: User feedback from a previous rejection (used to refine generation)
         
@@ -420,15 +426,15 @@ class DailyPostGenerator:
             if use_edit_prompt:
                 self._log_step(3, "Generating image EDIT prompt and title...")
                 edit_instructions = agent_context.get("image_edit_instructions", "")
-                # Pass feedback to prompt generator for style refinement
+                # Pass feedback and image_style to prompt generator
                 image_prompt, title = await generate_edit_prompt_and_title_parallel(
-                    agent_context, topic, edit_instructions, feedback=feedback
+                    agent_context, topic, edit_instructions, feedback=feedback, image_style=image_style
                 )
             else:
                 self._log_step(3, "Generating image prompt and title...")
-                # Pass feedback to prompt generator for style refinement
+                # Pass feedback and image_style to prompt generator
                 image_prompt, title = await generate_image_prompt_and_title_parallel(
-                    agent_context, topic, feedback=feedback
+                    agent_context, topic, feedback=feedback, image_style=image_style
                 )
             
             self._log_success(f"Title: {title}")

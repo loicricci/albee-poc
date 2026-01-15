@@ -57,6 +57,7 @@ class GeneratePostRequest(BaseModel):
     topic: Optional[str] = None
     category: Optional[str] = None
     image_engine: str = "dall-e-3"  # Options: "dall-e-3" or "gpt-image-1" (openai-edits deprecated)
+    image_style: Optional[str] = None  # Optional image style: realistic, cartoon, anime, futuristic, illustration, 3d_render, sketch, fantasy
     reference_image_url: Optional[str] = None  # User-selected reference image URL for image editing
 
 
@@ -88,6 +89,7 @@ class PreviewPostRequest(BaseModel):
     topic: Optional[str] = None
     category: Optional[str] = None
     image_engine: str = "dall-e-3"
+    image_style: Optional[str] = None  # Optional image style: realistic, cartoon, anime, futuristic, illustration, 3d_render, sketch, fantasy
     reference_image_url: Optional[str] = None
     feedback: Optional[str] = None  # User feedback for regeneration
     previous_preview_id: Optional[str] = None  # If regenerating, cleanup old preview
@@ -146,7 +148,7 @@ def is_admin_user(user_id: str, db: Session) -> bool:
 
 
 def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
-    """Get avees accessible to user"""
+    """Get avees accessible to user - OPTIMIZED: Uses batch query instead of N+1"""
     if is_admin:
         # Admin sees all avees
         query = text("""
@@ -181,32 +183,44 @@ def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
     
     rows = result.fetchall()
     
-    avees = []
-    for row in rows:
-        avee_id = str(row.avee_id)
-        
-        # Fetch reference images for this agent
+    # Collect all avee IDs for batch query
+    avee_ids = [str(row.avee_id) for row in rows]
+    
+    # OPTIMIZATION: Fetch ALL reference images in a single batch query instead of N+1 queries
+    ref_images_by_avee = {}
+    if avee_ids:
+        # Use a single query with IN clause to get all reference images at once
+        # Use CAST function (not :: operator) to avoid conflict with SQLAlchemy's :param syntax
         ref_images_query = text("""
             SELECT 
+                avee_id,
                 id,
                 reference_image_url,
                 mask_image_url,
                 is_primary
             FROM reference_images
-            WHERE avee_id = :avee_id
-            ORDER BY is_primary DESC, created_at DESC
+            WHERE avee_id = ANY(CAST(:avee_ids AS uuid[]))
+            ORDER BY avee_id, is_primary DESC, created_at DESC
         """)
-        ref_result = db.execute(ref_images_query, {"avee_id": avee_id})
+        ref_result = db.execute(ref_images_query, {"avee_ids": avee_ids})
         ref_rows = ref_result.fetchall()
         
-        reference_images = []
+        # Group reference images by avee_id in memory
         for ref_row in ref_rows:
-            reference_images.append({
-                "id": str(ref_row[0]),
-                "reference_image_url": ref_row[1],
-                "mask_image_url": ref_row[2],
-                "is_primary": ref_row[3]
+            avee_id = str(ref_row[0])
+            if avee_id not in ref_images_by_avee:
+                ref_images_by_avee[avee_id] = []
+            ref_images_by_avee[avee_id].append({
+                "id": str(ref_row[1]),
+                "reference_image_url": ref_row[2],
+                "mask_image_url": ref_row[3],
+                "is_primary": ref_row[4]
             })
+    
+    # Build the response using the pre-fetched reference images
+    avees = []
+    for row in rows:
+        avee_id = str(row.avee_id)
         
         avees.append({
             "avee_id": avee_id,
@@ -216,7 +230,7 @@ def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
             "auto_post_enabled": row.auto_post_enabled,
             "last_auto_post_at": row.last_auto_post_at.isoformat() if row.last_auto_post_at else None,
             "auto_post_settings": row.auto_post_settings,
-            "reference_images": reference_images
+            "reference_images": ref_images_by_avee.get(avee_id, [])
         })
     
     return avees
@@ -771,7 +785,6 @@ def get_auto_post_status(
     """
     user_uuid = uuid.UUID(user_id)
     is_admin = is_admin_user(str(user_uuid), db)
-    
     avees = get_user_avees(str(user_uuid), db, is_admin)
     
     return {
@@ -905,8 +918,9 @@ async def generate_posts(
             avee_id=avee_id,
             topic=request.topic,
             category=request.category,
-            image_engine=request.image_engine,  # NEW: Pass image engine
-            reference_image_url=request.reference_image_url,  # NEW: Pass selected reference image
+            image_engine=request.image_engine,  # Pass image engine
+            image_style=request.image_style,  # Pass image style
+            reference_image_url=request.reference_image_url,  # Pass selected reference image
             db=db
         )
         
@@ -930,8 +944,9 @@ async def generate_posts(
         avees_to_generate,
         request.topic,
         request.category,
-        request.image_engine,  # NEW: Pass image engine
-        request.reference_image_url  # NEW: Pass selected reference image
+        request.image_engine,  # Pass image engine
+        request.image_style,  # Pass image style
+        request.reference_image_url  # Pass selected reference image
     )
     
     return {
@@ -947,7 +962,8 @@ async def generate_single_post(
     topic: Optional[str],
     category: Optional[str],
     image_engine: str,
-    reference_image_url: Optional[str],  # NEW: User-selected reference image
+    image_style: Optional[str],  # Image style: realistic, cartoon, anime, etc.
+    reference_image_url: Optional[str],  # User-selected reference image
     db: Session
 ) -> dict:
     """Generate a single post for an agent"""
@@ -962,8 +978,9 @@ async def generate_single_post(
             agent_handle=handle,
             topic_override=topic,
             category=category,
-            image_engine=image_engine,  # NEW: Pass image engine selection
-            reference_image_url_override=reference_image_url  # NEW: Pass user-selected reference image
+            image_engine=image_engine,  # Pass image engine selection
+            image_style=image_style,  # Pass image style selection
+            reference_image_url_override=reference_image_url  # Pass user-selected reference image
         )
         
         # Check if generation was successful
@@ -1111,8 +1128,9 @@ async def generate_multiple_posts(
     avees: dict,
     topic: Optional[str],
     category: Optional[str],
-    image_engine: str,  # NEW: Accept image engine parameter
-    reference_image_url: Optional[str]  # NEW: Accept reference image URL
+    image_engine: str,  # Accept image engine parameter
+    image_style: Optional[str],  # Accept image style parameter
+    reference_image_url: Optional[str]  # Accept reference image URL
 ):
     """Background task to generate multiple posts"""
     # This runs in background - can't return results to API
@@ -1133,8 +1151,9 @@ async def generate_multiple_posts(
                 agent_handle=handle,
                 topic_override=topic,
                 category=category,
-                image_engine=image_engine,  # NEW: Pass image engine
-                reference_image_url_override=reference_image_url  # NEW: Pass reference image
+                image_engine=image_engine,  # Pass image engine
+                image_style=image_style,  # Pass image style
+                reference_image_url_override=reference_image_url  # Pass reference image
             )
             
             # Update last_auto_post_at
@@ -1387,6 +1406,7 @@ async def preview_post(
             topic_override=request.topic,
             category=request.category,
             image_engine=request.image_engine,
+            image_style=request.image_style,  # Pass image style for prompt generation
             reference_image_url_override=request.reference_image_url,
             feedback=request.feedback  # Pass user feedback for regeneration
         )
@@ -1457,6 +1477,18 @@ async def confirm_post(
     """
     user_uuid = uuid.UUID(user_id)
     
+    # Track already-confirmed previews to handle duplicate requests gracefully
+    # This prevents 404 errors when frontend retries or double-clicks
+    global _confirmed_previews
+    if not hasattr(confirm_post, '_confirmed_previews'):
+        confirm_post._confirmed_previews = {}  # preview_id -> post_id mapping
+    
+    # Check if this preview was already confirmed (handle duplicate requests)
+    if request.preview_id in confirm_post._confirmed_previews:
+        cached_result = confirm_post._confirmed_previews[request.preview_id]
+        print(f"[AutoPost Confirm] Returning cached result for already-confirmed preview: {request.preview_id}")
+        return cached_result
+    
     # Get preview data
     if request.preview_id not in _preview_cache:
         raise HTTPException(status_code=404, detail="Preview not found or expired")
@@ -1510,6 +1542,7 @@ async def confirm_post(
         del _preview_cache[request.preview_id]
         
         post_id = post_result["post_id"]
+        permanent_url_for_cache = permanent_url  # Save for caching
         
         # Check if should auto-post to Twitter
         twitter_url = None
@@ -1573,16 +1606,28 @@ async def confirm_post(
                 linkedin_error = str(linkedin_exc)
                 print(f"[AutoPost Confirm] LinkedIn auto-post error: {linkedin_error}")
         
-        return {
+        result = {
             "success": True,
             "post_id": post_id,
-            "image_url": permanent_url,
+            "image_url": permanent_url_for_cache,
             "view_url": post_result.get("view_url", f"/posts/{post_result['post_id']}"),
             "twitter_url": twitter_url,
             "twitter_error": twitter_error,
             "linkedin_url": linkedin_url,
             "linkedin_error": linkedin_error
         }
+        
+        # Cache the result for duplicate request handling (auto-cleanup after 5 minutes)
+        confirm_post._confirmed_previews[request.preview_id] = result
+        
+        # Schedule cleanup of old confirmed previews (keep last 100)
+        if len(confirm_post._confirmed_previews) > 100:
+            # Remove oldest entries
+            keys_to_remove = list(confirm_post._confirmed_previews.keys())[:-100]
+            for key in keys_to_remove:
+                del confirm_post._confirmed_previews[key]
+        
+        return result
         
     except HTTPException:
         raise

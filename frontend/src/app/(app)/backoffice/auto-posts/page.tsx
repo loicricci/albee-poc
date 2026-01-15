@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { 
   previewGeneratePost, 
@@ -9,6 +9,9 @@ import {
   PreviewPostResponse 
 } from '@/lib/api';
 import { PostPreviewModal } from '@/components/PostPreviewModal';
+
+// Track confirmed preview IDs to prevent duplicate submissions
+const confirmedPreviewIds = new Set<string>();
 
 interface Avee {
   avee_id: string;
@@ -37,6 +40,19 @@ interface AutoPostStatus {
   enabled_count: number;
 }
 
+// Image style options
+const IMAGE_STYLES = [
+  { value: "", label: "Auto / Default", description: "Let AI choose the best style" },
+  { value: "realistic", label: "Realistic", description: "Natural light. Real faces and places." },
+  { value: "cartoon", label: "Cartoon", description: "Simple shapes. Bold lines. Exaggerated features." },
+  { value: "anime", label: "Anime", description: "Japanese-style illustration. Big eyes. Clean colors." },
+  { value: "futuristic", label: "Futuristic / Sci-Fi", description: "Advanced tech. Neon lights. Cyber themes." },
+  { value: "illustration", label: "Illustration / Digital Art", description: "Painterly or graphic. Often used for covers." },
+  { value: "3d_render", label: "3D Render", description: "Depth and volume. Looks like CGI or game assets." },
+  { value: "sketch", label: "Sketch / Hand-drawn", description: "Pencil or ink style. Rough and expressive." },
+  { value: "fantasy", label: "Fantasy", description: "Mythical worlds. Magic. Creatures and heroes." },
+];
+
 export default function AutoPostGeneratorPage() {
   const [status, setStatus] = useState<AutoPostStatus | null>(null);
   const [selectedAvees, setSelectedAvees] = useState<Set<string>>(new Set());
@@ -44,6 +60,7 @@ export default function AutoPostGeneratorPage() {
   const [generating, setGenerating] = useState(false);
   const [topic, setTopic] = useState('');
   const [category, setCategory] = useState('');
+  const [imageStyle, setImageStyle] = useState(''); // Image style selection
   const [imageEngine, setImageEngine] = useState<'dall-e-3' | 'gpt-image-1'>('dall-e-3'); // Image engine selection
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null); // NEW: Selected reference image
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -167,6 +184,7 @@ export default function AutoPostGeneratorPage() {
           topic: topic || null,
           category: category || null,
           image_engine: imageEngine,
+          image_style: imageStyle || null,
           reference_image_url: referenceImageUrl, // Empty string = no reference, null = use agent default
         }),
       });
@@ -202,6 +220,7 @@ export default function AutoPostGeneratorPage() {
       setSelectedAvees(new Set());
       setTopic('');
       setCategory('');
+      setImageStyle(''); // Reset image style
       setImageEngine('dall-e-3'); // Reset to default
       setSelectedReferenceImage(null); // Reset selected image
       await loadStatus();
@@ -230,6 +249,7 @@ export default function AutoPostGeneratorPage() {
         topic: topic || null,
         category: category || null,
         image_engine: imageEngine,
+        image_style: imageStyle || null,
         reference_image_url: referenceImageUrl,
         feedback: feedback || null,
         previous_preview_id: previousPreviewId || null,
@@ -244,10 +264,29 @@ export default function AutoPostGeneratorPage() {
     }
   };
 
+  // Ref to prevent duplicate submissions
+  const isSubmittingRef = useRef(false);
+  
   // Handle preview approval
   const handleApprovePreview = async (editedTitle?: string, editedDescription?: string) => {
     if (!previewData) return;
     
+    // Prevent duplicate submissions using ref (immediate check)
+    if (isSubmittingRef.current) {
+      console.log("[AutoPosts] Preventing duplicate submission");
+      return;
+    }
+    
+    // Check if this preview was already confirmed
+    if (confirmedPreviewIds.has(previewData.preview_id)) {
+      console.log("[AutoPosts] Preview already confirmed, closing modal");
+      setPreviewData(null);
+      showMessage('success', 'Post published successfully!');
+      await loadStatus();
+      return;
+    }
+    
+    isSubmittingRef.current = true;
     setIsProcessingPreview(true);
     
     try {
@@ -258,6 +297,15 @@ export default function AutoPostGeneratorPage() {
         description: editedDescription,
       });
       
+      // Mark this preview as confirmed to handle any duplicate calls
+      confirmedPreviewIds.add(previewData.preview_id);
+      
+      // Cleanup old entries (keep last 50)
+      if (confirmedPreviewIds.size > 50) {
+        const oldestIds = Array.from(confirmedPreviewIds).slice(0, confirmedPreviewIds.size - 50);
+        oldestIds.forEach(id => confirmedPreviewIds.delete(id));
+      }
+      
       showMessage('success', 'Post published successfully!');
       
       // Clear state and reload
@@ -265,13 +313,24 @@ export default function AutoPostGeneratorPage() {
       setSelectedAvees(new Set());
       setTopic('');
       setCategory('');
+      setImageStyle('');
       setImageEngine('dall-e-3');
       setSelectedReferenceImage(null);
       await loadStatus();
     } catch (error: any) {
-      console.error('Error confirming post:', error);
-      showMessage('error', error.message || 'Failed to publish post');
+      // If we get a 404, the preview might have already been confirmed
+      if (error.status === 404 && error.message?.includes("Preview not found")) {
+        console.log("[AutoPosts] Preview already consumed, treating as success");
+        confirmedPreviewIds.add(previewData.preview_id);
+        setPreviewData(null);
+        showMessage('success', 'Post published successfully!');
+        await loadStatus();
+      } else {
+        console.error('Error confirming post:', error);
+        showMessage('error', error.message || 'Failed to publish post');
+      }
     } finally {
+      isSubmittingRef.current = false;
       setIsProcessingPreview(false);
     }
   };
@@ -525,6 +584,29 @@ export default function AutoPostGeneratorPage() {
               )}
             </button>
           </div>
+        </div>
+
+        {/* Image Style Selector */}
+        <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
+            🖼️ Image Style (Optional)
+          </label>
+          <select
+            value={imageStyle}
+            onChange={(e) => setImageStyle(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            {IMAGE_STYLES.map((style) => (
+              <option key={style.value} value={style.value}>
+                {style.label}
+              </option>
+            ))}
+          </select>
+          {imageStyle && (
+            <p className="text-xs text-gray-600 mt-2">
+              {IMAGE_STYLES.find((s) => s.value === imageStyle)?.description}
+            </p>
+          )}
         </div>
 
         {/* Reference Image Selector (Optional for GPT-Image-1) */}

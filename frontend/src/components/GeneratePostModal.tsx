@@ -10,6 +10,9 @@ import {
 } from "@/lib/api";
 import { PostPreviewModal } from "./PostPreviewModal";
 
+// Track confirmed preview IDs to prevent duplicate submissions
+const confirmedPreviewIds = new Set<string>();
+
 // Generation steps configuration
 type GenerationStep = {
   id: string;
@@ -192,9 +195,23 @@ function apiBase(): string {
   return base;
 }
 
+// Image style options
+const IMAGE_STYLES = [
+  { value: "", label: "Auto / Default", description: "Let AI choose the best style" },
+  { value: "realistic", label: "Realistic", description: "Natural light. Real faces and places." },
+  { value: "cartoon", label: "Cartoon", description: "Simple shapes. Bold lines. Exaggerated features." },
+  { value: "anime", label: "Anime", description: "Japanese-style illustration. Big eyes. Clean colors." },
+  { value: "futuristic", label: "Futuristic / Sci-Fi", description: "Advanced tech. Neon lights. Cyber themes." },
+  { value: "illustration", label: "Illustration / Digital Art", description: "Painterly or graphic. Often used for covers." },
+  { value: "3d_render", label: "3D Render", description: "Depth and volume. Looks like CGI or game assets." },
+  { value: "sketch", label: "Sketch / Hand-drawn", description: "Pencil or ink style. Rough and expressive." },
+  { value: "fantasy", label: "Fantasy", description: "Mythical worlds. Magic. Creatures and heroes." },
+];
+
 export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: GeneratePostModalProps) {
   // Form state
   const [topic, setTopic] = useState("");
+  const [imageStyle, setImageStyle] = useState<string>("");
   const [imageEngine, setImageEngine] = useState<"dall-e-3" | "gpt-image-1">("dall-e-3");
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
   
@@ -266,6 +283,7 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
   useEffect(() => {
     if (!isOpen) {
       setTopic("");
+      setImageStyle("");
       setImageEngine("dall-e-3");
       setReferenceImageUrl(null);
       setUploadedImageUrl(null);
@@ -418,6 +436,7 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
         avee_id: agent.id,
         topic: topic.trim() || null,
         image_engine: imageEngine,
+        image_style: imageStyle || null,
         reference_image_url: imageEngine === "gpt-image-1" ? referenceImageUrl : null,
         feedback: feedback || null,
         previous_preview_id: previousPreviewId || null,
@@ -441,9 +460,28 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
     }
   }
 
+  // Ref to prevent duplicate submissions
+  const isSubmittingRef = useRef(false);
+  
   async function handleApprove(editedTitle?: string, editedDescription?: string) {
     if (!previewData) return;
     
+    // Prevent duplicate submissions using ref (immediate check)
+    if (isSubmittingRef.current) {
+      console.log("[GeneratePostModal] Preventing duplicate submission");
+      return;
+    }
+    
+    // Check if this preview was already confirmed
+    if (confirmedPreviewIds.has(previewData.preview_id)) {
+      console.log("[GeneratePostModal] Preview already confirmed, closing modal");
+      setPreviewData(null);
+      onSuccess();
+      onClose();
+      return;
+    }
+    
+    isSubmittingRef.current = true;
     setIsProcessingPreview(true);
     
     try {
@@ -454,13 +492,33 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
         description: editedDescription,
       });
       
+      // Mark this preview as confirmed to handle any duplicate calls
+      confirmedPreviewIds.add(previewData.preview_id);
+      
+      // Cleanup old entries (keep last 50)
+      if (confirmedPreviewIds.size > 50) {
+        const oldestIds = Array.from(confirmedPreviewIds).slice(0, confirmedPreviewIds.size - 50);
+        oldestIds.forEach(id => confirmedPreviewIds.delete(id));
+      }
+      
       // Success!
       setPreviewData(null);
       onSuccess();
       onClose();
     } catch (e: any) {
-      setError(e.message || "Failed to publish post");
+      // If we get a 404, the preview might have already been confirmed
+      // Check if status is 404 and handle gracefully
+      if (e.status === 404 && e.message?.includes("Preview not found")) {
+        console.log("[GeneratePostModal] Preview already consumed, treating as success");
+        confirmedPreviewIds.add(previewData.preview_id);
+        setPreviewData(null);
+        onSuccess();
+        onClose();
+      } else {
+        setError(e.message || "Failed to publish post");
+      }
     } finally {
+      isSubmittingRef.current = false;
       setIsProcessingPreview(false);
     }
   }
@@ -577,6 +635,30 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
             <p className="mt-1 text-xs text-gray-500">
               Override the auto-generated topic with your own
             </p>
+          </div>
+
+          {/* Image Style Selection */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Image Style (Optional)
+            </label>
+            <select
+              value={imageStyle}
+              onChange={(e) => setImageStyle(e.target.value)}
+              disabled={isGenerating}
+              className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20"
+            >
+              {IMAGE_STYLES.map((style) => (
+                <option key={style.value} value={style.value}>
+                  {style.label}
+                </option>
+              ))}
+            </select>
+            {imageStyle && (
+              <p className="mt-1 text-xs text-gray-500">
+                {IMAGE_STYLES.find((s) => s.value === imageStyle)?.description}
+              </p>
+            )}
           </div>
 
           {/* Image Engine Selection */}

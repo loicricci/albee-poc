@@ -776,6 +776,7 @@ export type DiagnosticGenerateRequest = {
   topic?: string | null;
   category?: string | null;
   image_engine?: string;
+  image_style?: string | null;
 };
 
 export type DiagnosticStepData = {
@@ -814,7 +815,8 @@ export async function diagnosticGeneratePost(
 
   const token = await getToken();
 
-  // Use 90 second timeout for post generation
+  // Use 150 second timeout for post generation to account for slow AI image generation
+  // Typical generation time: ~100-120 seconds (profile loading + topic + description + image)
   const res = await fetchWithTimeout(
     `${API_BASE}/auto-post/diagnostic/generate`,
     {
@@ -826,7 +828,7 @@ export async function diagnosticGeneratePost(
       },
       body: JSON.stringify(request),
     },
-    90000 // 90 seconds
+    150000 // 150 seconds (2.5 minutes) to handle slow image generation
   );
 
   if (!res.ok) {
@@ -851,6 +853,7 @@ export type PreviewPostRequest = {
   topic?: string | null;
   category?: string | null;
   image_engine?: string;
+  image_style?: string | null;
   reference_image_url?: string | null;
   feedback?: string | null;
   previous_preview_id?: string | null;
@@ -908,7 +911,8 @@ export async function previewGeneratePost(
 
   const token = await getToken();
 
-  // Use 90 second timeout for preview generation (same as regular post generation)
+  // Use 150 second timeout for preview generation to account for slow AI image generation
+  // Typical generation time: ~100-120 seconds (profile loading + topic + description + image)
   const res = await fetchWithTimeout(
     `${API_BASE}/auto-post/preview`,
     {
@@ -920,7 +924,7 @@ export async function previewGeneratePost(
       },
       body: JSON.stringify(request),
     },
-    90000 // 90 seconds
+    150000 // 150 seconds (2.5 minutes) to handle slow image generation
   );
 
   if (!res.ok) {

@@ -9,10 +9,38 @@ import json
 import time
 import asyncio
 import re
-from typing import Dict, Any, Tuple
+import functools
+from typing import Dict, Any, Tuple, Optional
 from openai import OpenAI
 
 client = OpenAI()
+
+# Image style mappings - descriptive directives for each style
+IMAGE_STYLE_DIRECTIVES = {
+    "realistic": "Create a photorealistic image with natural lighting, realistic textures, and authentic human features. The image should look like a real photograph.",
+    "cartoon": "Create a cartoon-style illustration with simple shapes, bold outlines, exaggerated features, and vibrant flat colors. Think classic animated style.",
+    "anime": "Create a Japanese anime-style illustration with large expressive eyes, clean linework, vibrant colors, and characteristic anime aesthetics.",
+    "futuristic": "Create a futuristic sci-fi themed image with advanced technology, neon lights, holographic displays, cyber elements, and a high-tech atmosphere.",
+    "illustration": "Create a digital art illustration with painterly qualities, artistic brushwork, stylized elements suitable for editorial or concept art.",
+    "3d_render": "Create a 3D rendered image with depth, volume, realistic lighting and shadows, as if created in CGI software or game engine.",
+    "sketch": "Create a hand-drawn sketch style image with pencil or ink linework, rough expressive strokes, cross-hatching, and an artistic unfinished quality.",
+    "fantasy": "Create a fantasy-themed image with mythical elements, magical atmospheres, ethereal lighting, and elements of wonder and imagination.",
+}
+
+
+def get_style_directive(image_style: Optional[str]) -> str:
+    """
+    Get the style directive text for a given image style.
+    
+    Args:
+        image_style: The style key (realistic, cartoon, anime, etc.) or None
+    
+    Returns:
+        Style directive text to include in prompts, or empty string if no style
+    """
+    if not image_style or image_style not in IMAGE_STYLE_DIRECTIVES:
+        return ""
+    return IMAGE_STYLE_DIRECTIVES[image_style]
 
 
 def transform_hex_to_vivid_descriptions(branding_text: str) -> str:
@@ -117,7 +145,8 @@ class AIPromptGenerator:
     def generate_image_prompt(
         self, 
         agent_context: Dict[str, Any], 
-        topic: Dict[str, str]
+        topic: Dict[str, str],
+        image_style: Optional[str] = None
     ) -> str:
         """
         Generate a detailed DALL-E 3 image prompt.
@@ -125,11 +154,14 @@ class AIPromptGenerator:
         Args:
             agent_context: Agent profile data from ProfileContextLoader
             topic: Topic data from NewsTopicFetcher
+            image_style: Optional image style (realistic, cartoon, anime, etc.)
         
-                Returns:
+        Returns:
             Detailed image generation prompt for DALL-E 3
         """
         print(f"[AIPromptGenerator] Generating image prompt...")
+        if image_style:
+            print(f"[AIPromptGenerator] Using image style: {image_style}")
         start_time = time.time()
         
         # Get branding guidelines if available
@@ -147,6 +179,16 @@ MANDATORY: The image MUST prominently feature these specific colors as the DOMIN
 These colors should be immediately recognizable - they are the brand identity.
 """
         
+        # Get style directive if style is specified
+        style_directive = get_style_directive(image_style)
+        style_section = ""
+        if style_directive:
+            style_section = f"""
+MANDATORY IMAGE STYLE:
+{style_directive}
+This style MUST be the primary visual approach for the entire image.
+"""
+        
         # Construct meta-prompt for GPT-4o to create the image prompt
         meta_prompt = f"""You are an expert at creating detailed image generation prompts for DALL-E 3.
 
@@ -156,7 +198,7 @@ AGENT PROFILE:
 - Persona Summary: {agent_context['persona'][:500]}
 - Style Traits: {', '.join(agent_context['style_traits'])}
 - Themes: {', '.join(agent_context['themes'])}
-{branding_section}
+{branding_section}{style_section}
 DAILY TOPIC:
 - Topic: {topic['topic']}
 - Description: {topic['description']}
@@ -176,7 +218,8 @@ Create a detailed, vivid image generation prompt that:
    - Can be metaphorical or literal
 
 3. VISUAL STYLE REQUIREMENTS
-   - Specify artistic style (photorealistic, artistic, cinematic, etc.)
+   - If a MANDATORY IMAGE STYLE is specified above, you MUST follow it exactly
+   - Otherwise, specify artistic style (photorealistic, artistic, cinematic, etc.)
    - Include lighting, composition, color palette details
    - Describe the scene, setting, and atmosphere
    - Add specific visual elements that make it unique
@@ -377,7 +420,8 @@ Write the post now, as {agent_context['display_name']}:
         self,
         agent_context: Dict[str, Any],
         topic: Dict[str, str],
-        edit_instructions: str = ""
+        edit_instructions: str = "",
+        image_style: Optional[str] = None
     ) -> str:
         """
         Generate a prompt specifically for OpenAI Image Edits API.
@@ -390,11 +434,14 @@ Write the post now, as {agent_context['display_name']}:
             agent_context: Agent profile data from ProfileContextLoader
             topic: Topic data from NewsTopicFetcher
             edit_instructions: Optional custom edit instructions from agent settings
+            image_style: Optional image style (realistic, cartoon, anime, etc.)
         
         Returns:
             Concise edit prompt for OpenAI Image Edits API (max ~900 chars)
         """
         print(f"[AIPromptGenerator] Generating image EDIT prompt for reference image...")
+        if image_style:
+            print(f"[AIPromptGenerator] Using image style: {image_style}")
         start_time = time.time()
         
         # Get branding guidelines if available
@@ -407,6 +454,14 @@ Write the post now, as {agent_context['display_name']}:
             branding_section = f"""
 CRITICAL COLORS (MUST USE):
 {branding_truncated}
+"""
+        
+        # Get style directive if style is specified
+        style_directive = get_style_directive(image_style)
+        style_section = ""
+        if style_directive:
+            style_section = f"""
+MANDATORY STYLE: {style_directive}
 """
         
         # Construct meta-prompt for GPT-4o to create the edit prompt
@@ -422,7 +477,7 @@ AGENT PROFILE:
 - Name: {agent_context['display_name']}
 - Style Traits: {', '.join(agent_context['style_traits'][:4])}
 - Themes: {', '.join(agent_context['themes'][:3])}
-{branding_section}
+{branding_section}{style_section}
 DAILY TOPIC TO INCORPORATE:
 - Topic: {topic['topic']}
 - Description: {topic['description'][:200]}
@@ -601,10 +656,14 @@ Write ONLY the title, nothing else:
 
 
 # Convenience functions
-def generate_image_prompt(agent_context: Dict[str, Any], topic: Dict[str, str]) -> str:
+def generate_image_prompt(
+    agent_context: Dict[str, Any], 
+    topic: Dict[str, str],
+    image_style: Optional[str] = None
+) -> str:
     """Generate image prompt"""
     generator = AIPromptGenerator()
-    return generator.generate_image_prompt(agent_context, topic)
+    return generator.generate_image_prompt(agent_context, topic, image_style=image_style)
 
 
 def generate_description(
@@ -636,7 +695,8 @@ def generate_title(topic: Dict[str, str], agent_context: Dict[str, Any]) -> str:
 def generate_edit_prompt(
     agent_context: Dict[str, Any],
     topic: Dict[str, str],
-    edit_instructions: str = ""
+    edit_instructions: str = "",
+    image_style: Optional[str] = None
 ) -> str:
     """
     Generate an image edit prompt for OpenAI Image Edits API.
@@ -648,19 +708,21 @@ def generate_edit_prompt(
         agent_context: Agent profile data
         topic: Topic data
         edit_instructions: Optional custom edit instructions
+        image_style: Optional image style (realistic, cartoon, anime, etc.)
     
     Returns:
         Concise edit prompt for modifying reference image
     """
     generator = AIPromptGenerator()
-    return generator.generate_edit_prompt(agent_context, topic, edit_instructions)
+    return generator.generate_edit_prompt(agent_context, topic, edit_instructions, image_style=image_style)
 
 
 async def generate_edit_prompt_and_title_parallel(
     agent_context: Dict[str, Any],
     topic: Dict[str, str],
     edit_instructions: str = "",
-    feedback: str = None
+    feedback: str = None,
+    image_style: Optional[str] = None
 ) -> Tuple[str, str]:
     """
     Generate edit prompt and title in parallel for OpenAI Image Edits mode.
@@ -670,6 +732,7 @@ async def generate_edit_prompt_and_title_parallel(
         topic: Topic data
         edit_instructions: Optional custom edit instructions
         feedback: Optional user feedback from rejection (for regeneration)
+        image_style: Optional image style (realistic, cartoon, anime, etc.)
     
     Returns:
         Tuple of (edit_prompt, title)
@@ -677,6 +740,8 @@ async def generate_edit_prompt_and_title_parallel(
     print("[AIPromptGenerator] Generating edit prompt and title in parallel...")
     if feedback:
         print(f"[AIPromptGenerator] Using user feedback: {feedback[:50]}...")
+    if image_style:
+        print(f"[AIPromptGenerator] Using image style: {image_style}")
     start_time = time.time()
     
     # Enhance topic with feedback if provided
@@ -693,13 +758,16 @@ async def generate_edit_prompt_and_title_parallel(
     
     loop = asyncio.get_event_loop()
     
-    edit_prompt_task = loop.run_in_executor(
-        None,
+    # Use functools.partial to pass additional arguments
+    edit_prompt_func = functools.partial(
         generate_edit_prompt,
         agent_context,
         enhanced_topic,
-        enhanced_instructions
+        enhanced_instructions,
+        image_style
     )
+    
+    edit_prompt_task = loop.run_in_executor(None, edit_prompt_func)
     
     title_task = loop.run_in_executor(
         None,
@@ -720,7 +788,8 @@ async def generate_edit_prompt_and_title_parallel(
 async def generate_image_prompt_and_title_parallel(
     agent_context: Dict[str, Any], 
     topic: Dict[str, str],
-    feedback: str = None
+    feedback: str = None,
+    image_style: Optional[str] = None
 ) -> Tuple[str, str]:
     """
     Generate image prompt and title in parallel using asyncio.
@@ -731,6 +800,7 @@ async def generate_image_prompt_and_title_parallel(
         agent_context: Agent profile data
         topic: Topic data
         feedback: Optional user feedback from rejection (for regeneration)
+        image_style: Optional image style (realistic, cartoon, anime, etc.)
     
     Returns:
         Tuple of (image_prompt, title)
@@ -738,6 +808,8 @@ async def generate_image_prompt_and_title_parallel(
     print("[AIPromptGenerator] Generating image prompt and title in parallel...")
     if feedback:
         print(f"[AIPromptGenerator] Using user feedback: {feedback[:50]}...")
+    if image_style:
+        print(f"[AIPromptGenerator] Using image style: {image_style}")
     start_time = time.time()
     
     # Enhance topic with feedback if provided
@@ -750,12 +822,15 @@ async def generate_image_prompt_and_title_parallel(
     # Run both in thread pool since OpenAI client is synchronous
     loop = asyncio.get_event_loop()
     
-    image_prompt_task = loop.run_in_executor(
-        None, 
-        generate_image_prompt, 
-        agent_context, 
-        enhanced_topic
+    # Use functools.partial to pass additional arguments
+    image_prompt_func = functools.partial(
+        generate_image_prompt,
+        agent_context,
+        enhanced_topic,
+        image_style
     )
+    
+    image_prompt_task = loop.run_in_executor(None, image_prompt_func)
     
     title_task = loop.run_in_executor(
         None,
