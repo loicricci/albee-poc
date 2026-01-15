@@ -110,6 +110,8 @@ export type Profile = {
 export type AppConfig = {
   app_name?: string;
   app_logo_url?: string;
+  app_cover_url?: string;
+  app_favicon_url?: string;
   hero_title?: string;
   hero_subtitle?: string;
 };
