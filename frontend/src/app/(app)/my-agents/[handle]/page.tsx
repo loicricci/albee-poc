@@ -12,6 +12,9 @@ import {
   updateAgent,
   updateAgentTwitterSettings,
   getTwitterConfig,
+  updateAgentLinkedInSettings,
+  getLinkedInConfig,
+  LinkedInOrganization,
 } from "@/lib/api";
 import { uploadImageToBucket } from "@/lib/upload";
 import { ChatButton } from "@/components/ChatButton";
@@ -108,6 +111,16 @@ export default function AgentEditorPage() {
   const [userTwitterConfig, setUserTwitterConfig] = useState<{ connected: boolean; twitter_username?: string } | null>(null);
   const [loadingTwitterConfig, setLoadingTwitterConfig] = useState(true);
 
+  // LinkedIn settings
+  const [linkedinSharingEnabled, setLinkedinSharingEnabled] = useState(false);
+  const [linkedinPostingMode, setLinkedinPostingMode] = useState<"auto" | "manual">("manual");
+  const [linkedinTargetType, setLinkedinTargetType] = useState<"personal" | "organization">("personal");
+  const [linkedinOrganizationId, setLinkedinOrganizationId] = useState<string | null>(null);
+  const [savingLinkedinSettings, setSavingLinkedinSettings] = useState(false);
+  const [linkedinSettingsMsg, setLinkedinSettingsMsg] = useState<string | null>(null);
+  const [userLinkedinConfig, setUserLinkedinConfig] = useState<{ connected: boolean; linkedin_username?: string; organizations?: LinkedInOrganization[] } | null>(null);
+  const [loadingLinkedinConfig, setLoadingLinkedinConfig] = useState(true);
+
   // Reference images for OpenAI Image Edits
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
   const [referenceMaskUrl, setReferenceMaskUrl] = useState<string | null>(null);
@@ -162,6 +175,12 @@ export default function AgentEditorPage() {
       // Load Twitter settings from agent data
       setTwitterSharingEnabled(data?.twitter_sharing_enabled === true || data?.twitter_sharing_enabled === "true");
       setTwitterPostingMode((data?.twitter_posting_mode as "auto" | "manual") || "manual");
+      
+      // Load LinkedIn settings from agent data
+      setLinkedinSharingEnabled(data?.linkedin_sharing_enabled === true || data?.linkedin_sharing_enabled === "true");
+      setLinkedinPostingMode((data?.linkedin_posting_mode as "auto" | "manual") || "manual");
+      setLinkedinTargetType((data?.linkedin_target_type as "personal" | "organization") || "personal");
+      setLinkedinOrganizationId(data?.linkedin_organization_id || null);
       
       // Load reference image settings
       setReferenceImageUrl(data?.reference_image_url || null);
@@ -219,6 +238,22 @@ export default function AgentEditorPage() {
       }
     }
     loadTwitterConfig();
+  }, []);
+
+  // Load user's LinkedIn connection status
+  useEffect(() => {
+    async function loadLinkedInConfig() {
+      try {
+        const config = await getLinkedInConfig();
+        setUserLinkedinConfig(config);
+      } catch (e) {
+        console.error("Failed to load LinkedIn config:", e);
+        setUserLinkedinConfig(null);
+      } finally {
+        setLoadingLinkedinConfig(false);
+      }
+    }
+    loadLinkedInConfig();
   }, []);
 
   async function onSaveDetails() {
@@ -389,6 +424,27 @@ export default function AgentEditorPage() {
       setTwitterSettingsMsg(e.message || "Failed to save Twitter settings");
     } finally {
       setSavingTwitterSettings(false);
+    }
+  }
+
+  async function onSaveLinkedInSettings() {
+    if (!agent?.id) return;
+
+    setSavingLinkedinSettings(true);
+    setLinkedinSettingsMsg(null);
+
+    try {
+      await updateAgentLinkedInSettings(agent.id, {
+        enabled: linkedinSharingEnabled,
+        posting_mode: linkedinPostingMode,
+        target_type: linkedinTargetType,
+        organization_id: linkedinTargetType === "organization" ? linkedinOrganizationId || undefined : undefined,
+      });
+      setLinkedinSettingsMsg("LinkedIn settings saved successfully.");
+    } catch (e: any) {
+      setLinkedinSettingsMsg(e.message || "Failed to save LinkedIn settings");
+    } finally {
+      setSavingLinkedinSettings(false);
     }
   }
 
@@ -2001,6 +2057,257 @@ export default function AgentEditorPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         Save Twitter Settings
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* LinkedIn Settings Card */}
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-sky-50 px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A66C2]">
+                <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900">LinkedIn Integration</h2>
+                <p className="mt-1 text-xs sm:text-sm text-gray-600">Auto-post agent updates to LinkedIn</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 sm:p-6">
+            {loadingLinkedinConfig ? (
+              <div className="flex items-center justify-center py-8">
+                <svg className="h-6 w-6 animate-spin text-gray-400" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="ml-2 text-sm text-gray-500">Loading LinkedIn status...</span>
+              </div>
+            ) : !userLinkedinConfig?.connected ? (
+              <div className="rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 p-6 text-center">
+                <svg className="mx-auto h-12 w-12 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="mt-3 text-sm font-medium text-gray-900">LinkedIn Not Connected</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  Connect your LinkedIn account in your profile settings to enable LinkedIn posting for this agent.
+                </p>
+                <Link
+                  href="/profile"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#004182]"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Go to Profile Settings
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Connection Status */}
+                <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3">
+                  <div className="flex items-center gap-2">
+                    <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-green-900">
+                      Connected as {userLinkedinConfig.linkedin_username}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Enable/Disable Toggle */}
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                        <input
+                          type="checkbox"
+                          checked={linkedinSharingEnabled}
+                          onChange={(e) => {
+                            setLinkedinSharingEnabled(e.target.checked);
+                            setLinkedinSettingsMsg(null);
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-[#0A66C2] focus:ring-[#0A66C2]"
+                        />
+                        Enable LinkedIn Posting
+                      </label>
+                      <p className="mt-1 text-xs text-gray-600">
+                        Allow this agent to post updates to your LinkedIn account
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Settings when enabled */}
+                {linkedinSharingEnabled && (
+                  <>
+                    {/* Posting Mode Selection */}
+                    <div className="rounded-lg border border-gray-200 p-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-3">
+                        Posting Mode
+                      </label>
+                      <div className="space-y-3">
+                        <label className="flex items-start gap-3 rounded-lg border-2 border-gray-200 p-3 cursor-pointer transition-all hover:border-[#0A66C2] hover:bg-blue-50/50">
+                          <input
+                            type="radio"
+                            name="linkedinPostingMode"
+                            value="auto"
+                            checked={linkedinPostingMode === "auto"}
+                            onChange={() => {
+                              setLinkedinPostingMode("auto");
+                              setLinkedinSettingsMsg(null);
+                            }}
+                            className="mt-0.5 h-4 w-4 border-gray-300 text-[#0A66C2] focus:ring-[#0A66C2]"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Auto-post (Immediate)</div>
+                            <div className="mt-1 text-xs text-gray-600">
+                              Automatically post to LinkedIn when the agent creates new content
+                            </div>
+                          </div>
+                        </label>
+
+                        <label className="flex items-start gap-3 rounded-lg border-2 border-gray-200 p-3 cursor-pointer transition-all hover:border-[#0A66C2] hover:bg-blue-50/50">
+                          <input
+                            type="radio"
+                            name="linkedinPostingMode"
+                            value="manual"
+                            checked={linkedinPostingMode === "manual"}
+                            onChange={() => {
+                              setLinkedinPostingMode("manual");
+                              setLinkedinSettingsMsg(null);
+                            }}
+                            className="mt-0.5 h-4 w-4 border-gray-300 text-[#0A66C2] focus:ring-[#0A66C2]"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Manual Approval</div>
+                            <div className="mt-1 text-xs text-gray-600">
+                              Review and approve each post before it goes to LinkedIn
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Target Type Selection */}
+                    <div className="rounded-lg border border-gray-200 p-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-3">
+                        Post To
+                      </label>
+                      <div className="space-y-3">
+                        <label className="flex items-start gap-3 rounded-lg border-2 border-gray-200 p-3 cursor-pointer transition-all hover:border-[#0A66C2] hover:bg-blue-50/50">
+                          <input
+                            type="radio"
+                            name="linkedinTargetType"
+                            value="personal"
+                            checked={linkedinTargetType === "personal"}
+                            onChange={() => {
+                              setLinkedinTargetType("personal");
+                              setLinkedinSettingsMsg(null);
+                            }}
+                            className="mt-0.5 h-4 w-4 border-gray-300 text-[#0A66C2] focus:ring-[#0A66C2]"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Personal Profile</div>
+                            <div className="mt-1 text-xs text-gray-600">
+                              Posts will appear on your personal LinkedIn feed
+                            </div>
+                          </div>
+                        </label>
+
+                        <label className={`flex items-start gap-3 rounded-lg border-2 border-gray-200 p-3 cursor-pointer transition-all hover:border-[#0A66C2] hover:bg-blue-50/50 ${!userLinkedinConfig.organizations?.length ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <input
+                            type="radio"
+                            name="linkedinTargetType"
+                            value="organization"
+                            checked={linkedinTargetType === "organization"}
+                            onChange={() => {
+                              setLinkedinTargetType("organization");
+                              setLinkedinSettingsMsg(null);
+                            }}
+                            disabled={!userLinkedinConfig.organizations?.length}
+                            className="mt-0.5 h-4 w-4 border-gray-300 text-[#0A66C2] focus:ring-[#0A66C2] disabled:opacity-50"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Company Page</div>
+                            <div className="mt-1 text-xs text-gray-600">
+                              {userLinkedinConfig.organizations?.length 
+                                ? "Posts will appear on a company page you manage"
+                                : "No company pages available. Reconnect LinkedIn with organization permissions."}
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Organization Selection */}
+                    {linkedinTargetType === "organization" && userLinkedinConfig.organizations && userLinkedinConfig.organizations.length > 0 && (
+                      <div className="rounded-lg border border-gray-200 p-4">
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Select Company Page
+                        </label>
+                        <select
+                          value={linkedinOrganizationId || ""}
+                          onChange={(e) => {
+                            setLinkedinOrganizationId(e.target.value || null);
+                            setLinkedinSettingsMsg(null);
+                          }}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#0A66C2] focus:outline-none focus:ring-2 focus:ring-[#0A66C2]/20"
+                        >
+                          <option value="">Select a company page...</option>
+                          {userLinkedinConfig.organizations.map((org) => (
+                            <option key={org.id} value={org.id}>
+                              {org.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Status Message */}
+                {linkedinSettingsMsg && (
+                  <div className={`rounded-lg px-4 py-3 text-sm ${
+                    linkedinSettingsMsg.includes("success") || linkedinSettingsMsg.includes("saved")
+                      ? "bg-green-50 text-green-800 border border-green-200"
+                      : "bg-red-50 text-red-800 border border-red-200"
+                  }`}>
+                    {linkedinSettingsMsg}
+                  </div>
+                )}
+
+                {/* Save Button */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={onSaveLinkedInSettings}
+                    disabled={savingLinkedinSettings}
+                    className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0A66C2] to-[#004182] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {savingLinkedinSettings ? (
+                      <>
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save LinkedIn Settings
                       </>
                     )}
                   </button>

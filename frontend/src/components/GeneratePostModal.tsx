@@ -10,6 +10,150 @@ import {
 } from "@/lib/api";
 import { PostPreviewModal } from "./PostPreviewModal";
 
+// Generation steps configuration
+type GenerationStep = {
+  id: string;
+  label: string;
+  description: string;
+  duration: number; // estimated duration in ms
+};
+
+const GENERATION_STEPS: GenerationStep[] = [
+  { id: "profile", label: "Loading Profile", description: "Analyzing agent personality and style...", duration: 2000 },
+  { id: "topic", label: "Generating Content", description: "Creating engaging topic and message...", duration: 8000 },
+  { id: "image", label: "Creating Image", description: "Generating stunning visual with AI...", duration: 35000 },
+  { id: "preview", label: "Preparing Preview", description: "Finalizing your post for review...", duration: 3000 },
+];
+
+// Progress Overlay Component
+function GenerationProgressOverlay({ 
+  currentStep, 
+  isComplete 
+}: { 
+  currentStep: number; 
+  isComplete: boolean;
+}) {
+  const totalSteps = GENERATION_STEPS.length;
+  const progress = isComplete ? 100 : Math.min(((currentStep + 0.5) / totalSteps) * 100, 95);
+
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm rounded-2xl">
+      {/* Central animated icon */}
+      <div className="relative mb-8">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#001f98] to-[#3366cc] flex items-center justify-center shadow-lg shadow-[#001f98]/30">
+          {isComplete ? (
+            <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-10 h-10 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          )}
+        </div>
+        {/* Animated ring */}
+        {!isComplete && (
+          <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-[#001f98]/20 border-t-[#001f98] animate-spin" />
+        )}
+      </div>
+
+      {/* Title */}
+      <h3 className="text-xl font-bold text-gray-900 mb-2">
+        {isComplete ? "Almost Done!" : "Creating Your Post"}
+      </h3>
+      <p className="text-sm text-gray-500 mb-8 text-center max-w-xs">
+        {isComplete 
+          ? "Your post is ready for preview" 
+          : "Please wait while we craft something amazing"}
+      </p>
+
+      {/* Progress bar */}
+      <div className="w-64 mb-8">
+        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-[#001f98] to-[#3366cc] rounded-full transition-all duration-1000 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="text-xs text-gray-400 mt-2 text-center">
+          {Math.round(progress)}% complete
+        </p>
+      </div>
+
+      {/* Steps list */}
+      <div className="w-72 space-y-3">
+        {GENERATION_STEPS.map((step, index) => {
+          const isActive = index === currentStep && !isComplete;
+          const isCompleted = index < currentStep || isComplete;
+          const isPending = index > currentStep && !isComplete;
+
+          return (
+            <div
+              key={step.id}
+              className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-500 ${
+                isActive 
+                  ? "bg-[#e6eaff] border-2 border-[#001f98] shadow-md" 
+                  : isCompleted
+                    ? "bg-green-50 border-2 border-green-200"
+                    : "bg-gray-50 border-2 border-transparent"
+              }`}
+            >
+              {/* Step indicator */}
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                isCompleted 
+                  ? "bg-green-500 text-white" 
+                  : isActive 
+                    ? "bg-[#001f98] text-white"
+                    : "bg-gray-200 text-gray-400"
+              }`}>
+                {isCompleted ? (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : isActive ? (
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <span className="text-sm font-medium">{index + 1}</span>
+                )}
+              </div>
+
+              {/* Step content */}
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold transition-colors duration-300 ${
+                  isCompleted 
+                    ? "text-green-700" 
+                    : isActive 
+                      ? "text-[#001f98]"
+                      : "text-gray-400"
+                }`}>
+                  {step.label}
+                </p>
+                <p className={`text-xs truncate transition-colors duration-300 ${
+                  isActive ? "text-[#001f98]/70" : isPending ? "text-gray-300" : "text-gray-400"
+                }`}>
+                  {isCompleted ? "Completed" : step.description}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Subtle animation dots at the bottom */}
+      {!isComplete && (
+        <div className="mt-8 flex gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-[#001f98] animate-bounce" style={{ animationDelay: "0ms" }} />
+          <div className="w-2 h-2 rounded-full bg-[#001f98] animate-bounce" style={{ animationDelay: "150ms" }} />
+          <div className="w-2 h-2 rounded-full bg-[#001f98] animate-bounce" style={{ animationDelay: "300ms" }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 type ReferenceImage = {
   id: string;
   reference_image_url: string;
@@ -67,12 +211,15 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generationStep, setGenerationStep] = useState(0);
+  const [generationComplete, setGenerationComplete] = useState(false);
   
   // Preview state (for approval workflow)
   const [previewData, setPreviewData] = useState<PreviewPostResponse | null>(null);
   const [isProcessingPreview, setIsProcessingPreview] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch agent's reference images when modal opens
   useEffect(() => {
@@ -80,6 +227,32 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
       fetchReferenceImages();
     }
   }, [isOpen, agent.id]);
+
+  // Progress through generation steps based on estimated timings
+  useEffect(() => {
+    if (isGenerating && generationStep < GENERATION_STEPS.length) {
+      const currentStepDuration = GENERATION_STEPS[generationStep]?.duration || 2000;
+      
+      stepTimerRef.current = setTimeout(() => {
+        if (generationStep < GENERATION_STEPS.length - 1) {
+          setGenerationStep(prev => prev + 1);
+        }
+      }, currentStepDuration);
+    }
+    
+    return () => {
+      if (stepTimerRef.current) {
+        clearTimeout(stepTimerRef.current);
+      }
+    };
+  }, [isGenerating, generationStep]);
+
+  // Reset generation progress when modal closes or generation stops
+  useEffect(() => {
+    if (!isGenerating && !generationComplete) {
+      setGenerationStep(0);
+    }
+  }, [isGenerating, generationComplete]);
 
   // Clear reference image when switching to DALL-E 3
   useEffect(() => {
@@ -99,6 +272,11 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
       setUploadError(null);
       setError(null);
       setPreviewData(null);
+      setGenerationStep(0);
+      setGenerationComplete(false);
+      if (stepTimerRef.current) {
+        clearTimeout(stepTimerRef.current);
+      }
     }
   }, [isOpen]);
 
@@ -228,6 +406,9 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
   async function handleGenerate(feedback?: string, previousPreviewId?: string) {
     if (!agent.id) return;
     
+    // Reset and start generation progress
+    setGenerationStep(0);
+    setGenerationComplete(false);
     setIsGenerating(true);
     setError(null);
     
@@ -242,12 +423,21 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
         previous_preview_id: previousPreviewId || null,
       });
       
-      // Show the preview modal
-      setPreviewData(preview);
+      // Mark generation as complete before showing preview
+      setGenerationComplete(true);
+      
+      // Brief delay to show completion state, then show preview
+      setTimeout(() => {
+        setPreviewData(preview);
+        setIsGenerating(false);
+        setGenerationStep(0);
+        setGenerationComplete(false);
+      }, 800);
     } catch (e: any) {
       setError(e.message || "Failed to generate preview");
-    } finally {
       setIsGenerating(false);
+      setGenerationStep(0);
+      setGenerationComplete(false);
     }
   }
 
@@ -320,9 +510,17 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
       }}
     >
       <div 
-        className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Generation Progress Overlay */}
+        {isGenerating && (
+          <GenerationProgressOverlay 
+            currentStep={generationStep} 
+            isComplete={generationComplete} 
+          />
+        )}
+
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
@@ -600,22 +798,10 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
               disabled={isGenerating}
               className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#3366cc] to-[#001f98] px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 transition-all hover:shadow-[#001f98]/40 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isGenerating ? (
-                <>
-                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Generate Post
-                </>
-              )}
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Generate Post
             </button>
           </div>
         </div>

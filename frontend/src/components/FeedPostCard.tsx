@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { UnifiedFeedItem } from "@/lib/api";
 import { CommentSection } from "@/components/CommentSection";
+import { ShareButton } from "@/components/ShareButton";
 
 type FeedPostCardProps = {
   item: UnifiedFeedItem;
@@ -195,6 +196,14 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
             </svg>
             <span>Repost</span>
           </button>
+
+          {/* Share to External Platforms */}
+          <ShareButton
+            url={typeof window !== "undefined" ? `${window.location.origin}/p/${actualPostId}` : `/p/${actualPostId}`}
+            title={item.title || `Post by @${item.agent_handle}`}
+            description={item.description || undefined}
+            variant="button"
+          />
         </div>
 
       {/* Comments Section */}

@@ -1,5 +1,6 @@
 import uuid
 import httpx
+from typing import Optional
 
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
@@ -219,6 +220,10 @@ app.include_router(twitter_router, tags=["twitter"])
 # Import Twitter OAuth router
 from backend.twitter_oauth_api import router as twitter_oauth_router
 app.include_router(twitter_oauth_router, tags=["twitter-oauth"])
+
+# Import LinkedIn OAuth router
+from backend.linkedin_oauth_api import router as linkedin_oauth_router
+app.include_router(linkedin_oauth_router, tags=["linkedin-oauth"])
 
 # Import Auto Post API router
 from backend.auto_post_api import router as auto_post_router
@@ -1010,6 +1015,21 @@ def get_avee_by_handle(
         "logo_url": a.logo_url,
         "logo_position": a.logo_position or "bottom-right",
         "logo_size": a.logo_size or "10",
+        # Twitter integration settings
+        "twitter_sharing_enabled": a.twitter_sharing_enabled or False,
+        "twitter_posting_mode": a.twitter_posting_mode or "manual",
+        # LinkedIn integration settings
+        "linkedin_sharing_enabled": a.linkedin_sharing_enabled or False,
+        "linkedin_posting_mode": a.linkedin_posting_mode or "manual",
+        "linkedin_target_type": a.linkedin_target_type or "personal",
+        "linkedin_organization_id": a.linkedin_organization_id,
+        # Reference image settings
+        "reference_image_url": a.reference_image_url,
+        "reference_image_mask_url": a.reference_image_mask_url,
+        "image_edit_instructions": a.image_edit_instructions,
+        # Auto-post topic personalization
+        "preferred_topics": a.preferred_topics,
+        "location": a.location,
     }
 
 
@@ -2432,7 +2452,7 @@ def update_avee_twitter_settings(
         raise HTTPException(status_code=403, detail="Only owner can edit this agent")
     
     # Update settings
-    avee.twitter_sharing_enabled = "true" if enabled else "false"
+    avee.twitter_sharing_enabled = enabled  # enabled is already a bool from FastAPI
     avee.twitter_posting_mode = posting_mode
     
     db.commit()
@@ -2445,6 +2465,70 @@ def update_avee_twitter_settings(
         "avee_id": str(avee.id),
         "twitter_sharing_enabled": enabled,
         "twitter_posting_mode": posting_mode
+    }
+
+
+@app.put("/avees/{avee_id}/linkedin-settings")
+def update_avee_linkedin_settings(
+    avee_id: str,
+    enabled: bool,
+    posting_mode: str,
+    target_type: str = "personal",
+    organization_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Update LinkedIn settings for an agent
+    
+    Args:
+        enabled: Whether LinkedIn sharing is enabled
+        posting_mode: 'auto' or 'manual'
+        target_type: 'personal' or 'organization'
+        organization_id: LinkedIn organization URN (required if target_type is 'organization')
+    """
+    owner_uuid = _parse_uuid(user_id, "user_id")
+    avee_uuid = _parse_uuid(avee_id, "avee_id")
+    
+    # Validate posting_mode
+    if posting_mode not in ["auto", "manual"]:
+        raise HTTPException(status_code=400, detail="posting_mode must be 'auto' or 'manual'")
+    
+    # Validate target_type
+    if target_type not in ["personal", "organization"]:
+        raise HTTPException(status_code=400, detail="target_type must be 'personal' or 'organization'")
+    
+    # If target_type is organization, require organization_id
+    if target_type == "organization" and not organization_id:
+        raise HTTPException(status_code=400, detail="organization_id is required when target_type is 'organization'")
+    
+    # Get agent
+    avee = db.query(Avee).filter(Avee.id == avee_uuid).first()
+    if not avee:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Verify ownership
+    if avee.owner_user_id != owner_uuid:
+        raise HTTPException(status_code=403, detail="Only owner can edit this agent")
+    
+    # Update settings
+    avee.linkedin_sharing_enabled = enabled
+    avee.linkedin_posting_mode = posting_mode
+    avee.linkedin_target_type = target_type
+    avee.linkedin_organization_id = organization_id if target_type == "organization" else None
+    
+    db.commit()
+    
+    # Invalidate cache
+    invalidate_agent_cache(str(avee_uuid))
+    
+    return {
+        "ok": True,
+        "avee_id": str(avee.id),
+        "linkedin_sharing_enabled": enabled,
+        "linkedin_posting_mode": posting_mode,
+        "linkedin_target_type": target_type,
+        "linkedin_organization_id": organization_id
     }
 
 
@@ -3021,6 +3105,46 @@ def get_profile_by_handle(
         } if owner else None,
         "is_following": is_following,
         "is_own_profile": str(agent.owner_user_id) == str(me) if agent else False,
+    }
+
+
+@app.get("/updates/{update_id}/public")
+def get_public_update(
+    update_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Get a single public update by ID - NO AUTHENTICATION REQUIRED
+    
+    This endpoint is used for social sharing and Open Graph metadata.
+    Only returns updates with layer='public'.
+    """
+    try:
+        update_uuid = uuid.UUID(update_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid update ID format")
+    
+    # Get update with agent info (public layer only)
+    update = db.query(AgentUpdate).filter(
+        AgentUpdate.id == update_uuid,
+        AgentUpdate.layer == "public"  # Only public updates
+    ).first()
+    
+    if not update:
+        raise HTTPException(status_code=404, detail="Update not found or not public")
+    
+    # Get agent info
+    agent = db.query(Avee).filter(Avee.id == update.avee_id).first()
+    
+    return {
+        "id": str(update.id),
+        "title": update.title,
+        "content": update.content,
+        "topic": update.topic,
+        "created_at": update.created_at.isoformat() if update.created_at else None,
+        "agent_handle": agent.handle if agent else None,
+        "agent_display_name": agent.display_name if agent else None,
+        "agent_avatar_url": agent.avatar_url if agent else None,
     }
 
 

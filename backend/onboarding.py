@@ -2,12 +2,15 @@
 Onboarding router for new user profile and agent creation.
 Handles multi-step onboarding wizard including handle suggestions,
 AI interview, and profile/agent creation.
+
+Includes GDPR-compliant T&C acceptance tracking.
 """
 
 import os
 import re
 import uuid
 import random
+from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -16,7 +19,7 @@ from openai import OpenAI
 
 from backend.db import SessionLocal
 from backend.models import Profile, Avee
-from backend.auth_supabase import get_current_user_id
+from backend.auth_supabase import get_current_user_id, get_current_user
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
@@ -86,6 +89,10 @@ class OnboardingCompleteRequest(BaseModel):
     avatar_url: Optional[str] = None
     persona: Optional[str] = None
     interview_data: Optional[dict] = None
+    # T&C acceptance (optional - can also be read from Supabase user_metadata)
+    terms_accepted: Optional[bool] = None
+    terms_accepted_at: Optional[str] = None
+    terms_version: Optional[str] = None
 
 
 class OnboardingStatusResponse(BaseModel):
@@ -242,18 +249,47 @@ async def interview_chat(
 
 
 @router.post("/complete")
-def complete_onboarding(
+async def complete_onboarding(
     req: OnboardingCompleteRequest,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    current_user: dict = Depends(get_current_user),
 ):
-    """Complete onboarding by creating profile and primary agent"""
+    """Complete onboarding by creating profile and primary agent.
+    
+    GDPR Compliance: Requires T&C acceptance before profile creation.
+    T&C acceptance is read from Supabase user_metadata (set during signup).
+    """
+    user_id = current_user["id"]
     user_uuid = uuid.UUID(user_id)
+    user_metadata = current_user.get("user_metadata", {})
     
     # Check if profile already exists
     existing_profile = db.query(Profile).filter(Profile.user_id == user_uuid).first()
     if existing_profile:
         raise HTTPException(status_code=400, detail="Profile already exists")
+    
+    # GDPR Compliance: Extract T&C acceptance from Supabase user_metadata
+    # This was set during signup in the frontend
+    terms_accepted_at_str = user_metadata.get("terms_accepted_at") or req.terms_accepted_at
+    terms_version = user_metadata.get("terms_version") or req.terms_version or "2026-01-15"
+    privacy_accepted_at_str = user_metadata.get("privacy_accepted_at") or req.terms_accepted_at
+    privacy_version = user_metadata.get("privacy_version") or req.terms_version or "2026-01-15"
+    
+    # Validate T&C acceptance - REQUIRED for GDPR compliance
+    if not terms_accepted_at_str:
+        raise HTTPException(
+            status_code=400, 
+            detail="Terms and Conditions must be accepted to create an account. Please sign up again and accept the Terms."
+        )
+    
+    # Parse datetime
+    try:
+        terms_accepted_at = datetime.fromisoformat(terms_accepted_at_str.replace("Z", "+00:00"))
+        privacy_accepted_at = datetime.fromisoformat(privacy_accepted_at_str.replace("Z", "+00:00")) if privacy_accepted_at_str else terms_accepted_at
+    except (ValueError, AttributeError):
+        # If parsing fails, use current time (user must have accepted to get here)
+        terms_accepted_at = datetime.utcnow()
+        privacy_accepted_at = terms_accepted_at
     
     # Validate handle
     handle = req.handle.strip().lower()
@@ -268,7 +304,7 @@ def complete_onboarding(
     if existing_handle:
         raise HTTPException(status_code=400, detail="Handle already taken")
     
-    # Create profile
+    # Create profile with T&C acceptance tracking
     display_name = req.display_name or handle
     
     try:
@@ -278,6 +314,11 @@ def complete_onboarding(
             display_name=display_name,
             bio=req.bio,
             avatar_url=req.avatar_url,
+            # GDPR: Store T&C acceptance for audit trail
+            terms_accepted_at=terms_accepted_at,
+            terms_version=terms_version,
+            privacy_accepted_at=privacy_accepted_at,
+            privacy_version=privacy_version,
         )
         db.add(profile)
         db.flush()  # Flush to get profile created before agent
@@ -309,6 +350,8 @@ def complete_onboarding(
                 "display_name": profile.display_name,
                 "bio": profile.bio,
                 "avatar_url": profile.avatar_url,
+                "terms_accepted_at": profile.terms_accepted_at.isoformat() if profile.terms_accepted_at else None,
+                "terms_version": profile.terms_version,
             },
             "agent": {
                 "id": str(agent.id),

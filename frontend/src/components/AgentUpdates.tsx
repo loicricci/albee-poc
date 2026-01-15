@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { ShareButton } from "@/components/ShareButton";
 
 type AgentUpdate = {
   id: string;
@@ -358,6 +359,15 @@ export function AgentUpdates({ agentId, agentHandle }: AgentUpdatesProps) {
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
+                          {/* Share button - only for public updates */}
+                          {update.layer === "public" && (
+                            <ShareButton
+                              url={typeof window !== "undefined" ? `${window.location.origin}/update/${update.id}` : `/update/${update.id}`}
+                              title={update.title}
+                              description={update.content.slice(0, 200)}
+                              variant="icon"
+                            />
+                          )}
                           <button
                             onClick={() => openEditModal(update)}
                             className="rounded p-1 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"

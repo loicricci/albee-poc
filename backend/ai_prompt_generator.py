@@ -237,70 +237,109 @@ IMPORTANT: Your response should be ONLY the image generation prompt itself (200-
         image_prompt: str
     ) -> str:
         """
-        Generate a social media post description.
+        Generate a social media post description in the agent's authentic voice.
         
         Args:
-            agent_context: Agent profile data
+            agent_context: Agent profile data (including voice instructions)
             topic: Topic data
             image_prompt: The image prompt that was generated (for context)
         
-                Returns:
-            Engaging social media post description
+        Returns:
+            Engaging social media post that sounds unmistakably like the agent
         """
-        print(f"[AIPromptGenerator] Generating post description...")
+        print(f"[AIPromptGenerator] Generating post description in {agent_context['display_name']}'s voice...")
         start_time = time.time()
         
-        # Construct meta-prompt for post description
-        meta_prompt = f"""You are a social media ghostwriter. Write a post for this agent about today's topic.
+        # Get voice-related context (these come from _extract_voice_instructions)
+        voice_instructions = agent_context.get('voice_instructions', '')
+        speaking_style = agent_context.get('speaking_style', '')
+        vocabulary_examples = agent_context.get('vocabulary_examples', [])
+        example_phrases = agent_context.get('example_phrases', [])
+        tone = agent_context.get('tone', 'authentic')
+        
+        # Use much more persona context - 2000+ chars for rich voice capture
+        persona_full = agent_context.get('persona', '')[:2500]
+        
+        # Build vocabulary section
+        vocab_section = ""
+        if vocabulary_examples:
+            vocab_sample = vocabulary_examples[:8]
+            vocab_section = f"""
+VOCABULARY & EXPRESSIONS TO USE:
+{', '.join(vocab_sample)}
+"""
+        
+        # Build example phrases section
+        examples_section = ""
+        if example_phrases:
+            examples_section = f"""
+EXAMPLES OF HOW THEY SPEAK:
+{chr(10).join([f'- "{phrase}"' for phrase in example_phrases[:5]])}
+"""
+        
+        # Build speaking style section
+        style_section = ""
+        if speaking_style:
+            # Limit but keep meaningful content
+            style_section = f"""
+SPEAKING STYLE & COMMUNICATION:
+{speaking_style[:1000]}
+"""
+        
+        # Construct persona-rich meta-prompt
+        meta_prompt = f"""You ARE {agent_context['display_name']}. Write a social media post about today's topic in YOUR authentic voice.
 
-AGENT PROFILE:
-- Name: {agent_context['display_name']}
-- Handle: @{agent_context['handle']}
-- Bio: {agent_context['bio']}
-- Persona: {agent_context['persona'][:600]}
-- Style Traits: {', '.join(agent_context['style_traits'])}
-- Themes: {', '.join(agent_context['themes'])}
+CRITICAL INSTRUCTION: You are not writing ABOUT this person - you ARE this person. Every word must sound like it came directly from them.
 
-DAILY TOPIC:
-- Topic: {topic['topic']}
-- Description: {topic['description']}
-- Category: {topic['category']}
+═══════════════════════════════════════════════════════════════
+WHO YOU ARE (YOUR COMPLETE IDENTITY):
+═══════════════════════════════════════════════════════════════
+{persona_full}
 
-IMAGE CONTEXT:
-The post will include an AI-generated image showing: {image_prompt[:200]}...
+═══════════════════════════════════════════════════════════════
+YOUR VOICE (FOLLOW THIS EXACTLY):
+═══════════════════════════════════════════════════════════════
+Tone: {tone}
+{voice_instructions}
+{vocab_section}
+{examples_section}
+{style_section}
+═══════════════════════════════════════════════════════════════
+TODAY'S TOPIC TO REACT TO:
+═══════════════════════════════════════════════════════════════
+Topic: {topic['topic']}
+Description: {topic.get('description', '')}
+Category: {topic.get('category', 'general')}
 
-TASK:
-Write an engaging social media post (150-300 words) that:
+The post includes an image showing: {image_prompt[:150]}...
 
-1. AUTHENTIC VOICE
-   - Sounds exactly like this agent would speak
-   - Uses their vocabulary, tone, and style
-   - Reflects their personality traits
-   - Feels genuine and natural
+═══════════════════════════════════════════════════════════════
+WRITING REQUIREMENTS:
+═══════════════════════════════════════════════════════════════
+1. VOICE AUTHENTICITY (MOST IMPORTANT)
+   - Write EXACTLY as {agent_context['display_name']} would write
+   - Use THEIR vocabulary, expressions, and speech patterns
+   - Capture THEIR emotional style (warm? provocative? witty? passionate?)
+   - The post should be IMPOSSIBLE to confuse with someone else's voice
 
-2. TOPIC CONNECTION
-   - References the news topic naturally
-   - Makes it relevant to the agent's interests/expertise
-   - Can be thoughtful, humorous, or inspirational (matching their style)
-   - Doesn't force the connection
+2. PERSONAL REACTION
+   - React to the topic AS THIS PERSON would genuinely react
+   - Include personal perspective, opinions, or stories if relevant
+   - Show their passions, values, and personality through the content
 
-3. ENGAGEMENT
-   - Starts with an attention-grabbing hook
-   - Includes the agent's personal take or perspective
-   - Ends with something memorable or a question
-   - Uses emojis if it fits the agent's style (not excessive)
+3. NATURAL STRUCTURE
+   - 150-300 words
+   - 2-4 paragraphs, easy to read on mobile
+   - Start with something attention-grabbing IN THEIR STYLE
+   - End memorably (question, reflection, call to action - matching their voice)
 
-4. STRUCTURE
-   - 2-4 short paragraphs
-   - Easy to read on mobile
-   - Natural breaks and pacing
-
-5. HASHTAGS
+4. HASHTAGS
    - 3-5 relevant hashtags at the end
-   - Mix of popular and niche tags
-   - Related to both the topic and agent's themes
+   - Mix their typical themes with the topic
 
-IMPORTANT: Write ONLY the post text itself, not meta-commentary. Make it feel like the agent wrote it themselves!
+REMEMBER: If someone read this post without seeing the author, they should IMMEDIATELY recognize whose voice it is. Generic social media writing is FORBIDDEN.
+
+Write the post now, as {agent_context['display_name']}:
 """
         
         try:
@@ -309,16 +348,16 @@ IMPORTANT: Write ONLY the post text itself, not meta-commentary. Make it feel li
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert social media writer. Write in the authentic voice of the person, making content engaging and natural."
+                        "content": f"You ARE {agent_context['display_name']}. Embody their personality, voice, vocabulary, and way of expressing themselves completely. Write as if you are literally this person sharing their genuine thoughts. Your writing must be unmistakably theirs - no generic social media speak."
                     },
                     {
                         "role": "user",
                         "content": meta_prompt
                     }
                 ],
-                temperature=0.85,  # High creativity for engaging content
-                max_tokens=600
-                        )
+                temperature=0.88,  # High creativity for authentic voice
+                max_tokens=700
+            )
             
             description = response.choices[0].message.content.strip()
             
@@ -461,56 +500,92 @@ Write ONLY the edit prompt (under 800 chars), no explanation:
 
     def generate_title(self, topic: Dict[str, str], agent_context: Dict[str, Any]) -> str:
         """
-        Generate a short, catchy title for the post.
+        Generate a short, catchy title for the post in the agent's unique voice.
         
         Args:
             topic: Topic data
-            agent_context: Agent profile data
+            agent_context: Agent profile data (including voice instructions)
         
-                Returns:
-            Short title (50 chars max)
+        Returns:
+            Short title that sounds unmistakably like the agent
         """
-        print(f"[AIPromptGenerator] Generating post title...")
+        print(f"[AIPromptGenerator] Generating post title in {agent_context['display_name']}'s voice...")
         start_time = time.time()
         
-        meta_prompt = f"""Create a short, catchy title for a social media post.
+        # Get voice-related context
+        voice_instructions = agent_context.get('voice_instructions', '')
+        vocabulary_examples = agent_context.get('vocabulary_examples', [])
+        example_phrases = agent_context.get('example_phrases', [])
+        tone = agent_context.get('tone', 'authentic')
+        persona_preview = agent_context.get('persona', '')[:800]  # More persona context
+        
+        # Build vocabulary section
+        vocab_section = ""
+        if vocabulary_examples:
+            vocab_sample = vocabulary_examples[:6]
+            vocab_section = f"\nVOCABULARY TO USE: {', '.join(vocab_sample)}"
+        
+        # Build example section
+        example_section = ""
+        if example_phrases:
+            example_section = f"\nEXAMPLE OF THEIR VOICE: \"{example_phrases[0]}\""
+        
+        meta_prompt = f"""You are writing a social media post title AS IF you ARE {agent_context['display_name']}.
 
-AGENT: {agent_context['display_name']}
-TOPIC: {topic['topic']}
-AGENT STYLE: {', '.join(agent_context['style_traits'][:3])}
+CRITICAL: The title must sound like {agent_context['display_name']} wrote it themselves - their unique voice, vocabulary, and personality must shine through.
 
-Requirements:
-- 5-10 words maximum
-- Eye-catching and engaging
-- Can use 1-2 emojis if they fit the agent's style
-- Should hint at both the agent and topic
+WHO YOU ARE:
+{persona_preview}
 
-Example formats:
-- "🎹 Rocking the Future of Music! 🎸"
-- "When Art Meets Science 🎨🔬"
-- "A New Chapter Begins ✨📖"
+YOUR VOICE:
+- Tone: {tone}
+- {voice_instructions}
+{vocab_section}
+{example_section}
+
+TODAY'S TOPIC: {topic['topic']}
+{f"Topic description: {topic['description'][:150]}" if topic.get('description') else ""}
+
+REQUIREMENTS:
+- Write 5-12 words maximum
+- The title MUST sound unmistakably like {agent_context['display_name']}
+- Use their vocabulary, expressions, and speech patterns
+- React to the topic AS THEY WOULD - with their personality showing
+- Emojis only if natural to their style (some characters don't use them)
+- This is NOT a generic title - it should be impossible to confuse with another person's post
+
+DO NOT write generic titles like "Exploring the Future" or "Thoughts on X".
+DO write titles that capture THIS person's unique reaction to the topic.
 
 Write ONLY the title, nothing else:
 """
         
         try:
             response = client.chat.completions.create(
-                model="gpt-4o-mini",  # Use mini for simple task
+                model="gpt-4o-mini",  # Use mini for speed
                 messages=[
+                    {
+                        "role": "system",
+                        "content": f"You are {agent_context['display_name']}. Write exactly as they would - their voice, their words, their personality. Every word must feel authentically theirs."
+                    },
                     {
                         "role": "user",
                         "content": meta_prompt
                     }
                 ],
                 temperature=0.9,
-                max_tokens=50
-                        )
+                max_tokens=60
+            )
             
             title = response.choices[0].message.content.strip()
             
+            # Remove surrounding quotes if present
+            if (title.startswith('"') and title.endswith('"')) or (title.startswith("'") and title.endswith("'")):
+                title = title[1:-1]
+            
             # Ensure it's not too long
-            if len(title) > 100:
-                title = title[:97] + "..."
+            if len(title) > 120:
+                title = title[:117] + "..."
             
             duration = time.time() - start_time
             tokens = response.usage.total_tokens if hasattr(response, 'usage') else 'N/A'
@@ -521,8 +596,8 @@ Write ONLY the title, nothing else:
             
         except Exception as e:
             print(f"[AIPromptGenerator] ❌ Error generating title: {e}")
-            # Fallback title
-            return f"✨ {topic['topic'][:40]}..."
+            # Fallback title with agent name
+            return f"{agent_context['display_name']} on {topic['topic'][:30]}..."
 
 
 # Convenience functions

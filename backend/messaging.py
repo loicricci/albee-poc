@@ -913,28 +913,55 @@ def get_unread_messages_count(
 ):
     """
     Get total count of unread messages across all conversations.
-    Returns the sum of unread messages from all conversations where user is a participant.
+    Returns the sum of unread messages from conversations where user is a participant
+    AND user is NOT the agent owner (those belong to Agent Activity, not My Chats).
     """
     user_uuid = _parse_uuid(user_id, "user_id")
     
-    # Get all conversations for this user
-    conversations = (
-        db.query(DirectConversation)
-        .filter(
-            or_(
-                DirectConversation.participant1_user_id == user_uuid,
-                DirectConversation.participant2_user_id == user_uuid,
-            )
-        )
-        .all()
-    )
+    # Get all conversations for this user with agent ownership info
+    # Use LEFT JOIN to get avee owner info for agent conversations
+    conversations_with_owner = db.execute(
+        text("""
+            SELECT 
+                dc.id,
+                dc.participant1_user_id,
+                dc.participant2_user_id,
+                dc.chat_type,
+                dc.target_avee_id,
+                a.owner_user_id as avee_owner_user_id
+            FROM direct_conversations dc
+            LEFT JOIN avees a ON dc.target_avee_id = a.id
+            WHERE dc.participant1_user_id = :user_id 
+               OR dc.participant2_user_id = :user_id
+        """),
+        {"user_id": str(user_uuid)}
+    ).fetchall()
     
-    if not conversations:
+    if not conversations_with_owner:
         return {"unread_count": 0}
     
-    # Build arrays for each participant type
-    participant1_conv_ids = [str(c.id) for c in conversations if c.participant1_user_id == user_uuid]
-    participant2_conv_ids = [str(c.id) for c in conversations if c.participant2_user_id == user_uuid]
+    # Filter out conversations where user is the agent owner
+    # (those appear in Agent Activity, not My Chats)
+    participant1_conv_ids = []
+    participant2_conv_ids = []
+    
+    for row in conversations_with_owner:
+        conv_id = str(row[0])
+        p1_user_id = str(row[1]) if row[1] else None
+        p2_user_id = str(row[2]) if row[2] else None
+        chat_type = row[3]
+        avee_owner_user_id = str(row[5]) if row[5] else None
+        
+        # Skip if this is an agent chat AND user owns the agent
+        is_agent_owner = (chat_type == "agent" and avee_owner_user_id == str(user_uuid))
+        if is_agent_owner:
+            continue
+        
+        # Add to appropriate list based on participant role
+        if p1_user_id == str(user_uuid):
+            participant1_conv_ids.append(conv_id)
+        if p2_user_id == str(user_uuid):
+            participant2_conv_ids.append(conv_id)
     
     total_unread = 0
     

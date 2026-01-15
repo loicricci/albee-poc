@@ -572,6 +572,96 @@ export async function getPendingTwitterPosts(limit = 20): Promise<{ posts: PostD
 }
 
 // =====================================
+// LINKEDIN INTEGRATION
+// =====================================
+
+export type LinkedInOrganization = {
+  id: string;
+  name: string;
+  vanity_name?: string;
+};
+
+export type LinkedInConfig = {
+  connected: boolean;
+  linkedin_username?: string;
+  linkedin_user_id?: string;
+  linkedin_profile_url?: string;
+  organizations?: LinkedInOrganization[];
+  token_expires_at?: string;
+  created_at?: string;
+};
+
+export type LinkedInOAuthInit = {
+  auth_url: string;
+  state: string;
+};
+
+export async function initiateLinkedInOAuth(includeOrgScope = false): Promise<LinkedInOAuthInit> {
+  const params = new URLSearchParams();
+  if (includeOrgScope) {
+    params.set("include_org_scope", "true");
+  }
+  const queryString = params.toString();
+  return api.get(`/linkedin/oauth/initiate${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function getLinkedInConfig(): Promise<LinkedInConfig> {
+  return api.get("/linkedin/config");
+}
+
+export async function disconnectLinkedIn(): Promise<{ success: boolean; message: string }> {
+  return api.delete("/linkedin/config");
+}
+
+export async function getLinkedInStatus(): Promise<{
+  server_configured: boolean;
+  user_connected: boolean;
+  config?: LinkedInConfig;
+}> {
+  return api.get("/linkedin/status");
+}
+
+export async function getLinkedInOrganizations(): Promise<{ organizations: LinkedInOrganization[] }> {
+  return api.get("/linkedin/organizations");
+}
+
+export async function refreshLinkedInToken(): Promise<{ success: boolean; message: string }> {
+  return api.post("/linkedin/refresh", {});
+}
+
+export async function updateAgentLinkedInSettings(
+  agentId: string,
+  settings: {
+    enabled: boolean;
+    posting_mode: 'auto' | 'manual';
+    target_type: 'personal' | 'organization';
+    organization_id?: string;
+  }
+): Promise<{ ok: boolean; linkedin_sharing_enabled: boolean; linkedin_posting_mode: string }> {
+  const params = new URLSearchParams();
+  params.set("enabled", settings.enabled.toString());
+  params.set("posting_mode", settings.posting_mode);
+  params.set("target_type", settings.target_type);
+  if (settings.organization_id) {
+    params.set("organization_id", settings.organization_id);
+  }
+  
+  return api.put(`/avees/${agentId}/linkedin-settings?${params.toString()}`, {});
+}
+
+export async function postToLinkedIn(postId: string): Promise<{ success: boolean; linkedin_url: string; linkedin_post_id: string }> {
+  return api.post(`/posts/${postId}/post-to-linkedin`, {});
+}
+
+export async function getPostLinkedInStatus(postId: string): Promise<{
+  can_post: boolean;
+  reason?: string;
+  linkedin_url?: string;
+}> {
+  return api.get(`/posts/${postId}/linkedin-status`);
+}
+
+// =====================================
 // COMMENTS API
 // =====================================
 
@@ -911,5 +1001,3 @@ export async function cancelPostPreview(
 
   return res.json();
 }
-
-

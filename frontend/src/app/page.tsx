@@ -39,6 +39,83 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
+// Cookie Consent Banner component
+function CookieBanner() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Check if user has already accepted cookies
+    const cookieConsent = localStorage.getItem("cookieConsent");
+    if (!cookieConsent) {
+      // Small delay for better UX
+      const timer = setTimeout(() => setIsVisible(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleAcceptAll = () => {
+    localStorage.setItem("cookieConsent", "accepted");
+    localStorage.setItem("cookieConsentDate", new Date().toISOString());
+    setIsVisible(false);
+  };
+
+  const handleDecline = () => {
+    localStorage.setItem("cookieConsent", "declined");
+    localStorage.setItem("cookieConsentDate", new Date().toISOString());
+    setIsVisible(false);
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-in slide-in-from-bottom duration-500">
+      <div className="mx-auto max-w-4xl">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl shadow-gray-200/50 p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {/* Cookie icon and text */}
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#001f98]/10 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-[#001f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">We value your privacy</h3>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. 
+                By clicking "Accept All", you consent to our use of cookies.
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              <Link
+                href="/privacy"
+                className="h-10 px-5 inline-flex items-center justify-center text-sm font-medium text-gray-600 hover:text-[#001f98] border border-gray-200 rounded-full hover:border-[#001f98]/30 transition-all"
+              >
+                See more
+              </Link>
+              <button
+                onClick={handleDecline}
+                className="h-10 px-5 inline-flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-200 rounded-full hover:border-gray-300 transition-all"
+              >
+                Decline
+              </button>
+              <button
+                onClick={handleAcceptAll}
+                className="h-10 px-6 inline-flex items-center justify-center rounded-full bg-[#001f98] text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 hover:shadow-[#001f98]/40 hover:scale-105 transition-all duration-300"
+              >
+                Accept All
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [appConfig, setAppConfig] = useState<AppConfig>({});
   const [activeSection, setActiveSection] = useState("");
@@ -1185,7 +1262,7 @@ export default function Home() {
         {/* ============================================ */}
         <footer className="border-t border-gray-200 py-16 bg-white">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
               {/* Logo */}
               <div className="col-span-2">
                 <Link href="/" className="flex items-center gap-3 mb-4">
@@ -1213,14 +1290,6 @@ export default function Home() {
                     { label: "Features", href: "#product" },
                     { label: "Pricing", href: "#pricing" },
                     { label: "Use cases", href: "#use-cases" },
-                  ],
-                },
-                {
-                  title: "Resources",
-                  links: [
-                    { label: "Documentation", href: "/docs" },
-                    { label: "API", href: "/api" },
-                    { label: "Status", href: "/status" },
                   ],
                 },
                 {
@@ -1277,6 +1346,9 @@ export default function Home() {
           </div>
         </footer>
       </main>
+
+      {/* Cookie Consent Banner */}
+      <CookieBanner />
     </div>
   );
 }

@@ -323,6 +323,64 @@ def get_posts(
     }
 
 
+@router.get("/posts/{post_id}/public")
+def get_public_post(
+    post_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Get a single public post by ID - NO AUTHENTICATION REQUIRED
+    
+    This endpoint is used for social sharing and Open Graph metadata.
+    Only returns posts with visibility='public'.
+    """
+    try:
+        post_uuid = uuid.UUID(post_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid post ID format")
+    
+    # Get post with agent info (public posts only)
+    result = db.query(
+        Post,
+        Avee.handle,
+        Avee.display_name,
+        Avee.avatar_url
+    ).outerjoin(
+        Avee, Post.agent_id == Avee.id
+    ).filter(
+        Post.id == post_uuid,
+        Post.visibility == "public"  # Only public posts
+    ).first()
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Post not found or not public")
+    
+    post, agent_handle, agent_display_name, agent_avatar_url = result
+    
+    # If no agent, get profile info
+    if not agent_handle:
+        profile = db.query(Profile).filter(Profile.user_id == post.owner_user_id).first()
+        if profile:
+            agent_handle = profile.handle
+            agent_display_name = profile.display_name
+            agent_avatar_url = profile.avatar_url
+    
+    return {
+        "id": str(post.id),
+        "title": post.title,
+        "description": post.description,
+        "image_url": post.image_url,
+        "post_type": post.post_type,
+        "created_at": post.created_at.isoformat() if post.created_at else None,
+        "agent_handle": agent_handle,
+        "agent_display_name": agent_display_name,
+        "agent_avatar_url": agent_avatar_url,
+        "like_count": post.like_count or 0,
+        "comment_count": post.comment_count or 0,
+        "share_count": post.share_count or 0,
+    }
+
+
 @router.get("/posts/{post_id}")
 def get_post(
     post_id: str,

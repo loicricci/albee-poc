@@ -29,6 +29,12 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS instagram_handle VARCHAR;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS languages VARCHAR;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS interests TEXT;
 
+-- Terms and Privacy tracking (GDPR compliance)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS terms_version VARCHAR;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS privacy_accepted_at TIMESTAMPTZ;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS privacy_version VARCHAR;
+
 -- Add comments for documentation
 COMMENT ON COLUMN profiles.birthdate IS 'Date of birth in YYYY-MM-DD format';
 COMMENT ON COLUMN profiles.gender IS 'Gender (Male, Female, Non-binary, Other, Prefer not to say)';

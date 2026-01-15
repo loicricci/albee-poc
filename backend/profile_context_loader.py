@@ -75,6 +75,9 @@ class ProfileContextLoader:
         # Extract themes
         themes = self._extract_themes(profile_data["persona"], knowledge_data["sample_content"])
         
+        # Extract voice instructions for persona-driven content generation
+        voice_data = self._extract_voice_instructions(profile_data["persona"], profile_data["display_name"])
+        
         context = {
             "handle": profile_data["handle"],
             "display_name": profile_data["display_name"],
@@ -96,13 +99,20 @@ class ProfileContextLoader:
             "logo_size": profile_data["logo_size"],
             # Auto-post topic personalization
             "preferred_topics": profile_data["preferred_topics"],
-            "location": profile_data["location"]
+            "location": profile_data["location"],
+            # Voice instructions for persona-driven content
+            "voice_instructions": voice_data["writing_instructions"],
+            "speaking_style": voice_data["speaking_style"],
+            "vocabulary_examples": voice_data["vocabulary_examples"],
+            "example_phrases": voice_data["example_phrases"],
+            "tone": voice_data["tone"]
         }
         
         print(f"[ProfileContextLoader] ✅ Loaded context for {profile_data['display_name']}")
         print(f"[ProfileContextLoader]    - {len(style_traits)} style traits")
         print(f"[ProfileContextLoader]    - {len(themes)} themes")
         print(f"[ProfileContextLoader]    - {knowledge_data['document_count']} documents")
+        print(f"[ProfileContextLoader]    - Voice: {voice_data['tone']}")
         
         # Cache for 1 hour (persona/bio rarely change)
         agent_cache.set(cache_key, context, ttl=3600)
@@ -284,6 +294,168 @@ class ProfileContextLoader:
             themes = ["culture", "creativity", "expression"]
         
         return themes[:6]  # Limit to 6 themes
+    
+    def _extract_voice_instructions(self, persona: str, display_name: str) -> Dict[str, Any]:
+        """
+        Extract specific voice/communication style instructions from persona.
+        
+        Looks for sections like:
+        - "Communication Style"
+        - "Your Voice and Personality"
+        - "RÈGLE NUMÉRO UN" (French personas)
+        - "How I speak/respond"
+        - "MON STYLE"
+        
+        Returns a dictionary with:
+        - speaking_style: How they communicate (formal/casual, vocabulary)
+        - vocabulary_examples: Specific words/phrases they use
+        - greeting_style: How they greet people
+        - tone: Overall tone description
+        - example_phrases: Direct example phrases from persona
+        - writing_instructions: Condensed instructions for AI to follow
+        """
+        import re
+        
+        voice_data = {
+            "speaking_style": "",
+            "vocabulary_examples": [],
+            "greeting_style": "",
+            "tone": "",
+            "example_phrases": [],
+            "writing_instructions": ""
+        }
+        
+        if not persona:
+            return voice_data
+        
+        # Section markers to look for (case-insensitive)
+        voice_section_markers = [
+            r"##?\s*Communication Style",
+            r"##?\s*Your Voice and Personality",
+            r"##?\s*Voice and Personality",
+            r"##?\s*Speaking Style",
+            r"##?\s*How I (?:speak|talk|respond|communicate)",
+            r"##?\s*MON STYLE",
+            r"##?\s*RÈGLE NUMÉRO UN",
+            r"##?\s*(?:My |The )(?:Voice|Style|Tone)",
+            r"##?\s*COMMENT JE (?:PARLE|RÉPONDS)",
+            r"##?\s*When responding",
+        ]
+        
+        # Extract voice-related sections
+        extracted_sections = []
+        persona_lower = persona.lower()
+        
+        for marker in voice_section_markers:
+            matches = re.finditer(marker, persona, re.IGNORECASE)
+            for match in matches:
+                start = match.start()
+                # Find the next section header or end of text
+                next_section = re.search(r'\n##?\s+[A-Z]', persona[start + len(match.group()):])
+                if next_section:
+                    end = start + len(match.group()) + next_section.start()
+                else:
+                    # Take up to 1500 chars if no next section
+                    end = min(start + 1500, len(persona))
+                
+                section_text = persona[start:end].strip()
+                if len(section_text) > 50:  # Only include meaningful sections
+                    extracted_sections.append(section_text)
+        
+        # Extract vocabulary/expression examples
+        vocabulary_patterns = [
+            r'["\']([^"\']{3,50})["\']',  # Quoted phrases
+            r'(?:use|say|expressions?|words?)[:\s]+([^\n.]{10,100})',  # "use: ...", "say: ..."
+            r'(?:like|such as)[:\s]+["\']?([^"\'.\n]{5,60})["\']?',  # "like ..."
+        ]
+        
+        vocabulary = []
+        for pattern in vocabulary_patterns:
+            matches = re.findall(pattern, persona, re.IGNORECASE)
+            vocabulary.extend([m.strip() for m in matches if len(m.strip()) > 3])
+        
+        # Deduplicate and limit
+        vocabulary = list(dict.fromkeys(vocabulary))[:15]
+        voice_data["vocabulary_examples"] = vocabulary
+        
+        # Extract example phrases (look for dialogue patterns)
+        example_patterns = [
+            r'(?:Example|Exemple)[s]?[:\s]*["\']([^"\']{10,150})["\']',
+            r'(?:Moi|I would say)[:\s]*["\']([^"\']{10,150})["\']',
+            r'(?:Salutation|Greeting)[s]?[:\s]*\n?[-*]?\s*["\']([^"\']{5,100})["\']',
+        ]
+        
+        example_phrases = []
+        for pattern in example_patterns:
+            matches = re.findall(pattern, persona, re.IGNORECASE)
+            example_phrases.extend([m.strip() for m in matches])
+        
+        voice_data["example_phrases"] = list(dict.fromkeys(example_phrases))[:10]
+        
+        # Detect tone from persona content
+        tone_indicators = {
+            "warm and friendly": ["warm", "friendly", "personable", "genuine", "caring"],
+            "provocative and vulgar": ["vulgaire", "vulgar", "provocateur", "gros mots", "enfoiré", "merde"],
+            "witty and humorous": ["witty", "humor", "humorous", "funny", "laugh", "joke"],
+            "formal and eloquent": ["formal", "eloquent", "articulate", "sophisticated"],
+            "direct and honest": ["direct", "honest", "truth", "sincere", "authentic"],
+            "passionate and enthusiastic": ["passionate", "enthusiastic", "energetic", "love"],
+            "self-deprecating": ["self-deprecating", "laugh at myself", "humble"],
+            "rebellious and anti-establishment": ["anarchist", "anti-establishment", "rebel", "against authority"],
+        }
+        
+        detected_tones = []
+        for tone, keywords in tone_indicators.items():
+            for keyword in keywords:
+                if keyword in persona_lower:
+                    detected_tones.append(tone)
+                    break
+        
+        voice_data["tone"] = ", ".join(detected_tones[:4]) if detected_tones else "authentic and engaging"
+        
+        # Build comprehensive speaking style from extracted sections
+        if extracted_sections:
+            # Combine and limit to reasonable size
+            combined = "\n\n".join(extracted_sections)
+            voice_data["speaking_style"] = combined[:2500] if len(combined) > 2500 else combined
+        else:
+            # Fallback: extract any bullet points about communication
+            bullet_pattern = r'[-*]\s*\*\*([^*]+)\*\*[:\s]*([^\n]+)'
+            bullets = re.findall(bullet_pattern, persona)
+            if bullets:
+                voice_data["speaking_style"] = "\n".join([f"- {b[0]}: {b[1]}" for b in bullets[:8]])
+        
+        # Build condensed writing instructions for AI prompts
+        instructions = []
+        
+        # Add tone instruction
+        if voice_data["tone"]:
+            instructions.append(f"Write with a {voice_data['tone']} tone.")
+        
+        # Add vocabulary guidance
+        if voice_data["vocabulary_examples"]:
+            vocab_sample = voice_data["vocabulary_examples"][:5]
+            instructions.append(f"Use expressions like: {', '.join(vocab_sample)}")
+        
+        # Add example phrases if available
+        if voice_data["example_phrases"]:
+            instructions.append(f"Example of their voice: \"{voice_data['example_phrases'][0]}\"")
+        
+        # Language detection and specific guidance
+        if any(word in persona_lower for word in ["tutoie", "enfoiré", "putain", "merde", "connard"]):
+            instructions.append("Use informal 'tu' form in French. Include mild profanity naturally.")
+        elif any(word in persona_lower for word in ["darling", "brilliant", "lovely", "british"]):
+            instructions.append("Use British expressions naturally (darling, brilliant, lovely).")
+        
+        voice_data["writing_instructions"] = " ".join(instructions) if instructions else f"Write authentically as {display_name} would speak."
+        
+        print(f"[ProfileContextLoader] 🎤 Extracted voice instructions:")
+        print(f"[ProfileContextLoader]    - Tone: {voice_data['tone']}")
+        print(f"[ProfileContextLoader]    - {len(voice_data['vocabulary_examples'])} vocabulary examples")
+        print(f"[ProfileContextLoader]    - {len(voice_data['example_phrases'])} example phrases")
+        print(f"[ProfileContextLoader]    - Speaking style: {len(voice_data['speaking_style'])} chars")
+        
+        return voice_data
     
     def close(self):
         """Close database session"""

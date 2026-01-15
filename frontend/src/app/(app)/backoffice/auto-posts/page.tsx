@@ -150,6 +150,12 @@ export default function AutoPostGeneratorPage() {
 
       const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
+      // For GPT-Image-1: send empty string "" to explicitly mean "no reference" (generate from text)
+      // This distinguishes from null which means "use agent's default"
+      const referenceImageUrl = imageEngine === 'gpt-image-1' 
+        ? (selectedReferenceImage || '')  // Empty string = explicitly no reference
+        : null;
+
       const response = await fetch(`${API_BASE}/auto-post/generate`, {
         method: 'POST',
         headers: {
@@ -161,7 +167,7 @@ export default function AutoPostGeneratorPage() {
           topic: topic || null,
           category: category || null,
           image_engine: imageEngine,
-          reference_image_url: imageEngine === 'gpt-image-1' ? selectedReferenceImage : null, // Reference for GPT-Image-1 editing
+          reference_image_url: referenceImageUrl, // Empty string = no reference, null = use agent default
         }),
       });
 
@@ -213,12 +219,18 @@ export default function AutoPostGeneratorPage() {
     try {
       setGenerating(true);
       
+      // For GPT-Image-1: send empty string "" to explicitly mean "no reference" (generate from text)
+      // This distinguishes from null which means "use agent's default"
+      const referenceImageUrl = imageEngine === 'gpt-image-1' 
+        ? (selectedReferenceImage || '')  // Empty string = explicitly no reference
+        : null;
+      
       const preview = await previewGeneratePost({
         avee_id: aveeId,
         topic: topic || null,
         category: category || null,
         image_engine: imageEngine,
-        reference_image_url: imageEngine === 'gpt-image-1' ? selectedReferenceImage : null,
+        reference_image_url: referenceImageUrl,
         feedback: feedback || null,
         previous_preview_id: previousPreviewId || null,
       });

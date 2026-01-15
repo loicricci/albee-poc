@@ -128,7 +128,20 @@ class DailyPostGenerator:
             # Use different prompt generator based on image engine and reference image availability
             
             # Determine if we have a reference image
-            reference_image_url = reference_image_url_override or agent_context.get("reference_image_url")
+            # Empty string "" = explicitly no reference (user chose not to use one)
+            # None = use agent's default (for automated/scheduled posts)
+            # URL string = use that specific reference
+            if reference_image_url_override == "":
+                # User explicitly chose NOT to use a reference image
+                reference_image_url = None
+                self._log_success("User chose no reference image - will generate from text only")
+            elif reference_image_url_override:
+                # User selected a specific reference image
+                reference_image_url = reference_image_url_override
+            else:
+                # No override provided - use agent's default (for automated posts)
+                reference_image_url = agent_context.get("reference_image_url")
+            
             has_reference_image = bool(reference_image_url)
             
             # For GPT-Image-1 with reference: use edit prompt
@@ -383,7 +396,20 @@ class DailyPostGenerator:
                 self.tracker.stop_step({"topic": topic["topic"], "has_feedback": bool(feedback)})
             
             # Steps 3 & 4: Generate image prompt and title
-            reference_image_url = reference_image_url_override or agent_context.get("reference_image_url")
+            # Empty string "" = explicitly no reference (user chose not to use one)
+            # None = use agent's default (for automated/scheduled posts)
+            # URL string = use that specific reference
+            if reference_image_url_override == "":
+                # User explicitly chose NOT to use a reference image
+                reference_image_url = None
+                self._log_success("User chose no reference image - will generate from text only")
+            elif reference_image_url_override:
+                # User selected a specific reference image
+                reference_image_url = reference_image_url_override
+            else:
+                # No override provided - use agent's default (for automated posts)
+                reference_image_url = agent_context.get("reference_image_url")
+            
             has_reference_image = bool(reference_image_url)
             use_edit_prompt = (image_engine == "gpt-image-1" and has_reference_image)
             

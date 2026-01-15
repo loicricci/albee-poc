@@ -18,6 +18,9 @@ export default function SignupPage() {
   const [successEmailConfirm, setSuccessEmailConfirm] = useState(false);
   const [signupAttempted, setSignupAttempted] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  
+  // Terms and Conditions acceptance
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Start with empty config to avoid hydration mismatch
   const [appConfig, setAppConfig] = useState<AppConfig>({});
@@ -65,11 +68,27 @@ export default function SignupPage() {
       return;
     }
 
+    if (!acceptedTerms) {
+      setLoading(false);
+      setError("You must accept the Terms and Conditions and Privacy Policy to create an account.");
+      return;
+    }
+
+    // Store T&C acceptance timestamp in user metadata for GDPR compliance
+    const termsAcceptedAt = new Date().toISOString();
+    const termsVersion = "2026-01-15"; // Update this when T&C change
+    
     const { data, error } = await supabase.auth.signUp({
       email: emailTrim,
       password: pw,
       options: {
         emailRedirectTo: `${window.location.origin}/onboarding`,
+        data: {
+          terms_accepted_at: termsAcceptedAt,
+          terms_version: termsVersion,
+          privacy_accepted_at: termsAcceptedAt,
+          privacy_version: termsVersion,
+        },
       },
     });
 
@@ -180,6 +199,66 @@ export default function SignupPage() {
                 <div className="mt-2 text-xs text-[#001f98]/60 dark:text-zinc-500">
                   Must be at least 8 characters long
                 </div>
+              </div>
+
+              {/* Terms and Conditions Acceptance */}
+              <div className="mb-6">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex-shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="peer sr-only"
+                    />
+                    <div className="h-5 w-5 rounded border-2 border-gray-300 dark:border-white/[.20] bg-white dark:bg-zinc-900 transition-all peer-checked:border-[#001f98] peer-checked:bg-[#001f98] dark:peer-checked:border-white dark:peer-checked:bg-white group-hover:border-[#001f98]/60 dark:group-hover:border-white/[.40]">
+                      <svg
+                        className="h-full w-full text-white dark:text-[#0B0B0C] opacity-0 peer-checked:opacity-100 transition-opacity"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    {/* Checkmark overlay */}
+                    {acceptedTerms && (
+                      <svg
+                        className="absolute inset-0 h-5 w-5 text-white dark:text-[#0B0B0C] p-0.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm text-[#0B0B0C]/80 dark:text-zinc-400 leading-tight">
+                    I have read and agree to the{" "}
+                    <Link
+                      href="/terms"
+                      target="_blank"
+                      className="font-semibold text-[#001f98] dark:text-white hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Terms and Conditions
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      href="/privacy"
+                      target="_blank"
+                      className="font-semibold text-[#001f98] dark:text-white hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+                <p className="mt-2 text-xs text-[#001f98]/50 dark:text-zinc-500 pl-8">
+                  By creating an account, you acknowledge that your data will be processed in accordance with EU GDPR regulations.
+                </p>
               </div>
 
               {error && (

@@ -53,6 +53,12 @@ class Profile(Base):
     languages = Column(String)  # Languages spoken
     interests = Column(Text)  # Personal interests and hobbies
     
+    # Terms and Conditions / GDPR Compliance
+    terms_accepted_at = Column(DateTime(timezone=True))  # When user accepted T&C
+    terms_version = Column(String)  # Version of T&C accepted (e.g., "2026-01-15")
+    privacy_accepted_at = Column(DateTime(timezone=True))  # When user accepted Privacy Policy
+    privacy_version = Column(String)  # Version of Privacy Policy accepted
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -87,6 +93,12 @@ class Avee(Base):
     # NEW (Phase 7): Twitter integration
     twitter_sharing_enabled = Column(Boolean, default=False)  # Whether this agent can share posts to Twitter
     twitter_posting_mode = Column(Text, default="manual")  # 'auto' or 'manual'
+
+    # NEW (Phase 12): LinkedIn integration
+    linkedin_sharing_enabled = Column(Boolean, default=False)  # Whether this agent can share posts to LinkedIn
+    linkedin_posting_mode = Column(Text, default="manual")  # 'auto' or 'manual'
+    linkedin_target_type = Column(Text, default="personal")  # 'personal' or 'organization'
+    linkedin_organization_id = Column(Text)  # Organization URN if posting to company page
 
     # NEW (Phase 8): Autopost image engine selection
     reference_image_url = Column(Text)  # URL to reference image for OpenAI Image Edits
@@ -580,6 +592,12 @@ class Post(Base):
     twitter_post_url = Column(Text)  # Full Twitter URL to the tweet
     twitter_posted_at = Column(DateTime(timezone=True))  # Timestamp when posted to Twitter
     
+    # LinkedIn integration
+    posted_to_linkedin = Column(Boolean, default=False)  # Whether this post has been shared to LinkedIn
+    linkedin_post_id = Column(Text)  # LinkedIn post/share ID
+    linkedin_post_url = Column(Text)  # Full LinkedIn URL to the post
+    linkedin_posted_at = Column(DateTime(timezone=True))  # Timestamp when posted to LinkedIn
+    
     # Image generation engine tracking
     image_generation_engine = Column(String(50), default="dall-e-3")  # 'dall-e-3' or 'openai-edits'
     
@@ -668,6 +686,35 @@ class TwitterOAuthState(Base):
     state = Column(Text, unique=True, nullable=False)
     oauth_token = Column(Text, nullable=False)  # Request token
     oauth_token_secret = Column(Text, nullable=False)  # Request token secret
+    user_id = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# --- LinkedIn Integration ---
+
+class ProfileLinkedInConfig(Base):
+    """Stores LinkedIn OAuth tokens for user profiles (one per user)"""
+    __tablename__ = "profile_linkedin_configs"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), unique=True, nullable=False)
+    linkedin_user_id = Column(Text, nullable=False)  # LinkedIn member URN (e.g., "urn:li:person:ABC123")
+    linkedin_username = Column(Text, nullable=False)  # Display name
+    linkedin_profile_url = Column(Text)  # Profile URL
+    access_token = Column(Text, nullable=False)
+    refresh_token = Column(Text)  # LinkedIn OAuth 2.0 uses refresh tokens
+    token_expires_at = Column(DateTime(timezone=True))  # Access token expiration (typically 60 days)
+    organizations = Column(Text)  # JSON array of company pages user can post to
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class LinkedInOAuthState(Base):
+    """Temporary OAuth state tokens for CSRF protection during LinkedIn OAuth flow"""
+    __tablename__ = "linkedin_oauth_states"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    state = Column(Text, unique=True, nullable=False)
+    code_verifier = Column(Text, nullable=False)  # PKCE code verifier
     user_id = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

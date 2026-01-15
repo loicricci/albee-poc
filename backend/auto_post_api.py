@@ -130,9 +130,6 @@ class CancelPreviewRequest(BaseModel):
 
 def is_admin_user(user_id: str, db: Session) -> bool:
     """Check if user is admin"""
-    # #region agent log
-    import json, time as _t; _log_start = _t.time(); open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:is_admin_user:entry", "message": "Checking admin status", "data": {"user_id": user_id}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "B"}) + "\n")
-    # #endregion
     query = text("""
         SELECT handle FROM profiles WHERE user_id = :user_id
     """)
@@ -140,26 +137,16 @@ def is_admin_user(user_id: str, db: Session) -> bool:
     row = result.fetchone()
     
     if not row:
-        # #region agent log
-        open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:is_admin_user:no_row", "message": "No profile found", "data": {"user_id": user_id}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "B"}) + "\n")
-        # #endregion
         return False
     
     # Check if handle is in admin list (same logic as backoffice)
     admin_handles = os.getenv("ADMIN_HANDLES", "loic_ricci").split(",")
     is_admin = row[0] in admin_handles
-    # #region agent log
-    open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:is_admin_user:result", "message": "Admin check result", "data": {"user_id": user_id, "handle": row[0], "admin_handles": admin_handles, "is_admin": is_admin, "duration_ms": int((_t.time() - _log_start)*1000)}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "B"}) + "\n")
-    # #endregion
     return is_admin
 
 
 def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
     """Get avees accessible to user"""
-    # #region agent log
-    import json, time as _t; _log_start = _t.time(); open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_user_avees:entry", "message": "Fetching avees", "data": {"user_id": user_id, "is_admin": is_admin}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "A,C"}) + "\n")
-    # #endregion
-    
     if is_admin:
         # Admin sees all avees
         query = text("""
@@ -193,9 +180,6 @@ def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
         result = db.execute(query, {"user_id": user_id})
     
     rows = result.fetchall()
-    # #region agent log
-    _query_time = _t.time(); open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_user_avees:main_query", "message": "Main query complete", "data": {"row_count": len(rows), "duration_ms": int((_query_time - _log_start)*1000)}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "C"}) + "\n")
-    # #endregion
     
     avees = []
     for row in rows:
@@ -234,10 +218,6 @@ def get_user_avees(user_id: str, db: Session, is_admin: bool) -> List[dict]:
             "auto_post_settings": row.auto_post_settings,
             "reference_images": reference_images
         })
-    
-    # #region agent log
-    open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_user_avees:complete", "message": "All avees fetched", "data": {"total_avees": len(avees), "total_duration_ms": int((_t.time() - _log_start)*1000), "ref_image_queries": len(rows)}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "D"}) + "\n")
-    # #endregion
     
     return avees
 
@@ -789,17 +769,10 @@ def get_auto_post_status(
     Get auto post status for all agents accessible to the user.
     Admins see all agents, non-admins see only their own.
     """
-    # #region agent log
-    import json, time as _t; _log_start = _t.time(); open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_auto_post_status:entry", "message": "Status endpoint called", "data": {"user_id": user_id}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "A"}) + "\n")
-    # #endregion
     user_uuid = uuid.UUID(user_id)
     is_admin = is_admin_user(str(user_uuid), db)
     
     avees = get_user_avees(str(user_uuid), db, is_admin)
-    
-    # #region agent log
-    open("/Users/loicricci/gabee-poc/.cursor/debug.log", "a").write(json.dumps({"location": "auto_post_api.py:get_auto_post_status:complete", "message": "Status endpoint complete", "data": {"user_id": user_id, "is_admin": is_admin, "avee_count": len(avees), "total_duration_ms": int((_t.time() - _log_start)*1000)}, "timestamp": int(_t.time()*1000), "sessionId": "debug-session", "hypothesisId": "A,E"}) + "\n")
-    # #endregion
     
     return {
         "is_admin": is_admin,
@@ -1058,6 +1031,48 @@ async def generate_single_post(
                 print(f"[AutoPost] Twitter auto-post error: {twitter_error}")
                 # Don't fail the post creation if Twitter posting fails
         
+        # Check if should auto-post to LinkedIn
+        linkedin_url = None
+        linkedin_error = None
+        
+        if post_id:
+            try:
+                from linkedin_posting_service import get_linkedin_posting_service
+                linkedin_service = get_linkedin_posting_service()
+                
+                # Check if agent should auto-post to LinkedIn
+                avee_uuid = uuid.UUID(avee_id)
+                if linkedin_service.should_auto_post(avee_uuid, db):
+                    # Get agent owner
+                    avee_query = text("""
+                        SELECT owner_user_id FROM avees WHERE id = :avee_id
+                    """)
+                    avee_result = db.execute(avee_query, {"avee_id": avee_id})
+                    avee_row = avee_result.fetchone()
+                    
+                    if avee_row:
+                        owner_user_id = avee_row[0]
+                        post_uuid = uuid.UUID(post_id)
+                        
+                        # Attempt to post to LinkedIn
+                        linkedin_result = linkedin_service.post_to_linkedin(
+                            post_uuid,
+                            owner_user_id,
+                            db
+                        )
+                        
+                        if linkedin_result["success"]:
+                            linkedin_url = linkedin_result.get("linkedin_url")
+                            print(f"[AutoPost] Auto-posted to LinkedIn: {linkedin_url}")
+                        else:
+                            linkedin_error = linkedin_result.get("error")
+                            print(f"[AutoPost] Failed to auto-post to LinkedIn: {linkedin_error}")
+                            
+            except Exception as linkedin_exc:
+                linkedin_error = str(linkedin_exc)
+                print(f"[AutoPost] LinkedIn auto-post error: {linkedin_error}")
+                # Don't fail the post creation if LinkedIn posting fails
+        
         duration = (datetime.now() - start_time).total_seconds()
         
         return {
@@ -1067,6 +1082,8 @@ async def generate_single_post(
             "post_id": post_id,
             "twitter_url": twitter_url,
             "twitter_error": twitter_error,
+            "linkedin_url": linkedin_url,
+            "linkedin_error": linkedin_error,
             "error": None,
             "duration_seconds": duration
         }
@@ -1162,6 +1179,26 @@ async def generate_multiple_posts(
                                 
                 except Exception as twitter_exc:
                     print(f"[AutoPost] Twitter auto-post error for @{handle}: {twitter_exc}")
+                
+                # Check if should auto-post to LinkedIn
+                try:
+                    from linkedin_posting_service import get_linkedin_posting_service
+                    linkedin_service = get_linkedin_posting_service()
+                    
+                    if linkedin_service.should_auto_post(avee_uuid, db):
+                        linkedin_result = linkedin_service.post_to_linkedin(
+                            post_uuid,
+                            owner_user_id,
+                            db
+                        )
+                        
+                        if linkedin_result["success"]:
+                            print(f"[AutoPost] Auto-posted to LinkedIn for @{handle}")
+                        else:
+                            print(f"[AutoPost] LinkedIn posting failed for @{handle}: {linkedin_result.get('error')}")
+                            
+                except Exception as linkedin_exc:
+                    print(f"[AutoPost] LinkedIn auto-post error for @{handle}: {linkedin_exc}")
             
             results.append({
                 "avee_id": avee_id,
@@ -1416,6 +1453,7 @@ async def confirm_post(
     """
     Confirm and save a previewed post to the database.
     Moves image from temp to permanent storage.
+    Also posts to Twitter/LinkedIn if auto-posting is enabled.
     """
     user_uuid = uuid.UUID(user_id)
     
@@ -1471,11 +1509,79 @@ async def confirm_post(
         # Remove from cache
         del _preview_cache[request.preview_id]
         
+        post_id = post_result["post_id"]
+        
+        # Check if should auto-post to Twitter
+        twitter_url = None
+        twitter_error = None
+        
+        if post_id:
+            try:
+                from backend.twitter_posting_service import get_twitter_posting_service
+                posting_service = get_twitter_posting_service()
+                
+                # Check if agent should auto-post
+                if posting_service.should_auto_post(avee_uuid, db):
+                    post_uuid = uuid.UUID(post_id)
+                    
+                    # Attempt to post to Twitter
+                    twitter_result = posting_service.post_to_twitter(
+                        post_uuid,
+                        user_uuid,
+                        db
+                    )
+                    
+                    if twitter_result["success"]:
+                        twitter_url = twitter_result.get("twitter_url")
+                        print(f"[AutoPost Confirm] Auto-posted to Twitter: {twitter_url}")
+                    else:
+                        twitter_error = twitter_result.get("error")
+                        print(f"[AutoPost Confirm] Failed to auto-post to Twitter: {twitter_error}")
+                        
+            except Exception as twitter_exc:
+                twitter_error = str(twitter_exc)
+                print(f"[AutoPost Confirm] Twitter auto-post error: {twitter_error}")
+        
+        # Check if should auto-post to LinkedIn
+        linkedin_url = None
+        linkedin_error = None
+        
+        if post_id:
+            try:
+                from backend.linkedin_posting_service import get_linkedin_posting_service
+                linkedin_service = get_linkedin_posting_service()
+                
+                # Check if agent should auto-post to LinkedIn
+                if linkedin_service.should_auto_post(avee_uuid, db):
+                    post_uuid = uuid.UUID(post_id)
+                    
+                    # Attempt to post to LinkedIn
+                    linkedin_result = linkedin_service.post_to_linkedin(
+                        post_uuid,
+                        user_uuid,
+                        db
+                    )
+                    
+                    if linkedin_result["success"]:
+                        linkedin_url = linkedin_result.get("linkedin_url")
+                        print(f"[AutoPost Confirm] Auto-posted to LinkedIn: {linkedin_url}")
+                    else:
+                        linkedin_error = linkedin_result.get("error")
+                        print(f"[AutoPost Confirm] Failed to auto-post to LinkedIn: {linkedin_error}")
+                        
+            except Exception as linkedin_exc:
+                linkedin_error = str(linkedin_exc)
+                print(f"[AutoPost Confirm] LinkedIn auto-post error: {linkedin_error}")
+        
         return {
             "success": True,
-            "post_id": post_result["post_id"],
+            "post_id": post_id,
             "image_url": permanent_url,
-            "view_url": post_result.get("view_url", f"/posts/{post_result['post_id']}")
+            "view_url": post_result.get("view_url", f"/posts/{post_result['post_id']}"),
+            "twitter_url": twitter_url,
+            "twitter_error": twitter_error,
+            "linkedin_url": linkedin_url,
+            "linkedin_error": linkedin_error
         }
         
     except HTTPException:
@@ -1519,4 +1625,3 @@ async def cancel_preview(
     del _preview_cache[request.preview_id]
     
     return {"success": True, "message": "Preview cancelled"}
-

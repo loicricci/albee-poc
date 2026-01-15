@@ -205,6 +205,38 @@ export function useAppData(): AppData {
   return context;
 }
 
+// Dynamic favicon component - updates the browser favicon when config changes
+function DynamicFavicon({ faviconUrl }: { faviconUrl?: string }) {
+  useEffect(() => {
+    if (!faviconUrl) return;
+    
+    // Find existing favicon link or create a new one
+    let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+    
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    
+    // Update the href
+    link.href = faviconUrl;
+    
+    // Also update apple-touch-icon if it exists or create it
+    let appleIcon: HTMLLinkElement | null = document.querySelector("link[rel='apple-touch-icon']");
+    if (!appleIcon) {
+      appleIcon = document.createElement('link');
+      appleIcon.rel = 'apple-touch-icon';
+      document.head.appendChild(appleIcon);
+    }
+    appleIcon.href = faviconUrl;
+    
+    console.log('[DynamicFavicon] Updated favicon to:', faviconUrl);
+  }, [faviconUrl]);
+  
+  return null;
+}
+
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   
@@ -568,6 +600,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             const previousUserId = getCurrentCacheUser();
             const isSameUser = userId && previousUserId && userId === previousUserId;
             
+            // CRITICAL FIX: Set loading states FIRST, before any state resets
+            // This ensures React renders loading state, not empty state
+            setIsLoading(true);
+            setIsLoadingCritical(true);
+            setIsLoadingFeed(true);
+            
             // Only clear caches if user actually changed (different user logging in)
             // This preserves cache for same user re-logins (e.g., token refresh, page reload)
             if (!isSameUser) {
@@ -580,6 +618,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
               clearAllLocalStorageCaches();  // Clear ALL localStorage caches (cache_* + legacy keys)
               clearAllCache();            // Clear sessionStorage cache
               
+              // Reset data state AFTER loading states are set
               setProfile(null);
               setAvees([]);
               setFeed(null);
@@ -601,8 +640,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             // Now set the new auth token
             setAuthToken(session.access_token);
             
-            setIsLoading(true);
-            setIsLoadingCritical(true);
             // DON'T await - let this run in background so sign-in completes quickly
             loadAppData().catch(e => console.error('[AppDataContext] Failed to load data:', e));
           } else {
@@ -665,6 +702,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppDataContext.Provider value={value}>
+      <DynamicFavicon faviconUrl={appConfig.app_favicon_url} />
       {children}
     </AppDataContext.Provider>
   );

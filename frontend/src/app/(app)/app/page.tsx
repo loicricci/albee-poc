@@ -7,6 +7,7 @@ import { ChatButton } from "@/components/ChatButton";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { QuickUpdateComposer } from "@/components/QuickUpdateComposer";
 import { CommentSection } from "@/components/CommentSection";
+import { ShareButton } from "@/components/ShareButton";
 import Toast, { ToastType } from "@/components/Toast";
 import { useAppData } from "@/contexts/AppDataContext";
 import { followAgent as apiFollowAgent, markAgentRead as apiMarkAgentRead, toggleLikePost, repostPost as apiRepostPost } from "@/lib/apiClient";
@@ -487,6 +488,14 @@ function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, curren
             </svg>
             <span className="font-medium">Repost</span>
           </button>
+
+          {/* Share to External Platforms */}
+          <ShareButton
+            url={typeof window !== "undefined" ? `${window.location.origin}/p/${postId}` : `/p/${postId}`}
+            title={item.title || `Post by @${item.agent_handle}`}
+            description={item.description || undefined}
+            variant="button"
+          />
         </div>
 
         {/* Date */}
