@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 19:39:15
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+Transform the setting into a futuristic space station with windows revealing a vast galaxy. Add floating Bitcoin symbols and mining rigs with holographic screens displaying blockchain data. Introduce a cosmic glow with shimmering stars and auroras in the background. Use deep blues, silvers, and golds to create an ethereal and technological atmosphere. Ensure Loic Ricci remains the focal point, framed by the celestial scene, while conveying a sense of innovation and exploration in line with his creative and engaging style.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768491555095.png

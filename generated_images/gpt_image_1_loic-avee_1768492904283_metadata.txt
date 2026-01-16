@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 20:01:44
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic and expressive image depicting a dynamic scene that embodies Loïc Ricci's strategic and engaging persona, set amidst the vibrant anticipation of the LA 2028 Olympic Games ticket raffle. Capture Loïc, a visionary thinker and system builder, as a charismatic figure in a serene, yet bustling outdoor setting, blending the elegance of Cannes with the modernity of Abu Dhabi. He's surrounded by a lively, diverse crowd, symbolizing unity and excitement, as they eagerly gather around a sleek, futuristic ticket booth. 
+
+The scene is bathed in warm, golden hour lighting, casting long shadows that add depth and intrigue. Integrate elements of art and technology with abstract, digital patterns subtly woven into the background, representing Loïc’s love for tech and structure. The color palette should be dominated by vibrant azure blues and radiant golds, echoing the Olympic spirit and the optimism of a global audience coming together. 
+
+Incorporate subtle, artistic nods to ancient art and literature, such as Grecian motifs and sculptural elements, to reflect Loïc’s appreciation for history and culture. The composition should be cinematic, with a wide-angle perspective capturing the grandeur of the event while focusing on Loïc at the center, exuding clarity and fairness. Ensure the image is high detail, suitable for social media, professional quality, and unmistakably captures Loïc's essence as the Strategic Builder in a world awaiting the excitement of the Olympic Games.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768492904283.png

@@ -163,14 +163,9 @@ export default function Home() {
             ) : (
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#001f98] to-[#3366cc] shadow-lg shadow-[#001f98]/25" />
             )}
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-gray-900 group-hover:text-[#001f98] transition-colors">
-                {appConfig.app_name || "Avee"}
-              </span>
-              <span className="text-[10px] text-gray-500 -mt-1 hidden sm:block">
-                AI-native social for creators
-              </span>
-            </div>
+            <span className="text-lg font-bold text-gray-900 group-hover:text-[#001f98] transition-colors">
+              {appConfig.app_name || "Avee"}
+            </span>
           </Link>
 
           {/* Nav Links */}
@@ -912,22 +907,38 @@ export default function Home() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
-                  icon: "📥",
+                  icon: (
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  ),
                   title: "Inbox Co-pilot",
                   description: "Triage DMs, draft replies, escalate when needed. Never miss an important message.",
                 },
                 {
-                  icon: "📅",
+                  icon: (
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  ),
                   title: "Daily Posting Engine",
                   description: "Auto-generate posts from topics. Schedule a week ahead in minutes.",
                 },
                 {
-                  icon: "💬",
+                  icon: (
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                    </svg>
+                  ),
                   title: "Community Companion",
                   description: "24/7 engagement with your audience. Answer questions while you sleep.",
                 },
                 {
-                  icon: "🧠",
+                  icon: (
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  ),
                   title: "Knowledge Persona",
                   description: "Your expertise, always available. Perfect for educators and consultants.",
                 },
@@ -936,7 +947,7 @@ export default function Home() {
                   key={i}
                   className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-[#001f98]/30 hover:shadow-lg hover:shadow-[#001f98]/5 transition-all duration-300"
                 >
-                  <div className="text-4xl mb-4">{useCase.icon}</div>
+                  <div className="text-[#001f98] mb-4">{useCase.icon}</div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{useCase.title}</h3>
                   <p className="text-gray-600 text-sm">{useCase.description}</p>
                 </div>
@@ -1004,16 +1015,16 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto items-stretch">
               {/* Free */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-8">
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Free</h3>
                 <p className="text-gray-500 text-sm mb-6">Perfect for getting started</p>
                 <div className="mb-6">
                   <span className="text-4xl font-bold text-gray-900">$0</span>
                   <span className="text-gray-500">/month</span>
                 </div>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-1">
                   {["1 agent", "Basic chat", "5 posts/month", "Community support"].map((feature, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
                       <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1025,30 +1036,29 @@ export default function Home() {
                 </ul>
                 <Link
                   href="/signup"
-                  className="block w-full h-12 flex items-center justify-center rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:border-[#001f98] hover:text-[#001f98] transition-all"
+                  className="block w-full h-12 flex items-center justify-center rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:border-[#001f98] hover:text-[#001f98] transition-all mt-auto"
                 >
                   Get started
                 </Link>
               </div>
 
-              {/* Creator - Featured */}
-              <div className="relative bg-gradient-to-b from-[#001f98]/5 to-[#3366cc]/5 border-2 border-[#001f98]/30 rounded-2xl p-8">
+              {/* Starter - Featured (Most Popular) */}
+              <div className="relative bg-gradient-to-b from-[#001f98]/5 to-[#3366cc]/5 border-2 border-[#001f98]/30 rounded-2xl p-8 flex flex-col">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#001f98] to-[#3366cc] rounded-full text-xs font-semibold text-white">
                   Most popular
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Creator</h3>
-                <p className="text-gray-500 text-sm mb-6">For serious creators</p>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Starter</h3>
+                <p className="text-gray-500 text-sm mb-6">For growing creators</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">$29</span>
+                  <span className="text-4xl font-bold text-gray-900">$14</span>
                   <span className="text-gray-500">/month</span>
                 </div>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-1">
                   {[
-                    "3 agents",
+                    "1 agent",
                     "Unlimited chat + voice",
-                    "50 posts/month with AI images",
+                    "20 posts/month with AI images",
                     "Auto-scheduling",
-                    "Priority support",
                   ].map((feature, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
                       <svg className="w-4 h-4 text-[#001f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1060,24 +1070,56 @@ export default function Home() {
                 </ul>
                 <Link
                   href="/signup"
-                  className="block w-full h-12 flex items-center justify-center rounded-full bg-[#001f98] text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 hover:shadow-[#001f98]/40 transition-all"
+                  className="block w-full h-12 flex items-center justify-center rounded-full bg-[#001f98] text-sm font-semibold text-white shadow-lg shadow-[#001f98]/25 hover:shadow-[#001f98]/40 transition-all mt-auto"
+                >
+                  Start free trial
+                </Link>
+              </div>
+
+              {/* Creator */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Creator</h3>
+                <p className="text-gray-500 text-sm mb-6">For serious creators</p>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-gray-900">$29</span>
+                  <span className="text-gray-500">/month</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {[
+                    "3 agents",
+                    "Unlimited chat + voice",
+                    "50 posts/month with AI images",
+                    "Auto-scheduling",
+                    "Priority support",
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/signup"
+                  className="block w-full h-12 flex items-center justify-center rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:border-[#001f98] hover:text-[#001f98] transition-all mt-auto"
                 >
                   Start free trial
                 </Link>
               </div>
 
               {/* Pro */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-8">
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Pro</h3>
                 <p className="text-gray-500 text-sm mb-6">For teams and agencies</p>
                 <div className="mb-6">
                   <span className="text-4xl font-bold text-gray-900">$99</span>
                   <span className="text-gray-500">/month</span>
                 </div>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-1">
                   {[
-                    "Unlimited agents",
-                    "Everything in Creator",
+                    "15 agents",
+                    "300 posts/month with AI images",
                     "Multi-agent orchestration",
                     "Advanced analytics",
                     "Dedicated support",
@@ -1092,7 +1134,7 @@ export default function Home() {
                 </ul>
                 <Link
                   href="/signup"
-                  className="block w-full h-12 flex items-center justify-center rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:border-[#001f98] hover:text-[#001f98] transition-all"
+                  className="block w-full h-12 flex items-center justify-center rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:border-[#001f98] hover:text-[#001f98] transition-all mt-auto"
                 >
                   Contact sales
                 </Link>

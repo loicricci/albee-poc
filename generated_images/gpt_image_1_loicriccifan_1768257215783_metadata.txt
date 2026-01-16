@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loicriccifan
+Generated: 2026-01-12 23:33:35
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/0d854e5f-970e-4e1a-84ea-ddd18d676ab7/reference_1768257131778.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+"Transform the background into a lively NFL playoff stadium with cheering crowds and vibrant team banners. Incorporate rainbow flags to celebrate LGBTQ pride, aligning with Loic's passionate style. Add visual elements like a football field and scoreboard displaying the playoff matchups. Use energetic colors such as bold reds and greens to reflect the excitement of the games. Include subtle science motifs, like a DNA helix pattern in the stadium lights, to connect with Loic's interest in science, while maintaining his presence dynamically amidst this enthusiastic sports scene."
+
+============================================================
+IMAGE FILE: gpt_image_1_loicriccifan_1768257215783.png

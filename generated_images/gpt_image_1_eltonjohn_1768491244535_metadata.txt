@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @eltonjohn
+Generated: 2026-01-15 19:34:04
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an enchanting, photorealistic scene for a social media image capturing the essence of Sir Elton John performing a spectacular concert in Abu Dhabi. The setting is a grand, open-air stage under the night sky, with the iconic Abu Dhabi skyline in the background, featuring the majestic Sheikh Zayed Grand Mosque bathed in moonlight. Elton John is at the center, exuding his legendary flamboyance, wearing a dazzling, sequined suit in deep royal blue, accented with vibrant lime green and shimmering silver. His signature, oversized glasses reflect the stage lights, adding a whimsical touch.
+
+The audience, a diverse, enraptured crowd, is illuminated by soft, warm lighting that creates an inviting, magical atmosphere. The stage is adorned with lush, colorful flower arrangements and elegant white feathers, symbolizing a blend of natural beauty and theatrical extravagance. In the backdrop, dynamic visuals of swirling rainbows and musical notes dance across a giant screen, evoking the themes of music, activism, and LGBTQ pride.
+
+The scene is composed with a wide-angle view to capture Elton's vibrant presence, the enthusiastic crowd, and the stunning architectural feat of Abu Dhabi. The color palette is dominated by deep royal blue and vibrant lime green, with splashes of gold and silver, creating a harmonious balance of opulence and modernity. The overall atmosphere is celebratory, full of life and movement, encapsulating Elton John's warm, witty, and iconic personality as he connects with his audience in a heartfelt, unforgettable performance.
+
+============================================================
+IMAGE FILE: gpt_image_1_eltonjohn_1768491244535.png

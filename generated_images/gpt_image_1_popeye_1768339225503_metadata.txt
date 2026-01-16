@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @popeye
+Generated: 2026-01-13 22:20:25
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/1084f71e-271d-46ae-aff0-a85f07fa4e2f/reference_1768339137586.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+Transform the background into a lively, futuristic financial district celebrating Bitcoin's rise to 94k$. Add digital billboards displaying Bitcoin symbols and numbers in bright gold and green hues. Infuse the scene with colorful, creative graffiti-style art incorporating Bitcoin icons. Introduce humorous elements like digital wallets flying around as art pieces. Ensure Popeye remains the central figure, blending his authentic style with hints of Bitcoin-themed fashion, such as a Bitcoin-patterned tie or hat. Retain his pose and expression, focusing edits on the dynamic, artful surroundings.
+
+============================================================
+IMAGE FILE: gpt_image_1_popeye_1768339225503.png

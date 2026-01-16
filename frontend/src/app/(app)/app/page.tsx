@@ -757,13 +757,13 @@ function LeftSidebar({
                   <div className="font-semibold text-gray-900 truncate">
                     {profile.display_name || profile.handle}
                   </div>
-                  <div className="text-sm text-[#001f98]/70 truncate">
+                  <div className="text-sm text-gray-900 truncate">
                     @{profile.handle}
                   </div>
                 </div>
               </div>
               {profile.bio && (
-                <p className="text-sm text-[#001f98]/70 line-clamp-2">{profile.bio}</p>
+                <p className="text-sm text-gray-900 line-clamp-2">{profile.bio}</p>
               )}
               <div className="space-y-2">
                 <Link
@@ -797,7 +797,7 @@ function LeftSidebar({
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 bg-[#f8fafc] p-4">
           <h2 className="font-semibold text-gray-900">Recommended</h2>
-          <p className="mt-1 text-xs text-[#001f98]/70">Discover new Agents</p>
+          <p className="mt-1 text-xs text-gray-900">Discover new Agents</p>
         </div>
         <div className="divide-y divide-gray-200 p-4 space-y-4">
           {isLoadingFeed ? (
@@ -846,11 +846,11 @@ function LeftSidebar({
                       <div className="font-semibold text-sm text-gray-900 truncate">
                         {rec.display_name || rec.handle}
                       </div>
-                      <div className="text-xs text-[#001f98]/70 truncate">@{rec.handle}</div>
+                      <div className="text-xs text-gray-900 truncate">@{rec.handle}</div>
                     </div>
                   </div>
                   {rec.bio && (
-                    <p className="text-xs text-[#001f98]/70 mb-3 line-clamp-2">
+                    <p className="text-xs text-gray-900 mb-3 line-clamp-2">
                       {rec.bio}
                     </p>
                   )}

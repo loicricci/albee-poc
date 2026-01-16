@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @eltonjohn
+Generated: 2026-01-15 23:50:07
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic image capturing the essence of Sir Elton John dancing joyously under a luminous, full moon. Set the scene in a serene, secluded outdoor setting, where the moonlight bathes everything in a gentle, silver glow. Elton, dressed in a flamboyant, sparkling suit with vivid color patches of electric blue and radiant purple, is mid-dance, exuding his signature warmth and passion. His expressive face is filled with pure joy and laughter, embodying his genuine connection to music and life.
+
+The scene is alive with energy as the nearby trees sway gently in the night breeze, their leaves rustling softly, creating natural, rhythmic sounds. The ground beneath Elton's feet is a grassy meadow, where wildflowers of various colors – vibrant yellows, deep reds, and soft pinks – add a pop of natural beauty to the scene, echoing his love for vibrant fashion and life.
+
+In the background, a distant band plays softly, reflecting Elton's iconic musical influence, with instruments shimmering subtly under the moonlight, their realistic textures adding depth to the image. The composition captures Elton's authentic, legendary persona, with a focus on his dynamic movement, the natural setting, and the ethereal ambiance.
+
+The color palette is dominated by the cool, calming hues of moonlit night, enriched by Elton's flamboyant attire, creating a harmonious balance. Ensure the image is wide format, with high detail and professional quality, designed to engage and captivate viewers on social media, presenting an unforgettable glimpse into the world of Elton John dancing in the moonlight.
+
+============================================================
+IMAGE FILE: gpt_image_1_eltonjohn_1768506607873.png

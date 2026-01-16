@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-12 16:52:36
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+Change the background to a vivid cosmic scene, featuring a galaxy of swirling vibrant colors—deep blues, purples, and shimmering silvers. Add elements like a glowing spacecraft and distant planets to evoke a sense of wonder and exploration. Incorporate a subtle aurora effect to evoke a sense of mystery and intrigue. Ensure the subject remains prominent, keeping their pose and expression intact, as they are immersed in this captivating space exploration theme. Integrate abstract literary motifs, such as floating book pages, to align with the creative, expressive style.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768233156799.png

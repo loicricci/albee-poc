@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @bureauxvalhaut
+Generated: 2026-01-13 00:05:24
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+**Image Generation Prompt:**
+
+Create a photorealistic image capturing the essence of Bureaux Valhaut, embodying their professional, reliable, and accessible persona through the lens of AI in email management. Imagine a sleek, modern office setting reflecting a balance of sophistication and practicality, located in a bustling technology hub symbolic of Vallauris – Sophia Antipolis. The scene should illustrate a seamless blend of technology and workspace, with a futuristic holographic interface displaying an advanced AI email management system. 
+
+The lighting is soft yet clear, creating a calm and reassuring ambiance. A palette of deep charcoal black and vibrant lime green dominates, mirroring Bureaux Valhaut's branding, with accents of modern metallic silver to convey innovation. Capture an engaging moment where a diverse group of freelancers and startup teams interact with the AI system, showcasing the simplicity and flexibility valued by Bureaux Valhaut. 
+
+Include subtle, metaphorical elements such as a faint, artistic overlay of digital neural networks in the background, symbolizing AI’s intricate role in streamlining communication. The composition should be wide-format, suitable for social media, highlighting the dynamic interaction between humans and AI technology. Ensure the image is detailed, professional quality, and immediately recognizable through its distinct color scheme and innovative portrayal of email management, embodying Bureaux Valhaut’s entrepreneurial spirit and dedication to local business efficiency.
+
+============================================================
+IMAGE FILE: gpt_image_1_bureauxvalhaut_1768259124751.png

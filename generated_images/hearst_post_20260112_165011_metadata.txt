@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-12 16:50:13
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a cinematic, photorealistic image depicting an industrial Bitcoin mining facility under the influence of dynamic weather changes. The scene is set against a vast landscape where a cold front is visibly sweeping in, with swirling gusty winds and dramatic skies. The facility itself is a showcase of modern, minimalist architecture with large geometric structures that reflect the efficient and durable nature of Hearst Mining. 
+
+The foreground features a series of towering mining rigs, their metallic surfaces gleaming under the contrasting light of the setting sun, which casts long, dramatic shadows across the scene. The color palette dominates with vibrant neon lime green accents on the machinery, vividly highlighting the cutting-edge technology amidst the neutral medium gray of the industrial structure. The bright pure white elements, like snow-capped peaks, symbolize purity and transparency, while deep pure black outlines define the stark, efficient design.
+
+Wind-blown dust and debris swirl around, adding a sense of movement and energy, hinting at the elevated fire danger. The atmosphere is tense yet serene, with a clear sense of resilience and professionalism. The overall mood is calm, institutional, and trustworthy, emphasizing the energy-focused essence of Hearst Mining, seamlessly integrating the company's identity with the evolving environmental conditions.
+
+This wide-format image is designed for social media, engaging viewers with its high detail and immediate recognition of the brand's signature color palette, capturing both the industrial power and the unpredictable beauty of nature.
+
+============================================================
+IMAGE FILE: hearst_post_20260112_165011.png

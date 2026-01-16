@@ -365,9 +365,20 @@ export default function SignupPage() {
                   />
                 </svg>
                 <div>
-                  <div className="font-semibold text-green-900">Account created successfully!</div>
+                  <div className="font-semibold text-green-900">Almost there! Check your email</div>
                   <div className="mt-1 text-sm text-green-800">
-                    Check your email to confirm, then log in.
+                    We sent a confirmation link to <strong>{emailTrim}</strong>. Click the link in the email to complete your signup and start onboarding.
+                  </div>
+                </div>
+              </div>
+              
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                <div className="flex items-start gap-3">
+                  <svg className="h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="text-sm text-amber-800">
+                    <strong>Important:</strong> You must confirm your email before you can log in. Check your spam folder if you don't see the email.
                   </div>
                 </div>
               </div>
@@ -414,20 +425,16 @@ export default function SignupPage() {
                 type="button"
                 onClick={resendConfirmation}
                 disabled={loading || !emailTrim}
-                className="w-full rounded-full border-2 border-gray-200 dark:border-white/[.20] px-4 py-3 text-sm font-medium text-[#0B0B0C] dark:text-white transition-all hover:border-[#001f98] dark:hover:border-white/[.30] hover:bg-[#E6E6E6]/50 dark:hover:bg-white/[.08] disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-full bg-[#001f98] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#001670] hover:shadow-xl hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
               >
                 Resend confirmation email
               </button>
 
-              <Link
-                href="/login"
-                className="flex w-full items-center justify-center rounded-full bg-[#001f98] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#001670] hover:shadow-xl hover:scale-105 dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
-              >
-                Go to login
-              </Link>
-
-              <div className="rounded-lg bg-[#001f98]/5 dark:bg-white/[.03] border border-[#001f98]/10 dark:border-white/[.08] p-4 text-xs text-[#001f98] dark:text-zinc-400">
-                <strong>Tip:</strong> Check your spam folder if you don't see the email. Some providers may delay confirmation emails.
+              <div className="text-center text-sm text-[#001f98]/70 dark:text-zinc-400">
+                Already confirmed your email?{" "}
+                <Link href="/login" className="font-semibold text-[#001f98] dark:text-white transition-colors hover:text-[#001670] dark:hover:text-zinc-300">
+                  Log in here
+                </Link>
               </div>
             </div>
           )}

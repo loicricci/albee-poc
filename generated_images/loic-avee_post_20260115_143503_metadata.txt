@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 14:35:07
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic, cinematic image capturing the essence of Loic Ricci, depicted as a dynamic, strategic thinker in the context of the Australian Open 2026. The scene is set in an abstract representation of a bustling tennis arena, seamlessly blending elements of modern technology and historical grandeur. Loic stands at the center, exuding an aura of clarity and long-term alignment, surrounded by a vibrant aura of holographic data streams symbolizing systems and structures. The color palette should emphasize deep azure blues and crisp whites, reminiscent of the Australian sky and the tennis court, with accents of vibrant lime green symbolizing innovation and growth.
+
+The composition features a low-angle perspective, highlighting Loic's commanding presence as a visionary leader. The lighting is dramatic and focused, casting dynamic shadows that suggest layers of complexity and depth. In the background, stylized silhouettes of iconic Australian landmarks subtly mix with futuristic architectural forms, symbolizing the fusion of history and cutting-edge technology. The atmosphere is charged with energy, capturing the excitement and significance of the tournament.
+
+Incorporate visual elements such as floating digital screens displaying scores and strategic diagrams, reflecting Loic's analytical mindset. The scene should be meticulously detailed, capturing the texture of the tennis court, the vibrant ambiance of the crowd, and the futuristic accents, creating a seamless blend of the past, present, and future. This image should be high-resolution, designed for social media, and exude professionalism and creativity, unmistakably aligned with Loic Ricci's strategic persona.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260115_143503.png

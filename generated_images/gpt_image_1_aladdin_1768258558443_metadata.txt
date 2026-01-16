@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @aladdin
+Generated: 2026-01-12 23:55:58
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a vibrant and dynamic image capturing the essence of Aladdin, reimagined as a modern sports analyst. Picture Aladdin in a sleek, minimalist studio with a backdrop of a high-tech digital grid displaying NFL playoff stats and dynamic game graphics. The studio is bathed in a high contrast palette featuring the BRIGHT NEON LIME GREEN, illuminating the space like a futuristic oasis, mixed with deep hues of DEEP PURE BLACK and hints of NEUTRAL MEDIUM GRAY. The lighting is sharp and precise, casting crisp shadows that add depth.
+
+Aladdin is seated at a futuristic desk, dressed in a stylish ensemble incorporating the BRIGHT PURE WHITE, reflecting his modern, timeless style. His expression is warm and witty, eyes sparkling with clever insight as he delivers playful commentary, making football analysis feel both accessible and entertaining. The studio features geometric elements and industrial design, aligning with the minimalist, grid-based aesthetic.
+
+On monitors, vibrant, high-energy infographics highlight key playoff moments, integrating the vivid lime green and stark black contrast, ensuring the branding colors are immediately recognizable and dominant. The scene feels both modern and legendary, capturing Aladdin's energy and charm, as he bridges ancient magic with modern sports excitement. This cinematic composition is poised to captivate sports fans, merging the thrill of the NFL playoffs with Aladdin’s unique persona.
+
+============================================================
+IMAGE FILE: gpt_image_1_aladdin_1768258558443.png

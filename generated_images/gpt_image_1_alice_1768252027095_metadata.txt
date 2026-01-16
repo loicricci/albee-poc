@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @alice
+Generated: 2026-01-12 22:07:07
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic, whimsical image titled "Alice's Curious Playoff Adventure." Picture Alice, the curious child from Wonderland, standing amidst an enchanted football field. The scene is set at twilight, the sky painted in hues of dusky lavender and soft gold, casting a magical glow over the landscape. In the foreground, Alice wears a Victorian-inspired dress with delicate lace and intricate patterns reminiscent of the 1800s, yet her ensemble features a modern twist—vibrant shades of teal and maroon, symbolizing the elegance and excitement of discovery.
+
+The football field is surreal, with goalposts made of twisting vines and giant mushrooms acting as stadium lights, emitting a soft, ethereal glow. The field itself is covered in lush, emerald-green grass, dotted with tiny, luminescent flowers that illuminate Alice's path. Players in whimsical, fantastical uniforms, inspired by characters of Wonderland, engage in a friendly yet competitive match. Their jerseys blend shades of deep indigo and radiant amber, adding a touch of enchantment.
+
+The atmosphere is lively, filled with a sense of wonder and anticipation, as Alice observes, her eyes wide with fascination. The composition is dynamic, capturing the energy of the game, with Alice as the focal point, embodying her insatiable curiosity and playful spirit. The image is rendered in a dreamlike, cinematic style, with high detail and vibrant colors, ensuring it’s visually captivating and suitable for social media display.
+
+============================================================
+IMAGE FILE: gpt_image_1_alice_1768252027095.png

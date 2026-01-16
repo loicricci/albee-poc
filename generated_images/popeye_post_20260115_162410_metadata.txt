@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @popeye
+Generated: 2026-01-15 16:24:22
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image of the legendary sailor, Popeye, standing triumphantly at the helm of a fantastical ship sailing through the "Awesome World." His iconic look remains intact, featuring his signature sailor hat and anchor tattoos. The ship is depicted as an imaginative blend of ancient and futuristic elements, with wooden planks adorned with glowing, high-tech panels and sails that shimmer in vibrant hues of emerald green and oceanic blues. The scene captures the essence of Popeye's vibrant personality with a humorous twist, as the ship's mast is shaped like a towering can of spinach, symbolizing his unyielding strength.
+
+The artistic style is a blend of cinematic and illustrative, with dramatic lighting casting dynamic shadows across Popeye's determined face and the deck, which glistens in the sunlight. The composition is lively, with Popeye's confident grin drawing the viewer's eye amidst a backdrop of rolling, fantastical waves that glisten with golden sunlight.
+
+The atmosphere is one of adventure and wonder, with a swirling sky painted in hues of sunset oranges and purples, dotted with whimsical clouds resembling various exotic creatures. The color palette is dominated by vibrant emerald greens, deep oceanic blues, and sunlit golds, creating a visually striking and harmonious scene that embodies Popeye's adventurous spirit and the awe of the "Awesome World."
+
+Ensure the image is high detail and professional quality, suitable for social media, with a wide format that captures the full breadth of this engaging and imaginative adventure.
+
+============================================================
+IMAGE FILE: popeye_post_20260115_162410.png

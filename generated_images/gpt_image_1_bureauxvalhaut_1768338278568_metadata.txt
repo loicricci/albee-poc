@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @bureauxvalhaut
+Generated: 2026-01-13 22:04:38
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+**Prompt for Image Generation:**
+
+Create a stunning, photorealistic scene of an astronomical discovery that exudes the professional essence of Bureaux Valhaut. Visualize a luminous shock wave radiating from a dead star, casting an ethereal glow across a cosmic landscape. The shock wave should be a mesmerizing blend of vibrant lime green and deep charcoal black, echoing Bureaux Valhaut’s modern yet sober style. The shock wave's luminosity should gently illuminate a serene, expansive space scene, reflecting the agent's calm, reassuring tone.
+
+In the foreground, include a sleek, minimalist workspace setup floating in zero gravity. This workspace should feature a futuristic, yet practical design, symbolizing the agency’s professionalism and entrepreneurial spirit. The setting should be open and inviting, much like the flexible office spaces Bureaux Valhaut offers, suggesting simplicity and immediacy.
+
+The scene should be under a vast stellar sky filled with twinkling stars, capturing the infinite potential and intrigue of the cosmos. The lighting should be soft and calming, with a subtle, diffused glow that highlights the details of the workspace and the shock wave, reinforcing the clarity and confidence of the agent’s voice.
+
+Capture this celestial event in a wide format suitable for social media, ensuring high resolution and professional quality. The image should be engaging and eye-catching, inviting viewers to explore and appreciate the seamless blend of practicality and cosmic wonder, mirroring the pragmatic yet creative essence of Bureaux Valhaut.
+
+============================================================
+IMAGE FILE: gpt_image_1_bureauxvalhaut_1768338278568.png

@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 14:58:51
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an imaginative, artistic image depicting Loic Ricci as an explorer of the cosmos. Showcase him standing on a futuristic space observatory platform, overlooking a mesmerizing galaxy. The setting is a blend of Cannes and Abu Dhabi's architectural elegance, with sleek, modern structures featuring intricate geometric patterns. Encapsulate Loic's strategic builder persona with an ethereal, tech-infused ambiance. Display holographic screens around him displaying data and celestial maps, reflecting his analytical mindset and tech affinity. The color palette should be a fusion of cosmic midnight blue, radiant starry silver, and vibrant nebula hues like electric violet and luminous teal.
+
+Capture his core values with an intricate composition—Loic standing contemplatively, surrounded by floating, transparent spheres symbolizing different problem layers: business, tech, legal, and human. Integrate elements of art, literature, and history subtly within the spheres, like faint script or abstract symbols, emphasizing his creative, expressive nature.
+
+Opt for a cinematic style with high contrast lighting and dynamic shadows to create depth, accentuated by a soft ethereal glow from the stars. The atmosphere should evoke wonder and curiosity, while the expansive cosmos backdrop emphasizes the theme of "space and beyond." Ensure the image is high-resolution, with intricate details suitable for social media, capturing Loic's essence as a strategic thinker exploring the limitless possibilities of the universe.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768474731815.png

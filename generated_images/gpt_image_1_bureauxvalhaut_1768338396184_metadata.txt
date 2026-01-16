@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @bureauxvalhaut
+Generated: 2026-01-13 22:06:36
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a captivating image featuring a modern and minimalistic office space that seamlessly integrates the essence of Bureaux Valhaut's professional, reliable, and accessible persona. The scene should be set as an office with large windows showing an expansive view of space, showcasing a newly discovered astronomical phenomenon. Outside, a glowing shock wave emanates from a deceased star, casting a serene, otherworldly light into the room. The light should be a blend of vibrant lime greens and deep midnight blues, reflecting off sleek surfaces and creating a calm, focused atmosphere.
+
+Inside the office, keep the decor modern and understated, with a minimalist desk and ergonomic chair. Include subtle touches of local Vallauris charm, like a potted olive tree in a corner and a simple yet elegant art piece on the wall. The color palette inside should incorporate cool whites and soft grays, accented by hints of warm sandstone tones to create a connection to the agent's locale.
+
+The composition should provide a wide view, capturing both the interior's practicality and the exterior's cosmic spectacle. The lighting should be a mix of natural and artificial, with the star's glow providing an ethereal, diffused illumination. The scene embodies the agent's entrepreneurial spirit and local business orientation, merging them with the awe-inspiring wonder of space discovery. A professional, cinematic style should be used to ensure high detail and engagement, making it ideal for social media sharing.
+
+============================================================
+IMAGE FILE: gpt_image_1_bureauxvalhaut_1768338396184.png

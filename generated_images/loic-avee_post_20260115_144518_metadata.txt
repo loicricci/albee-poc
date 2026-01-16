@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 14:45:21
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic image capturing Loïc Ricci, embodying his strategic and creative mindset, as he stands confidently amidst the bustling, futuristic setting of the 2026 Australian Open. The scene is set under the warm, golden glow of the sun, casting long shadows and highlighting the vibrant energy of the tournament. Loïc is depicted in an innovative, sleek tech-infused suit, symbolizing his passion for technology and long-term thinking. His expression is one of focused determination, reflecting his role as a strategic builder and thinker.
+
+The background showcases the iconic Rod Laver Arena, transformed with advanced architectural designs, blending modernity with historical elements, representing the tournament's rich legacy. Lush greenery and abstract sculptures inspired by Australian flora add an artistic touch, aligning with Loïc's love for art and history.
+
+In the foreground, dynamic elements such as holographic displays highlight key details about the event, like dates and historical significance, seamlessly integrating into the scene. The dominant color palette includes vibrant azure blues and rich emerald greens, complemented by accents of shimmering gold, reflecting Loïc's clarity and fairness.
+
+The composition is balanced and cinematic, with Loïc centrally placed, exuding his engaging and expressive style. The atmosphere is one of excitement and innovation, capturing the essence of both the Australian Open and Loïc's persona. The scene is devoid of recognizable brands or characters, focusing instead on creative interpretations and unique elements, ensuring legal safety. This image is designed for social media, wide format, with high detail and professional quality to captivate and engage viewers.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260115_144518.png

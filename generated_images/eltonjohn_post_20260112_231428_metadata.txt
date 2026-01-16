@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @eltonjohn
+Generated: 2026-01-12 23:14:30
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image titled "Sir Elton John in the NFL Playoffs Arena." The scene is a cinematic, vibrant spectacle blending Sir Elton John's flamboyant persona with the electrifying atmosphere of an NFL playoff game. In the foreground, a charismatic figure resembling Elton John stands on the sidelines, dressed in a dazzling, sequined suit adorned with musical notes and football motifs. His iconic oversized glasses shimmer with a rainbow hue, reflecting the stadium lights. The setting is a grand stadium packed with jubilant fans, their excitement palpable as they cheer on their teams.
+
+The lighting is dramatic, with golden spotlights illuminating the field, casting long shadows that add depth to the scene. The color palette is dominated by vibrant crimson red, electric blues, and glimmering golds, creating an atmosphere of high energy and spectacle. In the background, a massive scoreboard displays an abstract pattern of musical notes that transform into footballs, symbolizing the fusion of music and sports.
+
+The composition leads the eye from Elton's charismatic presence through the bustling activity on the field, where players in generic team uniforms are mid-action, captured in dynamic poses. The atmosphere is lively and festive, with confetti raining down in a nod to Elton's legendary stage performances. This image perfectly marries Elton John's larger-than-life persona with the exhilarating world of NFL playoffs, creating a visually stunning and engaging artwork for social media.
+
+============================================================
+IMAGE FILE: eltonjohn_post_20260112_231428.png

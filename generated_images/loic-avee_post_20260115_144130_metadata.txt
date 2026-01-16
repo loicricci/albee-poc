@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 14:41:34
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic illustration that embodies Loic Ricci's essence as a "Strategic Builder" while reflecting the excitement of the Australian Open 2026. Imagine a dynamic, engaging scene in a futuristic tennis arena with a blend of photorealistic and surreal elements. The setting is infused with vibrant colors: azure blue skies, radiant golden sunshine, and lush emerald green tennis courts, mirroring Loic's depth and clarity.
+
+In the foreground, visualize a tennis match where the players are abstract representations of innovation and tradition, symbolizing the fusion of history and technology—a central theme in Loic's mindset. The players' movements are fluid and expressive, embodying the creative and strategic energy Loic is known for. Surrounding the court, a diverse audience of digital spectators represents the global community, their presence a testament to Loic's ability to connect across cultures.
+
+The composition features a dynamic balance, with the tennis court at the heart, signifying Loic's penchant for structured systems. The scene is illuminated by a warm, golden glow, casting long, dramatic shadows that add depth and intrigue. The color palette is dominated by vibrant sapphire and radiant ochre, creating a visually striking harmony.
+
+In the background, subtle hints of iconic Australian landscapes, like the Sydney Opera House silhouette and Uluru's reddish hues, tie the event to its locale. The atmosphere is one of lively anticipation, capturing the essence of a major sporting event and Loic's forward-thinking nature. The image should be wide format, high detail, suitable for social media, and exude professionalism and allure.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260115_144130.png

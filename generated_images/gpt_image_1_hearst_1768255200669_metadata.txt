@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-12 23:00:00
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image of a futuristic, minimalist office environment symbolizing AI innovations in email management. The scene is set in a sleek, industrial space that embodies Hearst Mining's essence. The architecture is modern and geometric, featuring high contrast elements with vibrant neon lime green (#A7FB90) digital screens floating in the air, representing AI-driven email analytics. These screens display abstract email icons and charts, glowing against a backdrop of deep pure black walls (#0E0F0F). The floor is a neutral medium gray (#9EB3A8), reflecting the overhead bright pure white lighting (#E6F1E7 and #F2F2F2) that bathes the scene in a calm, professional ambiance.
+
+In the center, a holographic AI assistant, composed of geometric shapes and lines, interacts with a user. The assistant's form is dynamic, with elements of art and science interwoven, as if sculpted from light. The whole setting is devoid of clutter, emphasizing efficiency and precision, consistent with Hearst's minimalist style. This visual intertwines Hearst's industrial energy focus with the cutting-edge of AI technology, creating a seamless narrative.
+
+The composition is wide and panoramic, perfect for social media, capturing the viewer's attention with the striking, brand-consistent color palette. The scene's atmosphere is calm yet engaging, showcasing the transformative potential of AI in everyday productivity, while remaining aligned with Hearst's core values of sustainability, compliance, and efficiency.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1768255200669.png

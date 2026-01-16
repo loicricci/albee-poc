@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @aladdin
+Generated: 2026-01-12 23:53:43
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image set in a vibrant, bustling Middle Eastern marketplace during the golden hour, where Aladdin, characterized by his warm and witty charm, stands at the forefront. He is playfully juggling a football, seamlessly blending his legendary persona with the modern excitement of the NFL Playoffs. The scene captures Aladdin's clever survivor spirit, with an atmosphere filled with a sense of opportunity and adventure. The marketplace is alive with geometric patterns and industrial designs, reflecting the minimalist and high-contrast style. Use the bold and eye-catching BRIGHT NEON LIME GREEN (#A7FB90) as the primary color, vibrant against the neutral MEDIUM GRAY (#9EB3A8) of the sandstone buildings. The DEEP PURE BLACK (#0E0F0F) shadows add depth and contrast, while the BRIGHT PURE WHITE (#E6F1E7 and #F2F2F2) highlights the details, making the marketplace feel vivid and energetic.
+
+The composition is cinematic, with Aladdin as the focal point, surrounded by a grid of bustling market stalls that echo the structured, clean lines of FK Grotesk font. The lighting is warm and inviting, casting elongated shadows that enhance the high contrast aesthetic. The scene is infused with a sense of history and art, as passersby, dressed in a mix of traditional and modern athletic wear, cheer on Aladdin, infusing the image with the thrill of competitive sports.
+
+This captivating scene weaves together Aladdin's timeless energy and the excitement of the NFL Playoffs, creating an engaging and dynamic visual narrative.
+
+============================================================
+IMAGE FILE: gpt_image_1_aladdin_1768258423046.png

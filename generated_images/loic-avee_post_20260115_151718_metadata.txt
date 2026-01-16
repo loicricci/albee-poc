@@ -1,0 +1,24 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 15:17:22
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image capturing the essence of Loic Ricci, the Strategic Builder, engaging with the Olympic Ticket Raffle. Show Loic standing at the forefront of a grand, abstract raffle ticket machine, symbolizing the fusion of technology and sports. The machine, designed with elegant, futuristic aesthetics, features intricate gears and digital displays, signifying his love for systems and clarity. Surrounding Loic are swirling streams of digital numbers and tickets, representing the strategic thinking and complex layers he navigates.
+
+The scene is set in a modern, expansive stadium under a glowing twilight sky, with hues of vibrant azure and deep coral reflecting the event's global excitement. The lighting is cinematic, casting dramatic shadows that highlight Loic's contemplative expression as he gazes at the raffle machine, embodying his long-term vision and fairness. 
+
+In the background, stylized silhouettes of cheering fans add an element of engagement and accessibility, with banners in warm amber and rich navy blue framing the scene. These colors, dominant in the palette, evoke a sense of unity and celebration. The atmosphere is electric, filled with anticipation and energy, reflecting Loic's engaging and expressive style. 
+
+The composition captures Loic in a moment of decision-making, embodying his core mindset of thinking from first principles and breaking down complex systems. This visual metaphor connects his persona to the Olympic Ticket Raffle, creating an image that is both captivating and deeply resonant with his strategic approach.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260115_151718.png

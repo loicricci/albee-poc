@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 20:07:24
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a stunning image capturing the essence of Loic Ricci, set against the backdrop of the Olympic Ticket Raffle. Picture Loic as a dynamic figurehead, a strategic builder, standing in a futuristic Olympic stadium. His expression is one of thoughtful enthusiasm, embodying his role as a founder and long-term thinker. The scene is illuminated by a soft golden glow, reminiscent of a sunrise over the Mediterranean, symbolizing new beginnings and opportunities. The composition is inspired by modernist art, with bold geometric patterns reflecting Loic's structured mindset, balanced by fluid lines representing his creative, expressive traits.
+
+In the foreground, a sleek digital screen displays the Olympic Ticket Raffle interface, with animated golden tickets spiraling upwards, symbolizing accessibility and excitement. Loic stands with one hand extended, as if he is orchestrating this event, his pose confident and engaging. Surrounding him are abstract representations of diverse fans, capturing the universal excitement and engagement of the games. 
+
+The color palette features deep azure blues and vibrant lime greens, symbolizing technological innovation and fresh perspectives, with accents of deep charcoal black grounding the scene in clarity and precision. The atmosphere is lively yet focused, with a cinematic depth of field that draws the viewer's eye to Loic's charismatic presence. This artistic interpretation is both metaphorical and literal, connecting Loic's persona with the Olympic theme in a visually captivating way, perfect for social media engagement.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768493244341.png

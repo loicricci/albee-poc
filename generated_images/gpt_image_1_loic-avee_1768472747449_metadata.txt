@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 14:25:47
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+"Transform the background into a futuristic library infused with AI elements. Replace bookshelves with holographic data panels, glowing circuits weaving around the room. Add subtle hints of robotic limbs organizing digital tomes. Introduce a palette of deep blues and silvers to emphasize the tech theme, while soft light emanates from screens displaying dynamic art and literary quotes. Maintain Loic Ricci's presence, ensuring his creative essence is harmonized with the advanced, expressive setting."
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768472747449.png

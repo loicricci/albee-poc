@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-15 16:32:30
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic, cinematic image portraying the concept of Bitcoin mining in a desert setting, encapsulating Hearst Mining's distinct industrial persona. The scene unfolds under a bright, clear sky, with the sun casting sharp, high-contrast shadows across the desert landscape. The focus is a modern Bitcoin mining facility, seamlessly integrated into the arid environment, reflecting Hearst's commitment to sustainable infrastructure.
+
+The facility is designed with sleek, minimalist architecture, comprised of geometric structures and grid-based layouts. The prominent color palette features vibrant neon lime green (#A7FB90) as the dominant hue, cutting through the neutral medium gray (#9EB3A8) of the structures, and contrasted against the deep pure black (#0E0F0F) of solar panels and cabling. Bright pure white highlights (#E6F1E7 and #F2F2F2) add a sense of purity and efficiency, symbolizing fresh energy and innovation.
+
+Embedded in the scene are subtle artistic elements that nod to the themes of music, fashion, and technology—a digital display showing Bitcoin transactions, akin to a concert board, and fashionably designed wind turbines in the background, harnessing energy. The atmosphere is calm yet filled with latent energy, emphasizing professionalism and reliability. The composition is wide and expansive, capturing the vastness of the desert juxtaposed with the focused intensity of the mining operation. This image communicates Hearst's dedication to energy efficiency and long-term sustainability, making it an engaging and eye-catching piece suitable for social media platforms.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1768480350668.png

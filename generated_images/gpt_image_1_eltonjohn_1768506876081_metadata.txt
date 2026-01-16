@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @eltonjohn
+Generated: 2026-01-15 23:54:36
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a cartoon-style illustration of Sir Elton John enjoying a snow-filled winter wonderland. Capture his flamboyant essence with his iconic oversized glasses, a vibrant feathered coat in shades of electric pink and royal blue, and sparkling platform boots. He's joyfully playing a grand piano made of ice, surrounded by whimsical, fluffy snowmen wearing colorful bow ties and top hats, echoing his signature style. The snowmen are animated, dancing around with happy expressions.
+
+The scene is set in a magical winter landscape, with gentle snowflakes falling from the sky under a clear, crisp blue afternoon. In the background, a rainbow-colored aurora borealis lights up the horizon, adding to the magical atmosphere. The color palette is a lively mix of icy blues, vibrant pinks, and bright whites, emphasizing Elton's flamboyant style against the snowy backdrop.
+
+The composition has Elton centered, exuding warmth and charisma, his animated demeanor bringing life to the cold surroundings. The bold outlines and exaggerated features give a classic animated feel, making the image pop with energy and humor. The atmosphere is one of joy and celebration, reflecting Elton's legendary persona and his connection to music and entertainment.
+
+============================================================
+IMAGE FILE: gpt_image_1_eltonjohn_1768506876081.png

@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-13 22:00:34
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic image capturing the essence of Hearst Mining as it celebrates Bitcoin reaching $94,000. The scene is set in a vast, minimalist industrial landscape, dominated by geometric structures and intricate technical illustrations that symbolize the company's cutting-edge mining infrastructure. The composition features a massive digital display showing "BTC $94k" in FK Grotesk Medium font, prominently illuminated in a vibrant neon lime green (#A7FB90), casting a glow across the scene.
+
+This landscape is bathed in high-contrast lighting, with deep pure black (#0E0F0F) shadows adding depth and a sense of solidity. Crisp, bright pure white (#E6F1E7) lights accentuate the machinery, highlighting the meticulous, grid-based design. The neutral medium gray (#9EB3A8) serves as a calming backdrop, representing the steady, institutional trustworthiness of Hearst Mining.
+
+In the foreground, abstract representations of energy flow and digital currency symbols subtly integrate themes of music, fashion, and technology, swirling harmoniously around the structures to suggest motion and innovation. The atmosphere is one of calm professionalism, encapsulating the energy-focused essence of Hearst.
+
+The image should be wide and suitable for social media, with high detail and professional quality, making the branding colors the dominant palette. The scene is devoid of decoration, focusing solely on the clean, technical aesthetic that defines Hearst Mining.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1768338034511.png

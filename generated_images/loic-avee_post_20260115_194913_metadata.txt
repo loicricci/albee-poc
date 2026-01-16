@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 19:49:19
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic and expressive image capturing the essence of Loic Ricci as he strategizes amidst a vibrant scene inspired by the upcoming Olympic Games ticket raffle. Set in a dynamic, futuristic stadium environment, Loic stands at a sleek, glass-paneled control center, thoughtfully analyzing digital displays filled with intricate diagrams and charts. Reflect his persona with a backdrop of interlocking geometric patterns symbolizing systems and structures, radiating strategic energy. The lighting is dramatic, casting soft glows and sharp contrasts, with a palette dominated by deep ocean blues, vibrant metallic golds, and crisp, bright whites, echoing the spirit of fairness and clarity.
+
+Incorporate elements of art and technology by featuring holographic projections of Olympic rings and abstract sports figures, hovering mid-air, emphasizing Loic's tech-savvy and long-term strategic thinking. Infuse a sense of movement and engagement with swirling lines and vibrant splashes of color, capturing his creative and expressive nature. The scene should be composed with a cinematic wide-angle view, allowing the viewer to feel immersed in Loic's world. 
+
+The atmosphere is both energetic and contemplative, with a palpable sense of anticipation for the Olympic Games. Ensure the image reflects Loic's strategic builder mindset by integrating subtle visual metaphors of balance and alignment, such as scales or compass motifs. The image should be high-detail, professional quality, and formatted for social media, making it both engaging and immediately recognizable.
+
+============================================================
+IMAGE FILE: loic-avee_post_20260115_194913.png

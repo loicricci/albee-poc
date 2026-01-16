@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { useAppData } from "@/contexts/AppDataContext";
+import { invalidateCache, clearAllCaches } from "@/lib/apiCache";
 import { OnboardingStepName } from "@/components/onboarding/OnboardingStepName";
 import { OnboardingStepHandle } from "@/components/onboarding/OnboardingStepHandle";
 import { OnboardingStepProfile } from "@/components/onboarding/OnboardingStepProfile";
@@ -21,16 +23,22 @@ interface OnboardingData {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { onboardingStatus } = useAppData();
   const [currentStep, setCurrentStep] = useState<Step>(1);
-  const [loading, setLoading] = useState(true);
+  // FIX: Start with loading=false since AppDataContext already checked onboarding status
+  const [loading, setLoading] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [onboardingData, setOnboardingData] = useState<Partial<OnboardingData>>({});
 
+  // Use onboardingStatus from AppDataContext instead of making redundant API call
   useEffect(() => {
-    checkOnboardingStatus();
-  }, []);
+    // If AppDataContext says onboarding is completed, redirect to app
+    if (onboardingStatus?.completed) {
+      router.push("/app");
+    }
+  }, [onboardingStatus, router]);
 
   async function getAccessToken(): Promise<string> {
     const { data, error } = await supabase.auth.getSession();
@@ -44,32 +52,6 @@ export default function OnboardingPage() {
     const base = process.env.NEXT_PUBLIC_API_BASE;
     if (!base) throw new Error("Missing NEXT_PUBLIC_API_BASE.");
     return base;
-  }
-
-  async function checkOnboardingStatus() {
-    try {
-      const token = await getAccessToken();
-      const res = await fetch(`${apiBase()}/onboarding/status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to check onboarding status");
-      }
-
-      const data = await res.json();
-      
-      if (data.completed) {
-        // Already completed onboarding, redirect to app
-        router.push("/app");
-        return;
-      }
-    } catch (err: any) {
-      console.error("Onboarding status check failed:", err);
-      // Continue with onboarding anyway
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function completeOnboarding(persona: string | null) {
@@ -101,8 +83,22 @@ export default function OnboardingPage() {
         throw new Error(errorText || "Failed to complete onboarding");
       }
 
-      // Success! Redirect to app
-      router.push("/app");
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.tsx:completeOnboarding',message:'API success - onboarding complete',data:{status:res.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
+
+      // Clear ALL caches before redirect
+      // This forces AppDataContext to fetch fresh data on the new page
+      clearAllCaches();
+      try {
+        sessionStorage.clear();
+      } catch (e) {
+        // Ignore
+      }
+      
+      // Use window.location for a hard redirect that forces a fresh page load
+      // This ensures AppDataContext re-initializes with fresh API data
+      window.location.href = "/app";
     } catch (err: any) {
       setError(err.message || "Failed to complete onboarding");
       setCompleting(false);

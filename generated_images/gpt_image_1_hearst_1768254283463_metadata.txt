@@ -1,0 +1,20 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-12 22:44:43
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an artistic, cinematic image capturing the essence of Hearst Mining's innovative spirit in the realm of AI-enhanced email management. Imagine a futuristic control room, where sleek, minimalist design meets high-tech functionality. A large, curved digital screen dominates the scene, displaying a dynamic, geometric interface of AI-driven email management, with lines and nodes pulsating in a rhythmic pattern. The room is bathed in the vibrant neon lime green (#A7FB90) light, casting an energetic glow over the scene, accentuated by neutral medium gray (#9EB3A8) surfaces and the stark contrast of deep pure black (#0E0F0F) machinery.
+
+The composition uses a wide-angle perspective, capturing the control room's intricate details. The lighting is sharp and focused, highlighting the crisp geometric shapes and grid-based layouts that echo Hearst's industrial ethos. In the foreground, a faceless, androgynous figure in a streamlined, futuristic outfit interacts with the display, symbolizing the seamless integration of human and AI.
+
+The air is calm yet charged with the hum of advanced technology, embodying a professional and trustworthy atmosphere. The pure white highlights (#E6F1E7, #F2F2F2) reflect off surfaces, enhancing the scene's clean and technical aesthetic. This visual narrative connects Hearst Mining’s industrial identity with cutting-edge AI email management, creating a metaphorical bridge between their brand and technological advancement. The image should be instantly recognizable through its bold use of Hearst's color palette, delivering a high-detail, professional-quality visual suitable for social media engagement.
+
+============================================================
+IMAGE FILE: gpt_image_1_hearst_1768254283463.png

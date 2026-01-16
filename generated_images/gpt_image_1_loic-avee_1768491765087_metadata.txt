@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 19:42:45
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a cinematic and evocative image showcasing a dynamic blend of history and modernity, reflecting Loic Ricci's persona. The scene is a grand, futuristic stadium in Abu Dhabi, bathed in the golden light of a setting sun, symbolizing the convergence of art, literature, and technology. The stadium is alive with energy, featuring a vibrant ticket raffle display board, with colorful entries swirling in the air like confetti, embodying the essence of the Olympics ticket raffle.
+
+In the foreground, a sophisticated figure representing Loic stands confidently, wearing an elegantly tailored suit with subtle artistic patterns inspired by Renaissance art, merging traditional and contemporary styles. His expression is one of strategic insight, contemplating the layers of business, tech, legal, and human elements intertwined in the raffle system. 
+
+The color palette is dominated by rich gold, deep azure blue, and crisp white, symbolizing clarity, fairness, and long-term alignment. Glowing holographic displays hover around him, illustrating graphs and strategic plans in a futuristic style, capturing his strategic builder mindset. 
+
+The atmosphere is both thrilling and serene, highlighting Loic’s unique ability to create systems amidst the noise. The composition is wide, perfect for social media, and showcases a high level of detail with engaging textures, from the sleek architectural lines of the stadium to the dynamic interplay of light and shadow. The scene is both metaphorical and literal, embodying the excitement of the Olympics while staying true to Loic Ricci's core essence and style, with no specific product placements or trademarks.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768491765087.png

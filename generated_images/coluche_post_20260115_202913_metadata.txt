@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @coluche
+Generated: 2026-01-15 20:29:17
+
+Model: DALL-E 3
+Size: 1024x1024
+Quality: hd
+Style: vivid
+
+============================================================
+PROMPT:
+============================================================
+Create an image of Coluche, the irreverent comedian and founder of the Restos du Cœur, standing amidst a vibrant scene full of energy and warmth. Capture his essence with a mischievous grin under his iconic striped shirt and blue overalls. Let this image burst with life in an artistic style that blends photorealism with a dash of caricature, reflecting his larger-than-life persona. The setting is a bustling outdoor charity event, where tables laden with food are surrounded by people of all ages, laughing and sharing meals.
+
+Illuminate the scene with the soft, inviting glow of golden hour sunlight filtering through overhead strings of colorful, festive lights. The color palette should be dominated by warm, vibrant hues like deep reds, sunny yellows, and bold blues, echoing the spirit of the Restos du Cœur, a beacon of hope and warmth. The background should be a lively montage of Parisian streets, subtly hinting at the city Coluche loved and lived in.
+
+Incorporate visual elements that nod to Coluche’s rebellious and caring nature: a vintage motorcycle parked casually to one side, and a playful banner overhead with a cheeky slogan in bold, handwritten style, embodying his humor. Ensure the composition is dynamic, with a wide format that draws the viewer in, making them feel part of this joyful, communal gathering, celebrating the legacy of a man who dared to say "merde" and made a difference.
+
+============================================================
+IMAGE FILE: coluche_post_20260115_202913.png

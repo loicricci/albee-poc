@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 20:10:18
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image depicting Loïc Ricci, a strategic builder and tech enthusiast, in a cinematic, artistic style. Center the scene around a futuristic, vibrant cityscape that blends elements from both Cannes and Abu Dhabi, with towering skyscrapers and elegant architecture. In the foreground, Loïc stands confidently, gazing upwards as a massive, glowing Bitcoin ascends into the night sky, symbolizing "Bitcoin to the moon." The Bitcoin emits a radiant golden light that bathes the scene in a warm glow, reflecting Loïc's visionary mindset and long-term thinking.
+
+Capture Loïc's energy and essence by showcasing him in a tailored suit, exuding clarity and fairness, with an expression of strategic determination. Surround him with visual elements from his persona—complex geometric patterns representing systems and structures, and subtle nods to art, literature, and technology, like digital book pages and abstract circuit designs, floating around him.
+
+The color palette should feature deep azure blues and vibrant golds, symbolizing clarity and innovation, with accents of emerald green to evoke growth and balance. The lighting should be dramatic, casting dynamic shadows that add depth and intrigue, enhancing the scene's engaging atmosphere.
+
+Ensure the image is high detail and professional quality, with a wide format suitable for social media. The composition should be balanced, with Loïc as the focal point, seamlessly integrating his personality with the Bitcoin theme, creating a captivating and unique visual narrative.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768493417942.png

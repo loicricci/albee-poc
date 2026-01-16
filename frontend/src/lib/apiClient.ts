@@ -152,14 +152,23 @@ export type OnboardingStatus = {
 
 /**
  * Get user profile (cached)
+ * Returns null for new users who haven't completed onboarding (404 response)
  */
-export async function getProfile(onUpdate?: (data: Profile) => void): Promise<Profile> {
-  return apiGetCached<Profile>(
-    "/me/profile",
-    "profile",
-    CACHE_TTL.profile,
-    onUpdate
-  );
+export async function getProfile(onUpdate?: (data: Profile | null) => void): Promise<Profile | null> {
+  try {
+    return await apiGetCached<Profile>(
+      "/me/profile",
+      "profile",
+      CACHE_TTL.profile,
+      onUpdate
+    );
+  } catch (error: any) {
+    // Handle 404 gracefully - new users don't have a profile yet
+    if (error.message?.includes("HTTP 404")) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 /**

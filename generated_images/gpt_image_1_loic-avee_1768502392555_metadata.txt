@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 22:39:52
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create an image capturing the essence of Loic Ricci, a visionary in AI platform innovation. In a dynamic, photorealistic style, depict Loic as a central figure standing on a futuristic bridge connecting Cannes and Abu Dhabi, symbolizing his life between these vibrant cities. The scene is bathed in the warm glow of a sunrise, casting long shadows and highlighting his confident stance. Use a color palette dominated by azure blues and shimmering golds, reflecting both the Mediterranean Sea and the opulence of the Middle East.
+
+Around him, visualize a conceptual digital landscape that merges art, literature, history, and technology. Floating holographic screens display complex systems of interconnected nodes and circuits, illustrating his strategic mindset. Integrate elements like abstract gears and flowing data streams to represent his ability to break down problems into structured layers.
+
+The atmosphere combines a sense of calm clarity with the energy of innovation. Behind him, the cities’ skylines emerge, with Cannes’ classic architecture blending seamlessly into Abu Dhabi’s modern skyscrapers, symbolizing the convergence of tradition and futurism. The composition is wide and cinematic, inviting viewers to explore every detail.
+
+Ensure the image is highly detailed, with intricate textures and professional quality, perfect for social media sharing. The scene should encapsulate Loic’s persona as a strategic builder and long-term thinker, while vividly connecting him to the world of AI innovation.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768502392555.png

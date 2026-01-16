@@ -391,9 +391,20 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       
       // Check onboarding before loading heavy data
       if (onboardingData && !onboardingData.completed) {
-        console.log("[AppData] Onboarding not completed, redirecting...");
-        router.push("/onboarding");
+        const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+        const alreadyOnOnboarding = currentPath === '/onboarding' || currentPath.startsWith('/onboarding/');
+        
+        // Always set loading states to false so the page can render
+        setIsLoadingCritical(false);
         setIsLoading(false);
+        
+        // Only redirect if NOT already on onboarding page
+        if (!alreadyOnOnboarding) {
+          console.log("[AppData] Onboarding not completed, redirecting...");
+          router.push("/onboarding");
+        } else {
+          console.log("[AppData] Already on onboarding page, skipping redirect");
+        }
         return;
       }
       

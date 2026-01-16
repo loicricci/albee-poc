@@ -1,0 +1,17 @@
+AI Edited Image Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-15 14:51:38
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+Reference Image: https://dqakztjxygoppdxagmtt.supabase.co/storage/v1/object/public/agent-reference-images/cd957655-c0b9-42be-a8c1-88736d11b92a/reference.png
+
+============================================================
+EDIT PROMPT:
+============================================================
+Change the background to a modern space launch site at dusk, with a towering space rocket on the launchpad. Add a starry sky with a hint of a crescent moon visible. Introduce subtle blue and silver hues reflecting off the rocket to evoke a sense of wonder and exploration. Surround the scene with scientists and engineers in futuristic attire, emphasizing the art and history of space travel. Ensure Loic Ricci remains the focal point, poised with a creative and engaging expression, harmonizing with the innovative atmosphere of space exploration.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic-avee_1768474298547.png
