@@ -5,6 +5,8 @@ import Link from "next/link";
 import { UnifiedFeedItem } from "@/lib/api";
 import { CommentSection } from "@/components/CommentSection";
 import { ShareButton } from "@/components/ShareButton";
+import { DownloadButton } from "@/components/DownloadButton";
+import { PostDetailModal } from "@/components/PostDetailModal";
 
 type FeedPostCardProps = {
   item: UnifiedFeedItem;
@@ -41,6 +43,7 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
   const [likeCount, setLikeCount] = useState(item.like_count || 0);
   const [showComments, setShowComments] = useState(false);
   const [showRepostModal, setShowRepostModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [repostComment, setRepostComment] = useState("");
   const [isLiking, setIsLiking] = useState(false);
 
@@ -91,17 +94,40 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
 
   const displayName = item.agent_display_name || item.agent_handle;
 
+  // Handle card click to open detail modal
+  const handleCardClick = () => {
+    setShowDetailModal(true);
+  };
+
+  // Handle interactions from modal
+  const handleModalLike = async (postId: string, newLiked: boolean) => {
+    await onLike(postId, newLiked);
+  };
+
+  const handleModalComment = () => {
+    setShowComments(true);
+    onComment(actualPostId);
+  };
+
+  const handleModalRepost = () => {
+    setShowRepostModal(true);
+  };
+
   // This component should ONLY render posts and reposts
   // Updates are handled by FeedUpdateCard component
   // Render as a post
   return (
     <>
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-all hover:shadow-lg hover:border-[#001f98]/30">
+      <div 
+        className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-all hover:shadow-lg hover:border-[#001f98]/30 cursor-pointer"
+        onClick={handleCardClick}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4">
           <Link 
             href={`/u/${item.agent_handle}`}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
               {item.agent_avatar_url ? (
@@ -155,7 +181,7 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
         )}
 
         {/* Interaction Buttons */}
-        <div className="flex items-center border-t border-gray-200 px-4 py-2 gap-1">
+        <div className="flex items-center border-t border-gray-200 px-4 py-2 gap-1" onClick={(e) => e.stopPropagation()}>
           {/* Like */}
           <button
             onClick={handleLike}
@@ -204,6 +230,15 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
             description={item.description || undefined}
             variant="button"
           />
+
+          {/* Download Image */}
+          {item.image_url && (
+            <DownloadButton
+              imageUrl={item.image_url}
+              filename={item.title ? `${item.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg` : undefined}
+              variant="button"
+            />
+          )}
         </div>
 
       {/* Comments Section */}
@@ -285,6 +320,19 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
           </div>
         </div>
       )}
+
+      {/* Post Detail Modal */}
+      <PostDetailModal
+        item={item}
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        onLike={handleModalLike}
+        onComment={handleModalComment}
+        onRepost={handleModalRepost}
+        liked={liked}
+        likeCount={likeCount}
+        isLiking={isLiking}
+      />
     </>
   );
 }

@@ -9,8 +9,9 @@ import { OnboardingStepName } from "@/components/onboarding/OnboardingStepName";
 import { OnboardingStepHandle } from "@/components/onboarding/OnboardingStepHandle";
 import { OnboardingStepProfile } from "@/components/onboarding/OnboardingStepProfile";
 import { OnboardingStepInterview } from "@/components/onboarding/OnboardingStepInterview";
+import { OnboardingStepFollowAgents } from "@/components/onboarding/OnboardingStepFollowAgents";
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 interface OnboardingData {
   name: string;
@@ -28,6 +29,8 @@ export default function OnboardingPage() {
   // FIX: Start with loading=false since AppDataContext already checked onboarding status
   const [loading, setLoading] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [creatingProfile, setCreatingProfile] = useState(false);
+  const [profileCreated, setProfileCreated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [onboardingData, setOnboardingData] = useState<Partial<OnboardingData>>({});
@@ -54,8 +57,9 @@ export default function OnboardingPage() {
     return base;
   }
 
-  async function completeOnboarding(persona: string | null) {
-    setCompleting(true);
+  // Create profile but don't redirect - used before showing follow agents step
+  async function createProfileAndProceed(persona: string | null) {
+    setCreatingProfile(true);
     setError(null);
 
     try {
@@ -80,29 +84,34 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || "Failed to complete onboarding");
+        throw new Error(errorText || "Failed to create profile");
       }
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.tsx:completeOnboarding',message:'API success - onboarding complete',data:{status:res.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
-
-      // Clear ALL caches before redirect
-      // This forces AppDataContext to fetch fresh data on the new page
-      clearAllCaches();
-      try {
-        sessionStorage.clear();
-      } catch (e) {
-        // Ignore
-      }
-      
-      // Use window.location for a hard redirect that forces a fresh page load
-      // This ensures AppDataContext re-initializes with fresh API data
-      window.location.href = "/app";
+      // Profile created successfully - now show follow agents step
+      setProfileCreated(true);
+      setOnboardingData({ ...onboardingData, persona });
+      setCurrentStep(5);
     } catch (err: any) {
-      setError(err.message || "Failed to complete onboarding");
-      setCompleting(false);
+      setError(err.message || "Failed to create profile");
+    } finally {
+      setCreatingProfile(false);
     }
+  }
+
+  // Final step - redirect to app
+  function finishOnboarding() {
+    setCompleting(true);
+    
+    // Clear ALL caches before redirect
+    clearAllCaches();
+    try {
+      sessionStorage.clear();
+    } catch (e) {
+      // Ignore
+    }
+    
+    // Use window.location for a hard redirect that forces a fresh page load
+    window.location.href = "/app";
   }
 
   // Step 1: Name
@@ -148,15 +157,23 @@ export default function OnboardingPage() {
 
   // Step 4: Interview
   function handleInterviewComplete(persona: string) {
-    completeOnboarding(persona);
+    // Create profile first, then proceed to follow agents step
+    createProfileAndProceed(persona);
   }
 
   function handleInterviewSkip() {
-    completeOnboarding(null);
+    // Create profile first with default persona, then proceed to follow agents step
+    createProfileAndProceed(null);
   }
 
   function handleInterviewBack() {
     setCurrentStep(3);
+  }
+
+  // Step 5: Follow Agents
+  function handleFollowAgentsComplete() {
+    // Profile already created - just redirect to app
+    finishOnboarding();
   }
 
   if (loading) {
@@ -173,7 +190,7 @@ export default function OnboardingPage() {
     );
   }
 
-  if (completing) {
+  if (creatingProfile) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-gray-900 dark:via-[#0F0F10] dark:to-gray-900">
         <div className="text-center max-w-md px-4">
@@ -186,6 +203,25 @@ export default function OnboardingPage() {
           </h2>
           <p className="text-[#001f98]/70 dark:text-zinc-400">
             Setting up your account and digital twin
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (completing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#FAFAFA] to-white dark:from-gray-900 dark:via-[#0F0F10] dark:to-gray-900">
+        <div className="text-center max-w-md px-4">
+          <svg className="h-12 w-12 animate-spin text-[#001f98] dark:text-white mx-auto mb-4" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Almost there...
+          </h2>
+          <p className="text-[#001f98]/70 dark:text-zinc-400">
+            Taking you to your new feed
           </p>
         </div>
       </div>
@@ -229,6 +265,12 @@ export default function OnboardingPage() {
             onComplete={handleInterviewComplete}
             onSkip={handleInterviewSkip}
             onBack={handleInterviewBack}
+          />
+        )}
+
+        {currentStep === 5 && profileCreated && (
+          <OnboardingStepFollowAgents
+            onComplete={handleFollowAgentsComplete}
           />
         )}
       </div>

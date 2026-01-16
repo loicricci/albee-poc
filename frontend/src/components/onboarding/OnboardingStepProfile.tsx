@@ -197,9 +197,10 @@ export function OnboardingStepProfile({ name, handle, onNext, onBack, onSkip }: 
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
           <div className="h-2 w-2 rounded-full bg-[#001f98] dark:bg-white"></div>
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
         </div>
         <p className="mt-2 text-xs text-[#001f98]/50 dark:text-zinc-500">
-          Step 3 of 4
+          Step 3 of 5
         </p>
       </div>
     </div>

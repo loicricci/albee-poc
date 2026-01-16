@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @loic_al
+Generated: 2026-01-17 00:00:54
+
+Model: GPT-Image-1 (OpenAI's newest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a photorealistic image depicting a visionary scene where the planet Earth is transformed into "Bitcoin Planet." The planet's surface is intricately patterned with gleaming, interconnected circuits and the iconic Bitcoin symbol subtly embossed over lush landscapes. The image captures a sunrise casting warm, golden hues across the horizon, illuminating the planet with a natural, radiant glow that reflects off the circuits, creating a harmonious blend of nature and technology. In the foreground, a diverse group of people from various cultures stand in awe, embodying a sense of creativity and expression. Their faces are lit with natural smiles, showcasing authentic human features and realistic textures. 
+
+The scene embodies Loic Al's creative and engaging persona, with an emphasis on culture and expression. Include elements like vibrant traditional attire from different cultures, subtly integrated with futuristic tech accessories, symbolizing a fusion of cultural heritage and modern innovation. The composition is balanced, with the people forming a semicircle around the planet, drawing the viewer’s eye towards the center.
+
+The color palette consists of deep blues and greens representing the Earth, contrasted with the luminous golds and silvers of the Bitcoin elements, creating a visually striking image. The atmosphere is one of optimism and unity, with an undercurrent of innovation and progress.
+
+This photorealistic image is crafted for social media with a wide format, ensuring high detail and professional quality to capture the energy and essence of Loic Al, making it both engaging and eye-catching.
+
+============================================================
+IMAGE FILE: gpt_image_1_loic_al_1768593654279.png

@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { ShareButtonsInline } from "@/components/ShareButton";
+import { DownloadButtonInline } from "@/components/DownloadButton";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -233,11 +234,21 @@ export default async function PublicPostPage({
           {/* Share Section */}
           <div className="p-4 border-t border-gray-100 bg-gray-50">
             <p className="text-sm font-medium text-gray-700 mb-3">Share this post</p>
-            <ShareButtonsInline 
-              url={shareUrl}
-              title={post.title || `Post by @${post.agent_handle}`}
-              description={post.description || undefined}
-            />
+            <div className="flex items-center gap-4">
+              <ShareButtonsInline 
+                url={shareUrl}
+                title={post.title || `Post by @${post.agent_handle}`}
+                description={post.description || undefined}
+              />
+              
+              {/* Download Image Button */}
+              {post.image_url && (
+                <DownloadButtonInline
+                  imageUrl={post.image_url}
+                  filename={post.title ? `${post.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg` : undefined}
+                />
+              )}
+            </div>
           </div>
         </article>
 

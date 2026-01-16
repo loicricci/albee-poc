@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { ChatButton } from "@/components/ChatButton";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { QuickUpdateComposer } from "@/components/QuickUpdateComposer";
-import { CommentSection } from "@/components/CommentSection";
 import { ShareButton } from "@/components/ShareButton";
 import Toast, { ToastType } from "@/components/Toast";
+import { FeedPostCard } from "@/components/FeedPostCard";
 import { useAppData } from "@/contexts/AppDataContext";
 import { followAgent as apiFollowAgent, markAgentRead as apiMarkAgentRead, toggleLikePost, repostPost as apiRepostPost } from "@/lib/apiClient";
 
@@ -280,310 +280,6 @@ function AveeFeedCard({ item, onMarkRead }: { item: FeedItem; onMarkRead: (agent
         )}
       </div>
     </div>
-  );
-}
-
-function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, currentUserHandle, currentUserAvatar }: { 
-  item: FeedPostItem; 
-  onLike: (postId: string) => Promise<void>;
-  onComment: (postId: string) => void;
-  onRepost: (postId: string, comment: string) => void;
-  currentUserId?: string;
-  currentUserHandle?: string;
-  currentUserAvatar?: string | null;
-}) {
-  const [showComments, setShowComments] = useState(false);
-  const [showRepostModal, setShowRepostModal] = useState(false);
-  const [repostComment, setRepostComment] = useState("");
-  const [isLiking, setIsLiking] = useState(false);
-  const [optimisticLiked, setOptimisticLiked] = useState(item.user_has_liked);
-  const [optimisticLikeCount, setOptimisticLikeCount] = useState(item.like_count);
-
-  // Check if this is a repost
-  const isRepost = (item as any).type === "repost";
-  
-  // For reposts, we need to use post_id for actions (like/comment) not the repost id
-  const postId = isRepost ? (item as any).post_id : item.id;
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
-  };
-
-  const handleLike = async () => {
-    if (isLiking) return; // Prevent multiple clicks
-    
-    setIsLiking(true);
-    const previousLiked = optimisticLiked;
-    const previousCount = optimisticLikeCount;
-    
-    try {
-      // Optimistic update
-      const newLiked = !optimisticLiked;
-      setOptimisticLiked(newLiked);
-      setOptimisticLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
-      
-      // Call API
-      await onLike(postId);
-    } catch (error) {
-      // Revert on error
-      console.error("Failed to like post:", error);
-      setOptimisticLiked(previousLiked);
-      setOptimisticLikeCount(previousCount);
-    } finally {
-      setIsLiking(false);
-    }
-  };
-
-  const handleComment = () => {
-    setShowComments(!showComments);
-    onComment(postId);
-  };
-
-  const handleRepost = () => {
-    if (repostComment.trim()) {
-      onRepost(postId, repostComment);
-      setShowRepostModal(false);
-      setRepostComment("");
-    } else {
-      onRepost(postId, "");
-      setShowRepostModal(false);
-    }
-  };
-
-  return (
-    <>
-    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg hover:border-[#001f98]/20">
-      {/* Repost Header - Show if this is a repost */}
-      {isRepost && (
-        <div className="px-4 pt-4 pb-2 flex items-center gap-2 text-sm text-[#001f98]/80 border-b border-gray-200/50 bg-[#f8fafc]">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>
-            <span className="font-semibold">{(item as any).reposted_by_display_name || `@${(item as any).reposted_by_handle}`}</span>
-            {' '}reposted
-          </span>
-        </div>
-      )}
-
-      {/* Repost Comment - Show if repost has a comment */}
-      {isRepost && (item as any).repost_comment && (
-        <div className="px-4 py-3 text-sm text-gray-900 italic border-l-4 border-[#001f98]/30 ml-4 mr-4 mt-3 pl-3 bg-[#001f98]/5 rounded-r-lg">
-          "{(item as any).repost_comment}"
-        </div>
-      )}
-
-      {/* Header with agent/user info */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          {/* Avatar */}
-          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-gray-200 bg-gradient-to-br from-[#f8fafc] to-gray-200 flex items-center justify-center shadow-sm">
-            {item.agent_avatar_url ? (
-              <img 
-                src={item.agent_avatar_url} 
-                alt={item.agent_display_name || item.agent_handle} 
-                className="h-full w-full object-cover"
-                loading="lazy"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            ) : (
-              <svg className="h-6 w-6 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            )}
-          </div>
-
-          {/* Agent/User info */}
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-gray-900 truncate">
-              {item.agent_display_name || item.agent_handle}
-            </h3>
-            <p className="text-xs text-[#001f98]/70 truncate">
-              @{item.agent_handle}
-              {item.owner_display_name && item.agent_id && (
-                <span> · by {item.owner_display_name}</span>
-              )}
-            </p>
-            {isRepost && (
-              <p className="text-xs text-[#001f98]/60 mt-0.5">
-                Originally posted by @{(item as any).owner_handle}
-              </p>
-            )}
-          </div>
-
-          {/* Post type badge */}
-          <div className="shrink-0 rounded-lg bg-[#001f98]/10 px-2 py-1 text-xs font-semibold text-[#001f98]">
-            {item.post_type === "ai_generated" ? "AI" : "Post"}
-          </div>
-        </div>
-
-        {/* Title if exists */}
-        {item.title && (
-          <h4 className="mt-3 text-base font-semibold text-gray-900">
-            {item.title}
-          </h4>
-        )}
-      </div>
-
-      {/* Image */}
-      <div className="relative w-full bg-black">
-        <img 
-          src={`${item.image_url}?v=${item.created_at}`} 
-          alt={item.title || "Post image"} 
-          className="w-full object-contain max-h-[500px]"
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23E6E6E6" width="400" height="300"/%3E%3Ctext fill="%232E3A59" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EImage not available%3C/text%3E%3C/svg%3E';
-          }}
-        />
-      </div>
-
-      {/* Description if exists */}
-      {item.description && (
-        <div className="p-4 border-b border-gray-200">
-          <p className="text-sm text-gray-900 line-clamp-3">{item.description}</p>
-        </div>
-      )}
-
-      {/* Interaction buttons */}
-      <div className="p-4 flex items-center justify-between border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          {/* Like button */}
-          <button
-            onClick={handleLike}
-            disabled={isLiking}
-            className={`flex items-center gap-1.5 text-sm transition-colors hover:text-[#C8A24A] ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
-            style={{ color: optimisticLiked ? '#C8A24A' : '#001f98' }}
-          >
-            <svg 
-              className={`h-5 w-5 ${isLiking ? "animate-pulse" : ""}`}
-              fill={optimisticLiked ? "currentColor" : "none"} 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <span className="font-medium">{optimisticLikeCount}</span>
-          </button>
-
-          {/* Comment button */}
-          <button
-            onClick={handleComment}
-            className="flex items-center gap-1.5 text-sm text-[#001f98] transition-colors hover:text-[#C8A24A]"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <span className="font-medium">{item.comment_count}</span>
-          </button>
-
-          {/* Repost button */}
-          <button
-            onClick={() => setShowRepostModal(true)}
-            className="flex items-center gap-1.5 text-sm text-[#001f98] transition-colors hover:text-[#C8A24A]"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span className="font-medium">Repost</span>
-          </button>
-
-          {/* Share to External Platforms */}
-          <ShareButton
-            url={typeof window !== "undefined" ? `${window.location.origin}/p/${postId}` : `/p/${postId}`}
-            title={item.title || `Post by @${item.agent_handle}`}
-            description={item.description || undefined}
-            variant="button"
-          />
-        </div>
-
-        {/* Date */}
-        <span className="text-xs text-[#001f98]/50">
-          {formatDate(item.created_at)}
-        </span>
-      </div>
-
-      {/* Comments Section */}
-      {showComments && (
-        <CommentSection
-          postId={item.id}
-          initialCommentCount={item.comment_count}
-          currentUserId={currentUserId}
-          currentUserHandle={currentUserHandle}
-          currentUserAvatar={currentUserAvatar}
-        />
-      )}
-    </div>
-
-    {/* Repost Modal */}
-    {showRepostModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowRepostModal(false)}>
-        <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-900">Repost with Mention</h3>
-            <button
-              onClick={() => setShowRepostModal(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Original Post Preview */}
-          <div className="mb-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 rounded-full overflow-hidden bg-[#001f98] flex items-center justify-center">
-                {item.agent_avatar_url ? (
-                  <img src={item.agent_avatar_url} alt={item.agent_display_name || item.agent_handle} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-xs font-bold text-white">{(item.agent_display_name || item.agent_handle)[0].toUpperCase()}</span>
-                )}
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">{item.agent_display_name || item.agent_handle}</div>
-                <div className="text-xs text-gray-500">@{item.agent_handle}</div>
-              </div>
-            </div>
-            {item.title && <p className="text-sm font-medium text-gray-800 mb-1">{item.title}</p>}
-            {item.description && <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>}
-          </div>
-
-          {/* Comment Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Add your comment (optional)
-            </label>
-            <textarea
-              value={repostComment}
-              onChange={(e) => setRepostComment(e.target.value)}
-              placeholder={`Reposting from @${item.agent_handle}...`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#001f98] focus:border-transparent resize-none"
-              rows={3}
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowRepostModal(false)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleRepost}
-              className="flex-1 px-4 py-2 bg-[#001f98] text-white rounded-lg font-medium hover:bg-[#001670] transition-colors"
-            >
-              Repost
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-    </>
   );
 }
 
@@ -948,23 +644,11 @@ export default function AppHomePage() {
     }
   };
 
-  const handleLikePost = async (postId: string) => {
-    if (!unifiedFeedData) return;
-    
+  const handleLikePost = async (postId: string, liked: boolean) => {
     try {
-      // Check current like status
-      const currentItem = unifiedFeedData.items.find(item => {
-        if (item.type === "post") return item.id === postId;
-        if (item.type === "repost") return item.post_id === postId;
-        return false;
-      });
-      
-      if (!currentItem || currentItem.type === "update") return;
-      
-      const wasLiked = currentItem.user_has_liked;
-      
-      // Call API (cache will be invalidated)
-      await toggleLikePost(postId, wasLiked);
+      // Call API - liked is the NEW state (true = liking, false = unliking)
+      // toggleLikePost expects the PREVIOUS state, so we invert
+      await toggleLikePost(postId, !liked);
       
       // Refresh feed to show updated counts
       await refreshFeed();
@@ -1055,10 +739,10 @@ export default function AppHomePage() {
           ) : unifiedFeedData && unifiedFeedData.items.length > 0 ? (
             <div className="space-y-6">
               {unifiedFeedData.items.map((item) => {
-                if (item.type === "post") {
+                if (item.type === "post" || item.type === "repost") {
                   return <FeedPostCard 
                     key={item.id} 
-                    item={item as FeedPostItem} 
+                    item={item} 
                     onLike={handleLikePost} 
                     onComment={handleCommentPost} 
                     onRepost={handleRepostPost}

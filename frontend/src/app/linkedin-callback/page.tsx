@@ -19,7 +19,15 @@ function LinkedInCallbackContent() {
       // Check if user denied authorization or there was an error
       if (error) {
         setStatus("error");
-        setMessage(errorDescription || error || "LinkedIn authorization was denied");
+        
+        // Handle specific error cases with helpful messages
+        if (error === "unauthorized_scope_error" && errorDescription?.includes("w_organization_social")) {
+          setMessage("Organization posting requires LinkedIn Marketing API access. Please uncheck 'post to company pages' option, or apply for Marketing API access in LinkedIn Developer Portal.");
+        } else {
+          // Decode HTML entities in error description
+          const decodedError = errorDescription ? errorDescription.replace(/&quot;/g, '"').replace(/&amp;/g, '&') : error;
+          setMessage(decodedError || "LinkedIn authorization was denied");
+        }
         setTimeout(() => {
           window.location.href = `/profile?linkedin=error&reason=${encodeURIComponent(error)}`;
         }, 2000);

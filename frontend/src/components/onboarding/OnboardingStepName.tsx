@@ -72,9 +72,10 @@ export function OnboardingStepName({ onNext }: OnboardingStepNameProps) {
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
         </div>
         <p className="mt-2 text-xs text-[#001f98]/50 dark:text-zinc-500">
-          Step 1 of 4
+          Step 1 of 5
         </p>
       </div>
     </div>

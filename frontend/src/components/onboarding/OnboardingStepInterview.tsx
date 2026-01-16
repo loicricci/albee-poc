@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
+import { transcribeAudio } from "@/lib/upload";
+
+// Lazy load VoiceRecorder (only loads when user clicks record button)
+const VoiceRecorder = dynamic(() => import("../VoiceRecorder").then(mod => ({ default: mod.VoiceRecorder })), {
+  ssr: false,
+  loading: () => <div className="text-sm text-gray-500">Loading recorder...</div>,
+});
 
 interface Message {
   role: "user" | "assistant";
@@ -28,6 +36,10 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
   const [suggestedPersona, setSuggestedPersona] = useState<string | null>(null);
   const [interviewComplete, setInterviewComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Voice input state
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [transcribingAudio, setTranscribingAudio] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -113,6 +125,30 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
         content: "Let's refine it a bit more.",
       },
     ]);
+  }
+
+  async function handleVoiceRecording(audioBlob: Blob) {
+    setTranscribingAudio(true);
+    setShowVoiceRecorder(false);
+    setError(null);
+
+    try {
+      // Convert blob to file
+      const audioFile = new File([audioBlob], "voice-input.webm", {
+        type: "audio/webm",
+      });
+
+      // Transcribe the audio
+      const token = await getAccessToken();
+      const result = await transcribeAudio(audioFile, token);
+
+      // Set the transcribed text as input
+      setInput(result.transcription);
+    } catch (e: any) {
+      setError(`Voice transcription error: ${e.message}`);
+    } finally {
+      setTranscribingAudio(false);
+    }
   }
 
   return (
@@ -206,23 +242,75 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
 
       {/* Input Form */}
       {!interviewComplete && (
-        <form onSubmit={handleSendMessage} className="flex gap-2 mb-4">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your response..."
-            disabled={loading}
-            className="flex-1 rounded-lg border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-[#0B0B0C] dark:text-white transition-all focus:border-[#001f98] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 dark:focus:ring-white/[.10] disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || loading}
-            className="rounded-lg bg-[#001f98] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#001670] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
-          >
-            Send
-          </button>
-        </form>
+        <div className="mb-4">
+          {showVoiceRecorder ? (
+            <div className="rounded-xl border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-sm text-[#001f98] dark:text-white">
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                  </svg>
+                  Record Voice Message
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowVoiceRecorder(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <VoiceRecorder
+                onRecordingComplete={handleVoiceRecording}
+                maxDuration={60}
+              />
+              <p className="mt-3 text-xs text-gray-500 dark:text-zinc-400">
+                Record up to 60 seconds. Your voice will be transcribed to text.
+              </p>
+            </div>
+          ) : transcribingAudio ? (
+            <div className="flex items-center justify-center gap-3 rounded-xl border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 p-4">
+              <svg className="h-5 w-5 animate-spin text-[#001f98] dark:text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span className="text-sm text-[#001f98] dark:text-white">Transcribing your voice message...</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSendMessage} className="flex gap-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type or use voice input..."
+                disabled={loading}
+                className="flex-1 rounded-lg border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-[#0B0B0C] dark:text-white transition-all focus:border-[#001f98] dark:focus:border-white/[.20] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 dark:focus:ring-white/[.10] disabled:opacity-50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowVoiceRecorder(true)}
+                disabled={loading}
+                className="rounded-lg border border-gray-200 dark:border-white/[.08] bg-white dark:bg-zinc-900 px-3 py-3 text-[#001f98] dark:text-white transition-all hover:bg-[#001f98]/10 dark:hover:bg-white/[.10] disabled:cursor-not-allowed disabled:opacity-50"
+                title="Record voice message"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                </svg>
+              </button>
+              <button
+                type="submit"
+                disabled={!input.trim() || loading}
+                className="rounded-lg bg-[#001f98] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#001670] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-[#0B0B0C] dark:hover:bg-zinc-100"
+              >
+                Send
+              </button>
+            </form>
+          )}
+        </div>
       )}
 
       <button
@@ -239,9 +327,10 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
           <div className="h-2 w-2 rounded-full bg-[#001f98] dark:bg-white"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
         </div>
         <p className="mt-2 text-xs text-[#001f98]/50 dark:text-zinc-500">
-          Step 4 of 4
+          Step 4 of 5
         </p>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ShareButton } from "@/components/ShareButton";
+import { DownloadButton } from "@/components/DownloadButton";
 
 type PostData = {
   id: string;
@@ -239,6 +240,13 @@ export function ImagePost({
           url={typeof window !== "undefined" ? `${window.location.origin}/p/${post.id}` : `/p/${post.id}`}
           title={post.title || `Post by @${post.owner_handle}`}
           description={post.description || undefined}
+          variant="button"
+        />
+
+        {/* Download Image */}
+        <DownloadButton
+          imageUrl={post.image_url}
+          filename={post.title ? `${post.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg` : undefined}
           variant="button"
         />
       </div>

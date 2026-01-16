@@ -1533,6 +1533,11 @@ function ProfileContent() {
                     />
                     Also request permission to post to company pages I manage
                   </label>
+                  {includeLinkedinOrgScope && (
+                    <p className="mt-1 text-xs text-amber-600">
+                      ⚠️ This requires LinkedIn Marketing API access. If you haven't applied for it in the LinkedIn Developer Portal, the connection will fail.
+                    </p>
+                  )}
                 </div>
 
                 <button
