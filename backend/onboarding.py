@@ -335,7 +335,7 @@ async def complete_onboarding(
             bio=req.bio,
             avatar_url=req.avatar_url,
             persona=persona,
-            is_primary="true",  # Mark as primary agent
+            is_primary=True,  # Mark as primary agent (boolean)
         )
         db.add(agent)
         db.commit()

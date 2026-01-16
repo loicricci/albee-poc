@@ -1384,7 +1384,7 @@ async def send_message(
         # Check if recipient has a primary agent
         recipient_agent = db.query(Avee).filter(
             Avee.owner_user_id == recipient_user_id,
-            Avee.is_primary == "true"
+            Avee.is_primary == True
         ).first()
     
     agent_message_result = None
@@ -1738,7 +1738,7 @@ async def stream_message(
         
         recipient_agent = db.query(Avee).filter(
             Avee.owner_user_id == recipient_user_id,
-            Avee.is_primary == "true"
+            Avee.is_primary == True
         ).first()
     
     # Check if user is the owner of the agent

@@ -88,7 +88,7 @@ class Avee(Base):
     auto_research_enabled = Column(String, default="false")  # Whether auto research was used
 
     # NEW (Phase 6): Unified messaging - primary agent for user
-    is_primary = Column(String, default="false")  # Whether this is the primary agent for the user
+    is_primary = Column(Boolean, default=False)  # Whether this is the primary agent for the user
 
     # NEW (Phase 7): Twitter integration
     twitter_sharing_enabled = Column(Boolean, default=False)  # Whether this agent can share posts to Twitter
