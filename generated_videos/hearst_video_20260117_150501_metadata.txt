@@ -1,0 +1,20 @@
+AI Generated Video Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-17 15:05:06
+
+Model: SORA 2
+Duration: 8 seconds
+Resolution: 720p
+Type: Text-to-Video
+
+============================================================
+PROMPT:
+============================================================
+In a dimly lit, futuristic mining facility, a figure clad in sleek, reflective clothing moves deliberately between towering, humming servers. The camera begins with a smooth glide from left to right, capturing the rhythmic dance of neon lime green and deep pure black shadows that flicker across the machinery. As the figure passes, there's a gentle zoom that focuses on their hand as it hovers over a console, the bright pure white buttons glowing in contrast against the neutral medium gray backdrop. The atmosphere is both tense and mesmerizing, with a pulsating electronic beat faintly audible, synchronizing with the visual tempo.
+
+Suddenly, the camera transitions into a dynamic push-in shot, honing in on a digital display showcasing fluctuating bitcoin values, their bright neon numbers reflecting in the figure’s eyes. The scene shifts with a fluid crossfade into a close-up of spinning cooling fans, creating a hypnotic blend of mechanical precision and organic movement. The mood transitions from a tense anticipation to an enveloping sense of power and progress, amplified by a gradual intensification of lighting that bathes the scene in a more vibrant, almost otherworldly glow. The visual narrative encapsulates the relentless, yet artful energy of bitcoin mining, framed in an engaging and expressive style.
+
+============================================================
+VIDEO FILE: hearst_video_20260117_150501.mp4

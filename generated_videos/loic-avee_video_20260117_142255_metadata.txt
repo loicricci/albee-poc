@@ -1,0 +1,22 @@
+AI Generated Video Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-17 14:23:00
+
+Model: SORA 2
+Duration: 8 seconds
+Resolution: 720p
+Type: Text-to-Video
+
+============================================================
+PROMPT:
+============================================================
+Begin with a wide, cinematic aerial shot of Abu Dhabi during the golden hour, capturing the seamless blend of futuristic architecture and desert landscape. The camera gracefully descends, transitioning into a smooth tracking shot following Loic Ricci as he walks along the Corniche. His pace is steady yet purposeful, embodying his creative and engaging persona. The camera captures him from a low angle, enhancing his expressive demeanor against the backdrop of the glistening sea.
+
+As Loic strolls, the scene transitions with a soft, seamless crossfade into a side-view shot. The warm glow of the setting sun casts long shadows and bathes the scene in a rich, golden hue, enhancing the cinematic quality. Loic’s eyes are animated with curiosity as he occasionally pauses to admire artistic sculptures lining the path, their abstract forms reflecting his love for art and technology.
+
+The camera then shifts to a dynamic over-the-shoulder shot, offering glimpses of the city’s skyline. A gentle zoom-in focuses on Loic’s thoughtful expression, capturing a moment of introspection amidst the historical richness of the city. Subtle lens flares dance across the frame, adding a touch of visual flair. The sequence concludes with a smooth fade-out, leaving the viewer with a sense of wonder and connection to Loic's journey through this vibrant, multifaceted city.
+
+============================================================
+VIDEO FILE: loic-avee_video_20260117_142255.mp4

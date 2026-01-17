@@ -124,13 +124,28 @@ export function PostPreviewModal({
             </div>
           </div>
 
-          {/* Generated Image */}
+          {/* Generated Image or Video */}
           <div className="mb-4 overflow-hidden rounded-xl border border-gray-200 bg-black">
-            <img
-              src={preview.image_url}
-              alt="Generated post image"
-              className="w-full object-contain max-h-[400px]"
-            />
+            {preview.video_url ? (
+              <video
+                src={preview.video_url}
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full object-contain max-h-[400px]"
+                poster={preview.thumbnail_url || undefined}
+              >
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              <img
+                src={preview.image_url}
+                alt="Generated post image"
+                className="w-full object-contain max-h-[400px]"
+              />
+            )}
           </div>
 
           {/* Title and Description */}

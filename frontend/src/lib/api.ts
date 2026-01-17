@@ -440,6 +440,9 @@ export type PostData = {
   title: string | null;
   description: string | null;
   image_url: string;
+  video_url?: string | null;
+  video_duration?: number | null;
+  video_thumbnail_url?: string | null;
   post_type: string;
   ai_metadata: Record<string, any>;
   visibility: string;
@@ -731,7 +734,10 @@ export type UnifiedFeedItem = {
   title?: string | null;
   description?: string | null;
   image_url?: string;
-  post_type?: string;  // Valid values: 'image', 'ai_generated', 'text' (NOT 'update')
+  video_url?: string | null;  // Video URL for video posts
+  video_duration?: number | null;  // Video duration in seconds
+  video_thumbnail_url?: string | null;  // Explicit video thumbnail
+  post_type?: string;  // Valid values: 'image', 'ai_generated', 'text', 'video', 'ai_generated_video' (NOT 'update')
   like_count?: number;
   comment_count?: number;
   share_count?: number;
@@ -848,11 +854,26 @@ export async function diagnosticGeneratePost(
 // POST PREVIEW/APPROVAL API
 // =====================================
 
+/**
+ * Request to generate a post preview.
+ * 
+ * Image engine options:
+ * - "dall-e-3" - OpenAI DALL-E 3 (default)
+ * - "gpt-image-1" - OpenAI GPT-Image-1 with semantic editing
+ * - "gpt-image-1.5" - OpenAI GPT-Image-1.5 (latest)
+ * - "flux-2-pro" - Black Forest Labs FLUX.2 Pro
+ * - "flux-2-max" - Black Forest Labs FLUX.2 Max (highest quality)
+ * - "flux-2-klein" - Black Forest Labs FLUX.2 Klein (fastest)
+ * - "sora-2-video" - OpenAI SORA 2 video generation
+ * - "sora-2-pro" - OpenAI SORA 2 Pro video (higher quality)
+ */
 export type PreviewPostRequest = {
   avee_id: string;
   topic?: string | null;
   category?: string | null;
-  image_engine?: string;
+  image_engine?: 'dall-e-3' | 'gpt-image-1' | 'gpt-image-1.5' | 
+                 'flux-2-pro' | 'flux-2-max' | 'flux-2-klein' |
+                 'sora-2-video' | 'sora-2-pro' | string;
   image_style?: string | null;
   reference_image_url?: string | null;
   feedback?: string | null;
@@ -868,6 +889,11 @@ export type PreviewPostResponse = {
   title: string;
   description: string;
   image_url: string;
+  // Video fields (populated when image_engine is "sora-2-video")
+  video_url?: string;
+  thumbnail_url?: string | null;
+  duration?: number;
+  video_prompt?: string;
   topic: {
     topic: string;
     description?: string;
@@ -903,6 +929,7 @@ export type CancelPreviewRequest = {
  * Returns preview data for user approval.
  * 
  * If feedback is provided, it will be used to guide the regeneration.
+ * Routes to video API if image_engine starts with "sora-2".
  */
 export async function previewGeneratePost(
   request: PreviewPostRequest
@@ -911,10 +938,15 @@ export async function previewGeneratePost(
 
   const token = await getToken();
 
-  // Use 150 second timeout for preview generation to account for slow AI image generation
-  // Typical generation time: ~100-120 seconds (profile loading + topic + description + image)
+  // Route to video API for Sora 2 video generation (both standard and pro)
+  const isVideoMode = request.image_engine?.startsWith("sora-2") || false;
+  const endpoint = isVideoMode ? `${API_BASE}/video/preview` : `${API_BASE}/auto-post/preview`;
+  
+  // Video generation takes longer (up to 5 minutes), FLUX is fast (~30s)
+  const timeout = isVideoMode ? 300000 : 150000;
+
   const res = await fetchWithTimeout(
-    `${API_BASE}/auto-post/preview`,
+    endpoint,
     {
       method: "POST",
       headers: {
@@ -924,7 +956,7 @@ export async function previewGeneratePost(
       },
       body: JSON.stringify(request),
     },
-    150000 // 150 seconds (2.5 minutes) to handle slow image generation
+    timeout
   );
 
   if (!res.ok) {
@@ -934,22 +966,39 @@ export async function previewGeneratePost(
     throw err;
   }
 
-  return res.json();
+  const data = await res.json();
+  
+  // Normalize video response to match PreviewPostResponse format
+  if (isVideoMode && data.video_url) {
+    return {
+      ...data,
+      image_url: data.thumbnail_url || data.video_url,  // Use thumbnail as image_url fallback
+      image_prompt: data.video_prompt || "",
+    };
+  }
+
+  return data;
 }
 
 /**
  * Confirm and save a previewed post to the database.
- * Moves image from temp to permanent storage.
+ * Moves image/video from temp to permanent storage.
+ * 
+ * @param request - The confirm request
+ * @param isVideo - Whether this is a video preview (routes to video API)
  */
 export async function confirmGeneratedPost(
-  request: ConfirmPostRequest
+  request: ConfirmPostRequest,
+  isVideo: boolean = false
 ): Promise<ConfirmPostResponse> {
   if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE is not set");
 
   const token = await getToken();
 
+  const endpoint = isVideo ? `${API_BASE}/video/confirm` : `${API_BASE}/auto-post/confirm`;
+
   const res = await fetchWithTimeout(
-    `${API_BASE}/auto-post/confirm`,
+    endpoint,
     {
       method: "POST",
       headers: {
@@ -974,16 +1023,22 @@ export async function confirmGeneratedPost(
 
 /**
  * Cancel a preview and cleanup temp storage.
+ * 
+ * @param request - The cancel request
+ * @param isVideo - Whether this is a video preview (routes to video API)
  */
 export async function cancelPostPreview(
-  request: CancelPreviewRequest
+  request: CancelPreviewRequest,
+  isVideo: boolean = false
 ): Promise<{ success: boolean; message: string }> {
   if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE is not set");
 
   const token = await getToken();
 
+  const endpoint = isVideo ? `${API_BASE}/video/cancel` : `${API_BASE}/auto-post/cancel`;
+
   const res = await fetchWithTimeout(
-    `${API_BASE}/auto-post/cancel`,
+    endpoint,
     {
       method: "POST",
       headers: {

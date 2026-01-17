@@ -1,0 +1,24 @@
+AI Generated Video Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-17 14:29:30
+
+Model: SORA 2
+Duration: 8 seconds
+Resolution: 720p
+Type: Text-to-Video
+
+============================================================
+PROMPT:
+============================================================
+Begin with a soft, cinematic dolly shot capturing Loic Ricci strolling through the vibrant streets of Abu Dhabi. As the camera tracks his steady pace, it subtly shifts from side to side, embracing his creative and expressive persona. The bustling marketplace around him blurs slightly, highlighting the serene focus on Loic's face, capturing his essence as a tech lover with a soft blend of curiosity and contemplation.
+
+Transition to a smooth overhead shot as Loic walks beneath the shadows of palm trees, the camera gently rotating to symbolize his dynamic life between Cannes and Abu Dhabi. The sun casts a warm, golden hour glow, painting the scene with rich amber tones that complement his connection to art and history.
+
+Suddenly, the scene transitions with a fluid match cut to Loic standing before an awe-inspiring, modern architectural marvel. The camera performs a slow zoom out, transforming the intimate moment into an expansive vista, revealing the fusion of traditional and cutting-edge technology that reflects his passion.
+
+The atmospheric sound of distant calls to prayer and soft murmurs of the city create a rich audio backdrop, enhancing the engaging, cinematic storytelling. The scene concludes with the camera gently pulling back, framing Loic as a silhouette against the Abu Dhabi skyline, reinforcing his journey through this vibrant, culturally rich landscape.
+
+============================================================
+VIDEO FILE: loic-avee_video_20260117_142924.mp4

@@ -61,7 +61,12 @@ export default function AutoPostGeneratorPage() {
   const [topic, setTopic] = useState('');
   const [category, setCategory] = useState('');
   const [imageStyle, setImageStyle] = useState(''); // Image style selection
-  const [imageEngine, setImageEngine] = useState<'dall-e-3' | 'gpt-image-1'>('dall-e-3'); // Image engine selection
+  // Image engine selection - OpenAI (dall-e, gpt-image, sora) + Black Forest Labs (flux)
+  const [imageEngine, setImageEngine] = useState<
+    'dall-e-3' | 'gpt-image-1' | 'gpt-image-1.5' | 
+    'flux-2-pro' | 'flux-2-max' | 'flux-2-klein' |
+    'sora-2-video' | 'sora-2-pro'
+  >('dall-e-3');
   const [selectedReferenceImage, setSelectedReferenceImage] = useState<string | null>(null); // NEW: Selected reference image
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
@@ -526,64 +531,221 @@ export default function AutoPostGeneratorPage() {
           </button>
         </div>
 
-        {/* Image Engine Selector */}
+        {/* Image/Video Engine Selector */}
         <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
           <label className="block text-sm font-semibold text-gray-900 mb-2">
-            🎨 Image Generation Engine
+            🎨 Generation Engine
           </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <button
-              onClick={() => setImageEngine('dall-e-3')}
-              className={`p-3 rounded-lg border-2 transition-all text-left ${
-                imageEngine === 'dall-e-3'
-                  ? 'border-purple-600 bg-purple-100 shadow-md'
-                  : 'border-gray-300 bg-white hover:border-purple-300'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <div className={`w-4 h-4 rounded-full border-2 ${
-                  imageEngine === 'dall-e-3' ? 'border-purple-600 bg-purple-600' : 'border-gray-400'
-                }`}>
-                  {imageEngine === 'dall-e-3' && (
-                    <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
-                  )}
+          
+          {/* Image Engines */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">📷 Image Generation</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button
+                onClick={() => setImageEngine('dall-e-3')}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  imageEngine === 'dall-e-3'
+                    ? 'border-purple-600 bg-purple-100 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    imageEngine === 'dall-e-3' ? 'border-purple-600 bg-purple-600' : 'border-gray-400'
+                  }`}>
+                    {imageEngine === 'dall-e-3' && (
+                      <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm">DALL-E 3</span>
                 </div>
-                <span className="font-semibold text-sm">DALL-E 3</span>
-              </div>
-              <p className="text-xs text-gray-600 ml-6">
-                Fully AI-generated images from text prompts
-              </p>
-            </button>
-            
-            <button
-              onClick={() => setImageEngine('gpt-image-1')}
-              disabled={selectedAvees.size > 0 && !hasReferenceImages()}
-              className={`p-3 rounded-lg border-2 transition-all text-left ${
-                imageEngine === 'gpt-image-1'
-                  ? 'border-purple-600 bg-purple-100 shadow-md'
-                  : 'border-gray-300 bg-white hover:border-purple-300'
-              } ${selectedAvees.size > 0 && !hasReferenceImages() ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <div className={`w-4 h-4 rounded-full border-2 ${
-                  imageEngine === 'gpt-image-1' ? 'border-purple-600 bg-purple-600' : 'border-gray-400'
-                }`}>
-                  {imageEngine === 'gpt-image-1' && (
-                    <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
-                  )}
-                </div>
-                <span className="font-semibold text-sm">GPT-Image-1 ✨</span>
-              </div>
-              <p className="text-xs text-gray-600 ml-6">
-                Latest OpenAI model - works with or without reference images
-              </p>
-              {selectedAvees.size > 0 && hasReferenceImages() && (
-                <p className="text-xs text-green-600 ml-6 mt-1">
-                  ✓ Reference images available (optional)
+                <p className="text-xs text-gray-600 ml-6">
+                  OpenAI text-to-image
                 </p>
-              )}
-            </button>
+              </button>
+              
+              <button
+                onClick={() => setImageEngine('gpt-image-1')}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  imageEngine === 'gpt-image-1'
+                    ? 'border-purple-600 bg-purple-100 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    imageEngine === 'gpt-image-1' ? 'border-purple-600 bg-purple-600' : 'border-gray-400'
+                  }`}>
+                    {imageEngine === 'gpt-image-1' && (
+                      <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm">GPT-Image-1</span>
+                </div>
+                <p className="text-xs text-gray-600 ml-6">
+                  + reference editing
+                </p>
+              </button>
+              
+              <button
+                onClick={() => setImageEngine('gpt-image-1.5')}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  imageEngine === 'gpt-image-1.5'
+                    ? 'border-purple-600 bg-purple-100 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    imageEngine === 'gpt-image-1.5' ? 'border-purple-600 bg-purple-600' : 'border-gray-400'
+                  }`}>
+                    {imageEngine === 'gpt-image-1.5' && (
+                      <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm">GPT-Image-1.5 🆕</span>
+                </div>
+                <p className="text-xs text-gray-600 ml-6">
+                  Latest OpenAI model
+                </p>
+              </button>
+            </div>
           </div>
+          
+          {/* FLUX.2 Engines */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">⚡ FLUX.2 (Black Forest Labs)</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button
+                onClick={() => setImageEngine('flux-2-pro')}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  imageEngine === 'flux-2-pro'
+                    ? 'border-amber-600 bg-amber-100 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-amber-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    imageEngine === 'flux-2-pro' ? 'border-amber-600 bg-amber-600' : 'border-gray-400'
+                  }`}>
+                    {imageEngine === 'flux-2-pro' && (
+                      <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm">FLUX.2 Pro</span>
+                </div>
+                <p className="text-xs text-gray-600 ml-6">
+                  Best balance (~10s)
+                </p>
+              </button>
+              
+              <button
+                onClick={() => setImageEngine('flux-2-max')}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  imageEngine === 'flux-2-max'
+                    ? 'border-amber-600 bg-amber-100 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-amber-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    imageEngine === 'flux-2-max' ? 'border-amber-600 bg-amber-600' : 'border-gray-400'
+                  }`}>
+                    {imageEngine === 'flux-2-max' && (
+                      <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm">FLUX.2 Max ✨</span>
+                </div>
+                <p className="text-xs text-gray-600 ml-6">
+                  Highest quality
+                </p>
+              </button>
+              
+              <button
+                onClick={() => setImageEngine('flux-2-klein')}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  imageEngine === 'flux-2-klein'
+                    ? 'border-amber-600 bg-amber-100 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-amber-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    imageEngine === 'flux-2-klein' ? 'border-amber-600 bg-amber-600' : 'border-gray-400'
+                  }`}>
+                    {imageEngine === 'flux-2-klein' && (
+                      <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm">FLUX.2 Klein</span>
+                </div>
+                <p className="text-xs text-gray-600 ml-6">
+                  Fastest & cheapest
+                </p>
+              </button>
+            </div>
+          </div>
+          
+          {/* Video Engines */}
+          <div>
+            <p className="text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">🎬 Video Generation (SORA 2)</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                onClick={() => setImageEngine('sora-2-video')}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  imageEngine === 'sora-2-video'
+                    ? 'border-blue-600 bg-blue-100 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-blue-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    imageEngine === 'sora-2-video' ? 'border-blue-600 bg-blue-600' : 'border-gray-400'
+                  }`}>
+                    {imageEngine === 'sora-2-video' && (
+                      <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm">SORA 2</span>
+                </div>
+                <p className="text-xs text-gray-600 ml-6">
+                  Standard video generation
+                </p>
+              </button>
+              
+              <button
+                onClick={() => setImageEngine('sora-2-pro')}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  imageEngine === 'sora-2-pro'
+                    ? 'border-blue-600 bg-blue-100 shadow-md'
+                    : 'border-gray-300 bg-white hover:border-blue-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    imageEngine === 'sora-2-pro' ? 'border-blue-600 bg-blue-600' : 'border-gray-400'
+                  }`}>
+                    {imageEngine === 'sora-2-pro' && (
+                      <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm">SORA 2 Pro 🆕</span>
+                </div>
+                <p className="text-xs text-gray-600 ml-6">
+                  Higher quality, longer videos
+                </p>
+              </button>
+            </div>
+          </div>
+          
+          {/* Reference image hint */}
+          {(imageEngine === 'gpt-image-1' || imageEngine === 'gpt-image-1.5' || imageEngine.startsWith('flux-2')) && 
+           selectedAvees.size > 0 && hasReferenceImages() && (
+            <p className="text-xs text-green-600 mt-2">
+              ✓ Reference images available for semantic editing
+            </p>
+          )}
         </div>
 
         {/* Image Style Selector */}
@@ -609,15 +771,26 @@ export default function AutoPostGeneratorPage() {
           )}
         </div>
 
-        {/* Reference Image Selector (Optional for GPT-Image-1) */}
-        {imageEngine === 'gpt-image-1' && selectedAvees.size > 0 && hasReferenceImages() && (
+        {/* Reference Image Selector (Optional for GPT-Image, FLUX.2, or SORA Video) */}
+        {(imageEngine === 'gpt-image-1' || imageEngine === 'gpt-image-1.5' || 
+          imageEngine.startsWith('flux-2') || imageEngine.startsWith('sora-2')) && 
+         selectedAvees.size > 0 && hasReferenceImages() && (
           <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <label className="block text-sm font-semibold text-gray-900 mb-3">
               🖼️ Select Reference Image (Optional)
             </label>
             <p className="text-xs text-gray-600 mb-3">
-              <strong>With reference:</strong> GPT-Image-1 will edit the image semantically based on your topic.<br/>
-              <strong>Without reference:</strong> GPT-Image-1 will generate a brand new image from text.
+              {imageEngine.startsWith('sora-2') ? (
+                <>
+                  <strong>With reference:</strong> SORA will animate the image based on your prompt.<br/>
+                  <strong>Without reference:</strong> SORA will generate video from text only.
+                </>
+              ) : (
+                <>
+                  <strong>With reference:</strong> The AI will edit the image semantically based on your topic.<br/>
+                  <strong>Without reference:</strong> The AI will generate a brand new image from text.
+                </>
+              )}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {getAvailableReferenceImages().map((image) => (
@@ -660,7 +833,9 @@ export default function AutoPostGeneratorPage() {
             </div>
             {!selectedReferenceImage && (
               <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-                ℹ️ No reference selected - GPT-Image-1 will generate a new image from text
+                ℹ️ No reference selected - {imageEngine.startsWith('sora-2') 
+                  ? 'Video will be generated from text only' 
+                  : 'AI will generate a new image from text'}
               </div>
             )}
           </div>

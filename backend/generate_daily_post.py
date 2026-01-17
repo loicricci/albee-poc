@@ -192,10 +192,13 @@ class DailyPostGenerator:
             # Step 6: Generate image (using selected engine)
             if self.tracker:
                 if image_engine == "gpt-image-1":
+                    engine_label = "GPT-Image-1 (Semantic Editing)" if has_reference_image else "GPT-Image-1 (Pure Generation)"
+                elif image_engine == "gpt-image-1.5":
+                    engine_label = "GPT-Image-1.5 (Semantic Editing)" if has_reference_image else "GPT-Image-1.5 (Pure Generation)"
+                elif image_engine.startswith("flux-2"):
+                    engine_label = f"FLUX.2 ({image_engine.replace('flux-2-', '').upper()})"
                     if has_reference_image:
-                        engine_label = "GPT-Image-1 (Semantic Editing with Reference)"
-                    else:
-                        engine_label = "GPT-Image-1 (Pure Generation)"
+                        engine_label += " (Multi-Reference Editing)"
                 else:
                     engine_label = "DALL-E 3 (Generation)"
                 self.tracker.start_step("Step 6", f"Generate image ({engine_label})")
@@ -219,6 +222,31 @@ class DailyPostGenerator:
                         agent_handle,
                         image_prompt
                     )
+            elif image_engine == "gpt-image-1.5":
+                if has_reference_image:
+                    # Use GPT-Image-1.5 for semantic image editing with reference
+                    self._log_success(f"Using GPT-Image-1.5 with reference image")
+                    image_path = await self._generate_with_gpt_image_1_5(
+                        agent_handle,
+                        image_prompt,
+                        agent_context,
+                        reference_image_url_override
+                    )
+                else:
+                    # Use GPT-Image-1.5 for pure text-to-image generation
+                    self._log_success(f"Generating with GPT-Image-1.5 (no reference)")
+                    image_path = await self._generate_with_gpt_image_1_5_simple(
+                        agent_handle,
+                        image_prompt
+                    )
+            elif image_engine.startswith("flux-2"):
+                # Use FLUX.2 from Black Forest Labs
+                image_path = await self._generate_with_flux(
+                    agent_handle,
+                    image_prompt,
+                    image_engine,
+                    reference_image_url if has_reference_image else None
+                )
             else:
                 # Use DALL-E 3 (default generation model)
                 image_path = generate_post_image(image_prompt, agent_handle)
@@ -455,7 +483,10 @@ class DailyPostGenerator:
             
             # Step 6: Generate image
             if self.tracker:
-                engine_label = f"{image_engine} ({'with ref' if has_reference_image else 'pure gen'})"
+                if image_engine.startswith("flux-2"):
+                    engine_label = f"FLUX.2 ({image_engine.replace('flux-2-', '')})"
+                else:
+                    engine_label = f"{image_engine} ({'with ref' if has_reference_image else 'pure gen'})"
                 self.tracker.start_step("Step 6", f"Generate image ({engine_label})")
             
             self._log_step(6, f"Generating image with {image_engine}...")
@@ -467,6 +498,20 @@ class DailyPostGenerator:
                     )
                 else:
                     image_path = await self._generate_with_gpt_image_simple(agent_handle, image_prompt)
+            elif image_engine == "gpt-image-1.5":
+                if has_reference_image:
+                    image_path = await self._generate_with_gpt_image_1_5(
+                        agent_handle, image_prompt, agent_context, reference_image_url_override
+                    )
+                else:
+                    image_path = await self._generate_with_gpt_image_1_5_simple(agent_handle, image_prompt)
+            elif image_engine.startswith("flux-2"):
+                image_path = await self._generate_with_flux(
+                    agent_handle,
+                    image_prompt,
+                    image_engine,
+                    reference_image_url if has_reference_image else None
+                )
             else:
                 image_path = generate_post_image(image_prompt, agent_handle)
             
@@ -651,6 +696,130 @@ class DailyPostGenerator:
             prompt=prompt,
             agent_handle=agent_handle
         )
+    
+    
+    async def _generate_with_gpt_image_1_5(
+        self,
+        agent_handle: str,
+        edit_prompt: str,
+        agent_context: dict,
+        reference_image_url_override: Optional[str] = None
+    ) -> str:
+        """
+        Generate image using GPT-Image-1.5 with semantic editing.
+        
+        GPT-Image-1.5 is OpenAI's latest image model with improved quality
+        and prompt following. It can edit images based on text instructions
+        WITHOUT requiring masks.
+        
+        Args:
+            agent_handle: Agent handle
+            edit_prompt: Edit instruction
+            agent_context: Agent context including reference image URLs
+            reference_image_url_override: User-selected reference image URL
+        
+        Returns:
+            Local filepath to edited image
+        """
+        # Use override if provided, otherwise use agent's default reference image
+        reference_image_url = reference_image_url_override or agent_context.get("reference_image_url")
+        
+        if not reference_image_url:
+            raise Exception(
+                f"Agent @{agent_handle} does not have reference images uploaded. "
+                "Please upload reference images in the agent editor before using gpt-image-1.5 mode."
+            )
+        
+        self._log_success(f"Using reference image for GPT-Image-1.5 editing")
+        self._log_success(f"Edit instruction: {edit_prompt[:100]}...")
+        
+        # Use ImageGenerator to perform semantic editing with GPT-Image-1.5
+        from .image_generator import ImageGenerator
+        generator = ImageGenerator(output_dir="generated_images")
+        
+        return generator.generate_with_gpt_image_1_5(
+            reference_image_url=reference_image_url,
+            prompt=edit_prompt,
+            agent_handle=agent_handle
+        )
+    
+    
+    async def _generate_with_gpt_image_1_5_simple(
+        self,
+        agent_handle: str,
+        prompt: str
+    ) -> str:
+        """
+        Generate image using GPT-Image-1.5 for pure text-to-image generation.
+        
+        GPT-Image-1.5 is OpenAI's latest model with improved quality.
+        This uses it without reference images for pure generation.
+        
+        Args:
+            agent_handle: Agent handle
+            prompt: Image generation prompt
+        
+        Returns:
+            Local filepath to generated image
+        """
+        self._log_success(f"Generating with GPT-Image-1.5 (text-to-image)")
+        self._log_success(f"Prompt preview: {prompt[:100]}...")
+        
+        # Use ImageGenerator to perform pure text-to-image generation
+        from .image_generator import ImageGenerator
+        generator = ImageGenerator(output_dir="generated_images")
+        
+        return generator.generate_with_gpt_image_1_5_simple(
+            prompt=prompt,
+            agent_handle=agent_handle
+        )
+    
+    
+    async def _generate_with_flux(
+        self,
+        agent_handle: str,
+        prompt: str,
+        model: str,
+        reference_image_url: Optional[str] = None
+    ) -> str:
+        """
+        Generate image using FLUX.2 from Black Forest Labs.
+        
+        Supports flux-2-pro, flux-2-max, and flux-2-klein models.
+        Can do pure text-to-image or multi-reference editing.
+        
+        Args:
+            agent_handle: Agent handle
+            prompt: Image generation/edit prompt
+            model: FLUX.2 model variant (flux-2-pro, flux-2-max, flux-2-klein)
+            reference_image_url: Optional reference image for editing
+        
+        Returns:
+            Local filepath to generated image
+        """
+        from .flux_generator import FluxGenerator
+        
+        generator = FluxGenerator(output_dir="generated_images")
+        
+        if reference_image_url:
+            self._log_success(f"Using FLUX.2 ({model}) with reference image")
+            self._log_success(f"Edit prompt: {prompt[:100]}...")
+            
+            return generator.generate_with_reference(
+                prompt=prompt,
+                agent_handle=agent_handle,
+                input_images=[reference_image_url],
+                model=model
+            )
+        else:
+            self._log_success(f"Generating with FLUX.2 ({model}) - text-to-image")
+            self._log_success(f"Prompt preview: {prompt[:100]}...")
+            
+            return generator.generate_image(
+                prompt=prompt,
+                agent_handle=agent_handle,
+                model=model
+            )
     
     def generate_post(
         self,

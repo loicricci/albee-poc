@@ -571,9 +571,15 @@ class Post(Base):
     description = Column(Text)
     image_url = Column(Text, nullable=False)
     
+    # Video content (for video posts - SORA 2)
+    video_url = Column(Text)  # URL to the video file (MP4)
+    video_duration = Column(Integer)  # Duration in seconds
+    video_thumbnail_url = Column(Text)  # Explicit thumbnail URL (can differ from image_url)
+    
     # Post type: 'image' (user uploaded), 'ai_generated' (AI-created), 'text' (text-only)
+    # 'video' (user uploaded video), 'ai_generated_video' (SORA 2 generated)
     # NOTE: Do NOT use 'update' here - that's for AgentUpdate model, not Post model
-    post_type = Column(String, default="image")  # 'image', 'ai_generated', 'text'
+    post_type = Column(String, default="image")  # 'image', 'ai_generated', 'text', 'video', 'ai_generated_video'
     
     # AI metadata (for AI-generated images)
     ai_metadata = Column(Text, default="{}")  # JSON as text: model, prompt, style, etc.
@@ -598,8 +604,8 @@ class Post(Base):
     linkedin_post_url = Column(Text)  # Full LinkedIn URL to the post
     linkedin_posted_at = Column(DateTime(timezone=True))  # Timestamp when posted to LinkedIn
     
-    # Image generation engine tracking
-    image_generation_engine = Column(String(50), default="dall-e-3")  # 'dall-e-3' or 'openai-edits'
+    # Image/Video generation engine tracking
+    image_generation_engine = Column(String(50), default="dall-e-3")  # 'dall-e-3', 'gpt-image-1', 'sora-2-video'
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

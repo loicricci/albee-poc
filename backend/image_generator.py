@@ -833,6 +833,313 @@ IMAGE FILE: {os.path.basename(image_path)}
         print(f"[ImageGenerator] ✅ Metadata saved: {metadata_path}")
 
 
+    # =========================================================================
+    # GPT-IMAGE-1.5 METHODS
+    # =========================================================================
+
+    def generate_with_gpt_image_1_5_simple(
+        self,
+        prompt: str,
+        agent_handle: str,
+        size: str = "1024x1024"
+    ) -> str:
+        """
+        Generate image using GPT-Image-1.5 (pure generation, like DALL-E 3).
+        
+        GPT-Image-1.5 is OpenAI's latest image generation model with improved
+        quality, better prompt following, and enhanced photorealism.
+        
+        Args:
+            prompt: Detailed image generation prompt
+            agent_handle: Agent handle (for filename)
+            size: Image size (1024x1024, 1792x1024, 1024x1792)
+        
+        Returns:
+            Local file path to the saved image
+        
+        Raises:
+            Exception: If image generation or download fails
+        """
+        print(f"[ImageGenerator] Generating image with GPT-Image-1.5...")
+        print(f"[ImageGenerator] Using OpenAI's latest image model (1.5)")
+        print(f"[ImageGenerator] Size: {size}")
+        print(f"[ImageGenerator] Prompt preview: {prompt[:100]}...")
+        overall_start = time.time()
+        
+        try:
+            # Generate image with GPT-Image-1.5
+            print(f"[ImageGenerator] Calling GPT-Image-1.5 API...")
+            start_time = time.time()
+            
+            response = client.images.generate(
+                model="gpt-image-1.5",
+                prompt=prompt,
+                n=1,
+                size=size
+            )
+            
+            duration = time.time() - start_time
+            
+            # Handle both URL and base64 responses
+            if hasattr(response.data[0], 'url') and response.data[0].url:
+                image_url = response.data[0].url
+                print(f"[ImageGenerator] ✅ Image generated successfully! Got URL ({duration:.2f}s)")
+                
+                # Download and save
+                filepath = self._download_and_save(image_url, agent_handle)
+                
+            elif hasattr(response.data[0], 'b64_json') and response.data[0].b64_json:
+                # Handle base64 response
+                print(f"[ImageGenerator] Got base64 response, converting to file...")
+                import base64
+                import io
+                from PIL import Image
+                
+                # Decode base64 to image
+                image_bytes = base64.b64decode(response.data[0].b64_json)
+                image = Image.open(io.BytesIO(image_bytes))
+                
+                # Save directly to file
+                timestamp = int(time.time() * 1000)
+                filename = f"gpt_image_1_5_{agent_handle}_{timestamp}.png"
+                filepath = os.path.join(self.output_dir, filename)
+                
+                image.save(filepath, format='PNG')
+                print(f"[ImageGenerator] ✅ Image generated and saved from base64! ({duration:.2f}s)")
+            else:
+                raise Exception(f"GPT-Image-1.5 response has neither URL nor base64 data")
+            
+            # Save metadata
+            self._save_gpt_image_1_5_simple_metadata(filepath, prompt, agent_handle, size)
+            
+            total_duration = time.time() - overall_start
+            print(f"[ImageGenerator] ✅ Image saved: {filepath} (total: {total_duration:.2f}s)")
+            
+            return filepath
+            
+        except Exception as e:
+            error_msg = str(e)
+            
+            # Check for common errors
+            if "content_policy_violation" in error_msg.lower():
+                raise Exception(
+                    "Content policy violation: The prompt may contain restricted content. "
+                    "Try regenerating with a different topic or prompt."
+                )
+            elif "rate_limit" in error_msg.lower():
+                raise Exception(
+                    "Rate limit exceeded: Too many requests. Please wait and try again."
+                )
+            else:
+                raise Exception(f"GPT-Image-1.5 API error: {error_msg}")
+
+
+    def generate_with_gpt_image_1_5(
+        self,
+        reference_image_url: str,
+        prompt: str,
+        agent_handle: str,
+        size: str = "1024x1024"
+    ) -> str:
+        """
+        Generate image using GPT-Image-1.5 with reference image editing.
+        
+        GPT-Image-1.5 can understand images semantically and edit them based on
+        text instructions WITHOUT requiring masks. Perfect for background changes,
+        style transfer, color/lighting adjustments, etc.
+        
+        Args:
+            reference_image_url: Reference image URL from Supabase
+            prompt: Text instruction describing desired edits
+            agent_handle: Agent handle for filename
+            size: Image size (1024x1024, 1792x1024, 1024x1792)
+        
+        Returns:
+            Local file path to the saved edited image
+        
+        Raises:
+            Exception: If image editing or download fails
+        """
+        print(f"[ImageGenerator] Editing image with GPT-Image-1.5...")
+        print(f"[ImageGenerator] Using semantic editing (no mask required)")
+        print(f"[ImageGenerator] Edit instruction: {prompt[:100]}...")
+        overall_start = time.time()
+        
+        try:
+            # Download reference image
+            print(f"[ImageGenerator] Downloading reference image...")
+            reference_data = self._download_image_from_url(reference_image_url)
+            
+            # Convert to base64 for API
+            import base64
+            reference_b64 = base64.b64encode(reference_data).decode('utf-8')
+            
+            # Call GPT-Image-1.5 for semantic image editing via edits endpoint
+            print(f"[ImageGenerator] Calling GPT-Image-1.5 API with image edits endpoint...")
+            start_time = time.time()
+            
+            # Load and prepare reference image
+            from PIL import Image
+            import io
+            
+            print(f"[ImageGenerator] Preparing reference image...")
+            reference_image = Image.open(io.BytesIO(reference_data))
+            
+            # Ensure RGBA format (required by edits API)
+            if reference_image.mode != 'RGBA':
+                reference_image = reference_image.convert('RGBA')
+            
+            # Save to BytesIO buffer
+            reference_buffer = io.BytesIO()
+            reference_image.save(reference_buffer, format='PNG')
+            reference_buffer.seek(0)
+            reference_buffer.name = "reference.png"
+            
+            # Use the images.edit endpoint with GPT-Image-1.5
+            response = client.images.edit(
+                model="gpt-image-1.5",
+                image=reference_buffer,
+                prompt=prompt,
+                n=1,
+                size=size
+            )
+            
+            duration = time.time() - start_time
+            
+            # Handle both URL and base64 responses
+            if response.data and len(response.data) > 0:
+                image_data = response.data[0]
+                
+                # Check if we got a URL
+                if hasattr(image_data, 'url') and image_data.url:
+                    edited_image_url = image_data.url
+                    print(f"[ImageGenerator] ✅ Image edited with GPT-Image-1.5! Got URL ({duration:.2f}s)")
+                    
+                    # Download and save edited image
+                    filepath = self._download_and_save(edited_image_url, agent_handle)
+                
+                # Otherwise check for base64 data
+                elif hasattr(image_data, 'b64_json') and image_data.b64_json:
+                    print(f"[ImageGenerator] Got base64 response, converting to file...")
+                    
+                    # Decode base64 to image
+                    image_bytes = base64.b64decode(image_data.b64_json)
+                    image = Image.open(io.BytesIO(image_bytes))
+                    
+                    # Save directly to file instead of downloading
+                    os.makedirs(self.output_dir, exist_ok=True)
+                    timestamp = int(time.time() * 1000)
+                    filename = f"gpt_image_1_5_{agent_handle}_{timestamp}.png"
+                    filepath = os.path.join(self.output_dir, filename)
+                    
+                    image.save(filepath, format='PNG')
+                    print(f"[ImageGenerator] ✅ Image edited with GPT-Image-1.5! Saved from base64 ({duration:.2f}s)")
+                else:
+                    raise Exception(f"GPT-Image-1.5 response has neither URL nor base64 data: {image_data}")
+            else:
+                raise Exception(f"GPT-Image-1.5 API returned empty data")
+            
+            # Save metadata
+            self._save_gpt_image_1_5_metadata(
+                filepath,
+                prompt,
+                agent_handle,
+                reference_image_url,
+                size
+            )
+            
+            total_duration = time.time() - overall_start
+            print(f"[ImageGenerator] ✅ Edited image saved: {filepath} (total: {total_duration:.2f}s)")
+            
+            return filepath
+            
+        except Exception as e:
+            error_msg = str(e)
+            
+            # Check for common errors
+            if "content_policy_violation" in error_msg.lower():
+                raise Exception(
+                    "Content policy violation: The edit request may contain restricted content. "
+                    "Try a different prompt or reference image."
+                )
+            elif "rate_limit" in error_msg.lower():
+                raise Exception(
+                    "Rate limit exceeded: Too many requests. Please wait and try again."
+                )
+            else:
+                raise Exception(f"GPT-Image-1.5 API error: {error_msg}")
+
+
+    def _save_gpt_image_1_5_simple_metadata(
+        self,
+        image_path: str,
+        prompt: str,
+        agent_handle: str,
+        size: str
+    ):
+        """Save metadata file for GPT-Image-1.5 generated image"""
+        metadata_path = image_path.replace('.png', '_metadata.txt')
+        
+        metadata_content = f"""AI Generated Image Metadata
+{"=" * 60}
+
+Agent: @{agent_handle}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Model: GPT-Image-1.5 (OpenAI's latest image model)
+Size: {size}
+
+{"=" * 60}
+PROMPT:
+{"=" * 60}
+{prompt}
+
+{"=" * 60}
+IMAGE FILE: {os.path.basename(image_path)}
+"""
+        
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            f.write(metadata_content)
+        
+        print(f"[ImageGenerator] ✅ Metadata saved: {metadata_path}")
+
+
+    def _save_gpt_image_1_5_metadata(
+        self,
+        image_path: str,
+        prompt: str,
+        agent_handle: str,
+        reference_url: str,
+        size: str
+    ):
+        """Save metadata file for GPT-Image-1.5 edited image"""
+        metadata_path = image_path.replace('.png', '_metadata.txt')
+        
+        metadata_content = f"""AI Edited Image Metadata
+{"=" * 60}
+
+Agent: @{agent_handle}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Model: GPT-Image-1.5 (OpenAI's latest image model)
+Size: {size}
+Reference Image: {reference_url}
+
+{"=" * 60}
+EDIT PROMPT:
+{"=" * 60}
+{prompt}
+
+{"=" * 60}
+IMAGE FILE: {os.path.basename(image_path)}
+"""
+        
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            f.write(metadata_content)
+        
+        print(f"[ImageGenerator] ✅ Metadata saved: {metadata_path}")
+
+
     def overlay_logo(
         self, 
         image_path: str, 

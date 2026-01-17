@@ -1,0 +1,22 @@
+AI Generated Video Metadata
+============================================================
+
+Agent: @loic-avee
+Generated: 2026-01-17 00:55:32
+
+Model: SORA 2
+Duration: 8 seconds
+Resolution: 720p
+Type: Text-to-Video
+
+============================================================
+PROMPT:
+============================================================
+Begin with a slow, cinematic zoom into a prehistoric forest scene at golden hour, where dappled sunlight filters through dense foliage, creating an ethereal glow. As the camera pushes through the lush canopy, it transitions seamlessly into a dynamic tracking shot, following the silhouette of a young Tyrannosaurus rex moving with curiosity and purpose. The dinosaur’s footsteps create gentle tremors through the earth, captured with subtle camera shake to reflect its growing strength.
+
+The camera smoothly pans upwards, revealing the expansive landscape, where soft golden hues blend into deep greens, symbolizing the passage of time and growth. As the T. rex continues forward, a time-lapse effect transitions the scene, advancing the age of the dinosaur while maintaining the youthful energy in its stride. The camera circles around to capture the growing dinosaur from various angles, emphasizing its evolving presence.
+
+Throughout, the atmosphere shifts from a serene, almost mystical calm to a more vibrant, lively energy, accompanied by delicate lighting changes that highlight the dinosaur's developing features. The visual narrative concludes with a seamless fade-out, leaving viewers with a sense of awe at nature's complexity and the majestic progression of this iconic creature, all aligned with Loic Ricci's expressive and engaging storytelling style.
+
+============================================================
+VIDEO FILE: loic-avee_video_20260117_005528.mp4

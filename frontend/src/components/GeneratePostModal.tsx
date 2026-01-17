@@ -212,7 +212,12 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
   // Form state
   const [topic, setTopic] = useState("");
   const [imageStyle, setImageStyle] = useState<string>("");
-  const [imageEngine, setImageEngine] = useState<"dall-e-3" | "gpt-image-1">("dall-e-3");
+  // Engine options: OpenAI (dall-e, gpt-image, sora) + Black Forest Labs (flux)
+  const [imageEngine, setImageEngine] = useState<
+    "dall-e-3" | "gpt-image-1" | "gpt-image-1.5" | 
+    "flux-2-pro" | "flux-2-max" | "flux-2-klein" |
+    "sora-2-video" | "sora-2-pro"
+  >("dall-e-3");
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
   
   // Reference images from agent's library
@@ -271,7 +276,7 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
     }
   }, [isGenerating, generationComplete]);
 
-  // Clear reference image when switching to DALL-E 3
+  // Clear reference image when switching to DALL-E 3 (only dall-e-3 doesn't support reference images)
   useEffect(() => {
     if (imageEngine === "dall-e-3") {
       setReferenceImageUrl(null);
@@ -437,7 +442,8 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
         topic: topic.trim() || null,
         image_engine: imageEngine,
         image_style: imageStyle || null,
-        reference_image_url: imageEngine === "gpt-image-1" ? referenceImageUrl : null,
+        // Pass reference image for both GPT-Image-1 (editing) and Sora 2 Video (image-to-video)
+        reference_image_url: (imageEngine === "gpt-image-1" || imageEngine === "sora-2-video") ? referenceImageUrl : null,
         feedback: feedback || null,
         previous_preview_id: previousPreviewId || null,
       });
@@ -485,12 +491,15 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
     setIsProcessingPreview(true);
     
     try {
+      // Check if this is a video preview
+      const isVideo = imageEngine === "sora-2-video" || !!previewData.video_url;
+      
       await confirmGeneratedPost({
         preview_id: previewData.preview_id,
         avee_id: previewData.avee_id,
         title: editedTitle,
         description: editedDescription,
-      });
+      }, isVideo);
       
       // Mark this preview as confirmed to handle any duplicate calls
       confirmedPreviewIds.add(previewData.preview_id);
@@ -540,10 +549,13 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
     setIsProcessingPreview(true);
     
     try {
+      // Check if this is a video preview
+      const isVideo = imageEngine === "sora-2-video" || !!previewData.video_url;
+      
       await cancelPostPreview({
         preview_id: previewData.preview_id,
         avee_id: previewData.avee_id,
-      });
+      }, isVideo);
     } catch (e) {
       // Silently ignore - cleanup failure is not critical
       console.error("Failed to cancel preview:", e);
@@ -661,66 +673,168 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
             )}
           </div>
 
-          {/* Image Engine Selection */}
+          {/* Image/Video Engine Selection */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-3">
-              Image Generation Engine
+              Generation Engine
             </label>
-            <div className="space-y-2">
-              {/* DALL-E 3 Option */}
-              <label 
-                className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                  imageEngine === "dall-e-3" 
-                    ? "border-[#001f98] bg-[#e6eaff]" 
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="imageEngine"
-                  value="dall-e-3"
-                  checked={imageEngine === "dall-e-3"}
-                  onChange={() => setImageEngine("dall-e-3")}
-                  disabled={isGenerating}
-                  className="mt-1 h-4 w-4 text-[#001f98] focus:ring-[#001f98]"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900">DALL-E 3</div>
-                  <div className="text-xs text-gray-500">
-                    Pure image generation from prompt. Creates entirely new images.
+            
+            {/* OpenAI Image Engines */}
+            <div className="mb-3">
+              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">📷 OpenAI Images</p>
+              <div className="space-y-2">
+                <label 
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    imageEngine === "dall-e-3" 
+                      ? "border-[#001f98] bg-[#e6eaff]" 
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input type="radio" name="imageEngine" value="dall-e-3"
+                    checked={imageEngine === "dall-e-3"} onChange={() => setImageEngine("dall-e-3")}
+                    disabled={isGenerating} className="mt-1 h-4 w-4 text-[#001f98] focus:ring-[#001f98]" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">DALL-E 3</div>
+                    <div className="text-xs text-gray-500">Pure image generation from text prompts</div>
                   </div>
-                </div>
-              </label>
+                </label>
 
-              {/* GPT Image 1 Option */}
-              <label 
-                className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                  imageEngine === "gpt-image-1" 
-                    ? "border-[#001f98] bg-[#e6eaff]" 
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="imageEngine"
-                  value="gpt-image-1"
-                  checked={imageEngine === "gpt-image-1"}
-                  onChange={() => setImageEngine("gpt-image-1")}
-                  disabled={isGenerating}
-                  className="mt-1 h-4 w-4 text-[#001f98] focus:ring-[#001f98]"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900">GPT Image 1</div>
-                  <div className="text-xs text-gray-500">
-                    Supports reference images for semantic editing. Can transform existing images.
+                <label 
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    imageEngine === "gpt-image-1" 
+                      ? "border-[#001f98] bg-[#e6eaff]" 
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input type="radio" name="imageEngine" value="gpt-image-1"
+                    checked={imageEngine === "gpt-image-1"} onChange={() => setImageEngine("gpt-image-1")}
+                    disabled={isGenerating} className="mt-1 h-4 w-4 text-[#001f98] focus:ring-[#001f98]" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">GPT-Image-1</div>
+                    <div className="text-xs text-gray-500">Semantic editing with reference images</div>
                   </div>
-                </div>
-              </label>
+                </label>
+
+                <label 
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    imageEngine === "gpt-image-1.5" 
+                      ? "border-[#001f98] bg-[#e6eaff]" 
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input type="radio" name="imageEngine" value="gpt-image-1.5"
+                    checked={imageEngine === "gpt-image-1.5"} onChange={() => setImageEngine("gpt-image-1.5")}
+                    disabled={isGenerating} className="mt-1 h-4 w-4 text-[#001f98] focus:ring-[#001f98]" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 flex items-center gap-2">
+                      GPT-Image-1.5
+                      <span className="text-[10px] bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full font-semibold">NEW</span>
+                    </div>
+                    <div className="text-xs text-gray-500">Latest OpenAI model with improved quality</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* FLUX.2 Engines */}
+            <div className="mb-3">
+              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">⚡ FLUX.2 (Black Forest Labs)</p>
+              <div className="space-y-2">
+                <label 
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    imageEngine === "flux-2-pro" 
+                      ? "border-amber-500 bg-amber-50" 
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input type="radio" name="imageEngine" value="flux-2-pro"
+                    checked={imageEngine === "flux-2-pro"} onChange={() => setImageEngine("flux-2-pro")}
+                    disabled={isGenerating} className="mt-1 h-4 w-4 text-amber-500 focus:ring-amber-500" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">FLUX.2 Pro</div>
+                    <div className="text-xs text-gray-500">Best balance of speed & quality (~10s)</div>
+                  </div>
+                </label>
+
+                <label 
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    imageEngine === "flux-2-max" 
+                      ? "border-amber-500 bg-amber-50" 
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input type="radio" name="imageEngine" value="flux-2-max"
+                    checked={imageEngine === "flux-2-max"} onChange={() => setImageEngine("flux-2-max")}
+                    disabled={isGenerating} className="mt-1 h-4 w-4 text-amber-500 focus:ring-amber-500" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">FLUX.2 Max ✨</div>
+                    <div className="text-xs text-gray-500">Highest quality output</div>
+                  </div>
+                </label>
+
+                <label 
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    imageEngine === "flux-2-klein" 
+                      ? "border-amber-500 bg-amber-50" 
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input type="radio" name="imageEngine" value="flux-2-klein"
+                    checked={imageEngine === "flux-2-klein"} onChange={() => setImageEngine("flux-2-klein")}
+                    disabled={isGenerating} className="mt-1 h-4 w-4 text-amber-500 focus:ring-amber-500" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">FLUX.2 Klein</div>
+                    <div className="text-xs text-gray-500">Fastest & cheapest (sub-second)</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Video Engines */}
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">🎬 Video (SORA 2)</p>
+              <div className="space-y-2">
+                <label 
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    imageEngine === "sora-2-video" 
+                      ? "border-blue-500 bg-blue-50" 
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input type="radio" name="imageEngine" value="sora-2-video"
+                    checked={imageEngine === "sora-2-video"} onChange={() => setImageEngine("sora-2-video")}
+                    disabled={isGenerating} className="mt-1 h-4 w-4 text-blue-500 focus:ring-blue-500" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">SORA 2</div>
+                    <div className="text-xs text-gray-500">Standard 10-second AI video clips</div>
+                  </div>
+                </label>
+
+                <label 
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    imageEngine === "sora-2-pro" 
+                      ? "border-blue-500 bg-blue-50" 
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input type="radio" name="imageEngine" value="sora-2-pro"
+                    checked={imageEngine === "sora-2-pro"} onChange={() => setImageEngine("sora-2-pro")}
+                    disabled={isGenerating} className="mt-1 h-4 w-4 text-blue-500 focus:ring-blue-500" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 flex items-center gap-2">
+                      SORA 2 Pro
+                      <span className="text-[10px] bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-1.5 py-0.5 rounded-full font-semibold">NEW</span>
+                    </div>
+                    <div className="text-xs text-gray-500">Higher quality, longer 12-second videos</div>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* Reference Image Section - Only visible for GPT Image 1 */}
-          {imageEngine === "gpt-image-1" && (
+          {/* Reference Image Section - Visible for engines that support it */}
+          {(imageEngine === "gpt-image-1" || imageEngine === "gpt-image-1.5" || 
+            imageEngine.startsWith("flux-2") || imageEngine.startsWith("sora-2")) && (
             <div className="space-y-4">
               <label className="block text-sm font-semibold text-gray-900">
                 Reference Image (Optional)
@@ -859,7 +973,21 @@ export function GeneratePostModal({ isOpen, onClose, agent, onSuccess }: Generat
               </svg>
               <span>
                 DALL-E 3 generates images from scratch based on the post topic. 
-                Switch to GPT Image 1 to use reference images.
+                Switch to GPT Image 1 to use reference images, or Sora 2 Video for video content.
+              </span>
+            </div>
+          )}
+
+          {/* Info box for Sora 2 Video */}
+          {imageEngine === "sora-2-video" && (
+            <div className="flex items-start gap-3 rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm text-purple-800">
+              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>
+                Sora 2 generates <strong>10-second AI video</strong> clips based on the topic.
+                Optionally add a reference image to animate it into a video.
+                Video generation takes 1-2 minutes.
               </span>
             </div>
           )}

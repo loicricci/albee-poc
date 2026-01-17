@@ -229,6 +229,10 @@ app.include_router(linkedin_oauth_router, tags=["linkedin-oauth"])
 from backend.auto_post_api import router as auto_post_router
 app.include_router(auto_post_router, tags=["auto-post"])
 
+# Import Video API router (SORA 2 video generation)
+from backend.video_api import router as video_router
+app.include_router(video_router, tags=["video"])
+
 # Import Scheduler API router (for cron jobs / automated tasks)
 from backend.scheduler_api import router as scheduler_router
 app.include_router(scheduler_router, tags=["scheduler"])

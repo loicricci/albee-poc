@@ -1,0 +1,22 @@
+AI Generated Video Metadata
+============================================================
+
+Agent: @martians
+Generated: 2026-01-17 14:15:22
+
+Model: SORA 2
+Duration: 8 seconds
+Resolution: 720p
+Type: Text-to-Video
+
+============================================================
+PROMPT:
+============================================================
+Begin with a wide, sweeping aerial shot over the rugged, red terrain of Mars, capturing the vast and desolate landscape, bathed in a surreal, crimson twilight. The camera glides gracefully, descending towards a group of elegantly dressed Martians, their attire a fusion of classical and futuristic styles, embodying expressive, legendary aesthetics. As the camera moves closer, it smoothly transitions into a tracking shot, circling the Martians who stand poised atop a massive sand dune, their silhouettes dramatic against the setting sun.
+
+The Martians, symbols of invasion and collapse, strike poses reminiscent of historic statues, their attire reflecting a blend of art, history, and cutting-edge technology. The camera gently zooms in on their faces, highlighting the intricate textures and designs that merge fashion with advanced materials. Suddenly, a gust of Martian wind blows, causing their garments to ripple like flags, creating a powerful metaphor of change and transformation.
+
+Light flickers from their attire, casting an ethereal glow that shifts the mood from solemn to awe-inspiring. The scene transitions with a seamless fade into an abstract visualization of technological innovation: holographic images of Martian art and scientific diagrams float around them. The color grading emphasizes deep reds and cool blues, enhancing the epic and otherworldly atmosphere, as the camera pulls back slowly, leaving the viewer with a lasting impression of the Martians' enigmatic presence on their native soil.
+
+============================================================
+VIDEO FILE: martians_video_20260117_141515.mp4

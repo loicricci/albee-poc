@@ -20,7 +20,7 @@ CREATE INDEX IF NOT EXISTS idx_avees_reference_image ON avees(reference_image_ur
 COMMENT ON COLUMN avees.reference_image_url IS 'URL to reference image for OpenAI Image Edits (required for edits mode)';
 COMMENT ON COLUMN avees.reference_image_mask_url IS 'URL to optional mask image for targeted edits (if null, entire image is edited)';
 COMMENT ON COLUMN avees.image_edit_instructions IS 'Optional default instructions for image editing prompts';
-COMMENT ON COLUMN posts.image_generation_engine IS 'Image generation engine used: dall-e-3 or openai-edits';
+COMMENT ON COLUMN posts.image_generation_engine IS 'Engine used: dall-e-3, gpt-image-1, gpt-image-1.5, flux-2-pro, flux-2-max, flux-2-klein, sora-2-video, sora-2-pro';
 
 
 

@@ -56,9 +56,12 @@ class GeneratePostRequest(BaseModel):
     avee_ids: List[str]
     topic: Optional[str] = None
     category: Optional[str] = None
-    image_engine: str = "dall-e-3"  # Options: "dall-e-3" or "gpt-image-1" (openai-edits deprecated)
+    # Options: "dall-e-3", "gpt-image-1", "gpt-image-1.5", 
+    #          "flux-2-pro", "flux-2-max", "flux-2-klein",
+    #          "sora-2-video", "sora-2-pro"
+    image_engine: str = "dall-e-3"
     image_style: Optional[str] = None  # Optional image style: realistic, cartoon, anime, futuristic, illustration, 3d_render, sketch, fantasy
-    reference_image_url: Optional[str] = None  # User-selected reference image URL for image editing
+    reference_image_url: Optional[str] = None  # User-selected reference image URL for image editing or video animation
 
 
 class ReferenceImageInfo(BaseModel):
@@ -88,9 +91,12 @@ class PreviewPostRequest(BaseModel):
     avee_id: str
     topic: Optional[str] = None
     category: Optional[str] = None
+    # Options: "dall-e-3", "gpt-image-1", "gpt-image-1.5", 
+    #          "flux-2-pro", "flux-2-max", "flux-2-klein",
+    #          "sora-2-video", "sora-2-pro"
     image_engine: str = "dall-e-3"
     image_style: Optional[str] = None  # Optional image style: realistic, cartoon, anime, futuristic, illustration, 3d_render, sketch, fantasy
-    reference_image_url: Optional[str] = None
+    reference_image_url: Optional[str] = None  # For image editing (GPT/FLUX) or video animation (Sora)
     feedback: Optional[str] = None  # User feedback for regeneration
     previous_preview_id: Optional[str] = None  # If regenerating, cleanup old preview
 

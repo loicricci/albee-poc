@@ -477,6 +477,338 @@ def create_post_from_preview(
         session.close()
 
 
+def create_video_post(
+    agent_handle: str,
+    video_path: str,
+    thumbnail_path: Optional[str],
+    duration: int,
+    title: str,
+    description: str,
+    topic: Dict[str, str],
+    video_prompt: str,
+    visibility: str = "public",
+    engine: str = "sora-2-video"  # Options: "sora-2-video", "sora-2-pro"
+) -> Dict[str, Any]:
+    """
+    Create a video post with video upload and database entry.
+    
+    Args:
+        agent_handle: Agent's handle
+        video_path: Local path to generated video
+        thumbnail_path: Local path to video thumbnail (optional)
+        duration: Video duration in seconds
+        title: Post title
+        description: Post description
+        topic: Topic dictionary
+        video_prompt: SORA 2 prompt used
+        visibility: Post visibility
+        engine: Video generation engine (sora-2-video, sora-2-pro)
+    
+    Returns:
+        Dictionary with post details including video_url
+    """
+    print(f"[PostCreationService] Creating VIDEO post for @{agent_handle}...")
+    overall_start = time.time()
+    
+    session = SessionLocal()
+    
+    try:
+        # 1. Get user ID and agent ID
+        query = text("""
+            SELECT owner_user_id, id
+            FROM avees
+            WHERE handle = :handle
+            LIMIT 1
+        """)
+        
+        result = session.execute(query, {"handle": agent_handle})
+        row = result.fetchone()
+        
+        if not row:
+            raise ValueError(f"Agent @{agent_handle} not found in database")
+        
+        user_id = str(row[0])
+        agent_id = str(row[1])
+        
+        # 2. Upload video to Supabase
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        
+        if not supabase_url or not supabase_service_key:
+            raise ValueError("Supabase environment variables not set")
+        
+        # Upload video
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        video_filename = f"videos/{agent_handle}/post_{user_id}_{timestamp}.mp4"
+        
+        with open(video_path, 'rb') as f:
+            video_data = f.read()
+        
+        storage_url = f"{supabase_url}/storage/v1/object/app-videos/{video_filename}"
+        
+        headers = {
+            'Authorization': f'Bearer {supabase_service_key}',
+            'Content-Type': 'video/mp4',
+        }
+        
+        response = requests.post(storage_url, headers=headers, data=video_data, timeout=120)
+        
+        if response.status_code not in [200, 201]:
+            raise Exception(f"Video upload failed ({response.status_code}): {response.text}")
+        
+        video_url = f"{supabase_url}/storage/v1/object/public/app-videos/{video_filename}"
+        print(f"[PostCreationService] ✅ Video uploaded: {video_filename}")
+        
+        # 3. Upload thumbnail if provided
+        thumbnail_url = None
+        if thumbnail_path and os.path.exists(thumbnail_path):
+            thumb_filename = f"videos/{agent_handle}/post_{user_id}_{timestamp}_thumb.jpg"
+            
+            with open(thumbnail_path, 'rb') as f:
+                thumb_data = f.read()
+            
+            thumb_storage_url = f"{supabase_url}/storage/v1/object/app-videos/{thumb_filename}"
+            
+            thumb_headers = {
+                'Authorization': f'Bearer {supabase_service_key}',
+                'Content-Type': 'image/jpeg',
+            }
+            
+            thumb_response = requests.post(thumb_storage_url, headers=thumb_headers, data=thumb_data, timeout=60)
+            
+            if thumb_response.status_code in [200, 201]:
+                thumbnail_url = f"{supabase_url}/storage/v1/object/public/app-videos/{thumb_filename}"
+                print(f"[PostCreationService] ✅ Thumbnail uploaded: {thumb_filename}")
+        
+        # 4. Create post in database
+        post_id = str(uuid.uuid4())
+        
+        # Use thumbnail as image_url fallback
+        image_url = thumbnail_url if thumbnail_url else f"{supabase_url}/storage/v1/object/public/app-videos/default_video_thumb.png"
+        
+        # Prepare AI metadata
+        model_name = "SORA 2 Pro" if engine == "sora-2-pro" else "SORA 2"
+        ai_metadata = {
+            "model": model_name,
+            "generator": "OpenAI",
+            "engine": engine,
+            "duration": duration,
+            "prompt": video_prompt[:500] if len(video_prompt) > 500 else video_prompt,
+            "topic": topic.get("topic", ""),
+            "topic_category": topic.get("category", "general"),
+            "topic_source": topic.get("source", "unknown"),
+            "generation_date": datetime.now().strftime('%Y-%m-%d'),
+            "automated": True,
+            "media_type": "video"
+        }
+        
+        insert_query = text("""
+            INSERT INTO posts (
+                id, owner_user_id, agent_id, title, description, image_url,
+                video_url, video_duration, video_thumbnail_url,
+                post_type, ai_metadata, visibility, image_generation_engine,
+                like_count, comment_count, share_count,
+                created_at
+            ) VALUES (
+                :id, :owner_user_id, :agent_id, :title, :description, :image_url,
+                :video_url, :video_duration, :video_thumbnail_url,
+                :post_type, :ai_metadata, :visibility, :engine,
+                0, 0, 0,
+                NOW()
+            )
+            RETURNING id, created_at
+        """)
+        
+        result = session.execute(insert_query, {
+            "id": post_id,
+            "owner_user_id": user_id,
+            "agent_id": agent_id,
+            "title": title,
+            "description": description,
+            "image_url": image_url,
+            "video_url": video_url,
+            "video_duration": duration,
+            "video_thumbnail_url": thumbnail_url,
+            "post_type": "ai_generated_video",
+            "ai_metadata": json.dumps(ai_metadata),
+            "visibility": visibility,
+            "engine": engine
+        })
+        
+        session.commit()
+        
+        row = result.fetchone()
+        created_at = row[1]
+        
+        total_duration = time.time() - overall_start
+        
+        print(f"[PostCreationService] ✅ Video post created: {post_id} (total: {total_duration:.2f}s)")
+        
+        # Create notification
+        try:
+            create_autopost_notification(session, user_id, agent_handle, post_id)
+        except Exception as e:
+            print(f"[PostCreationService] Warning: Failed to create notification: {e}")
+        
+        return {
+            "post_id": post_id,
+            "video_url": video_url,
+            "thumbnail_url": thumbnail_url,
+            "image_url": image_url,
+            "created_at": created_at,
+            "view_url": f"/u/{agent_handle}",
+            "agent_handle": agent_handle
+        }
+        
+    except Exception as e:
+        session.rollback()
+        print(f"[PostCreationService] ❌ Error creating video post: {e}")
+        raise
+    finally:
+        session.close()
+
+
+def create_video_post_from_preview(
+    agent_handle: str,
+    video_url: str,
+    thumbnail_url: Optional[str],
+    duration: int,
+    title: str,
+    description: str,
+    topic: Dict[str, str],
+    video_prompt: str,
+    visibility: str = "public",
+    engine: str = "sora-2-video"  # Options: "sora-2-video", "sora-2-pro"
+) -> Dict[str, Any]:
+    """
+    Create a video post from a preview (video already uploaded to storage).
+    
+    Args:
+        agent_handle: Agent's handle
+        video_url: URL of the already-uploaded video
+        thumbnail_url: URL of the video thumbnail (optional)
+        duration: Video duration in seconds
+        title: Post title
+        description: Post description
+        topic: Topic dictionary
+        video_prompt: SORA 2 prompt used
+        visibility: Post visibility
+        engine: Video generation engine (sora-2-video, sora-2-pro)
+    
+    Returns:
+        Dictionary with post details
+    """
+    print(f"[PostCreationService] Creating video post from preview for @{agent_handle}...")
+    
+    session = SessionLocal()
+    
+    try:
+        # Get user ID and agent ID
+        query = text("""
+            SELECT owner_user_id, id
+            FROM avees
+            WHERE handle = :handle
+            LIMIT 1
+        """)
+        
+        result = session.execute(query, {"handle": agent_handle})
+        row = result.fetchone()
+        
+        if not row:
+            raise ValueError(f"Agent @{agent_handle} not found in database")
+        
+        user_id = str(row[0])
+        agent_id = str(row[1])
+        
+        # Generate post ID
+        post_id = str(uuid.uuid4())
+        
+        # Use thumbnail as image_url fallback
+        supabase_url = os.getenv("SUPABASE_URL", "")
+        image_url = thumbnail_url if thumbnail_url else f"{supabase_url}/storage/v1/object/public/app-videos/default_video_thumb.png"
+        
+        # Prepare AI metadata
+        model_name = "SORA 2 Pro" if engine == "sora-2-pro" else "SORA 2"
+        ai_metadata = {
+            "model": model_name,
+            "generator": "OpenAI",
+            "engine": engine,
+            "duration": duration,
+            "prompt": video_prompt[:500] if len(video_prompt) > 500 else video_prompt,
+            "topic": topic.get("topic", "Unknown"),
+            "topic_category": topic.get("category", "general"),
+            "topic_source": topic.get("source", "unknown"),
+            "generation_date": datetime.now().strftime('%Y-%m-%d'),
+            "automated": True,
+            "from_preview": True,
+            "media_type": "video"
+        }
+        
+        # Insert post
+        insert_query = text("""
+            INSERT INTO posts (
+                id, owner_user_id, agent_id, title, description, image_url,
+                video_url, video_duration, video_thumbnail_url,
+                post_type, ai_metadata, visibility, image_generation_engine,
+                like_count, comment_count, share_count,
+                created_at
+            ) VALUES (
+                :id, :owner_user_id, :agent_id, :title, :description, :image_url,
+                :video_url, :video_duration, :video_thumbnail_url,
+                :post_type, :ai_metadata, :visibility, :engine,
+                0, 0, 0,
+                NOW()
+            )
+            RETURNING id, created_at
+        """)
+        
+        result = session.execute(insert_query, {
+            "id": post_id,
+            "owner_user_id": user_id,
+            "agent_id": agent_id,
+            "title": title,
+            "description": description,
+            "image_url": image_url,
+            "video_url": video_url,
+            "video_duration": duration,
+            "video_thumbnail_url": thumbnail_url,
+            "post_type": "ai_generated_video",
+            "ai_metadata": json.dumps(ai_metadata),
+            "visibility": visibility,
+            "engine": engine
+        })
+        
+        session.commit()
+        
+        row = result.fetchone()
+        created_at = row[1]
+        
+        print(f"[PostCreationService] ✅ Video post created from preview: {post_id}")
+        
+        # Create notification
+        try:
+            create_autopost_notification(session, user_id, agent_handle, post_id)
+        except Exception as e:
+            print(f"[PostCreationService] Warning: Failed to create notification: {e}")
+        
+        return {
+            "post_id": post_id,
+            "video_url": video_url,
+            "thumbnail_url": thumbnail_url,
+            "image_url": image_url,
+            "created_at": created_at,
+            "view_url": f"/u/{agent_handle}",
+            "agent_handle": agent_handle
+        }
+        
+    except Exception as e:
+        session.rollback()
+        print(f"[PostCreationService] ❌ Error creating video post from preview: {e}")
+        raise
+    finally:
+        session.close()
+
+
 # Testing
 if __name__ == "__main__":
     from dotenv import load_dotenv

@@ -1,0 +1,22 @@
+AI Generated Video Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-17 00:45:27
+
+Model: SORA 2
+Duration: 8 seconds
+Resolution: 720p
+Type: Text-to-Video
+
+============================================================
+PROMPT:
+============================================================
+Begin with a dynamic aerial shot gliding over a futuristic cityscape glowing with neon lime green and deep black accents, capturing the essence of Hearst Mining's innovative spirit. The camera elegantly tilts downward, revealing an expansive digital grid that pulses rhythmically, symbolizing the tech-driven growth akin to the evolutionary path of the Tyrannosaurus rex. Transition smoothly into a time-lapse sequence where a translucent green T-rex silhouette emerges from the grid, gradually increasing in size, reflecting the study's revelation of extended growth periods.
+
+As the T-rex reaches its full form, the camera rotates around it, creating a 360-degree view that highlights the complexity and grandeur of both the dinosaur and the technological theme. Utilize a soft fade to transition into a dark, starry backdrop where constellations morph into mining hardware icons, bridging the connection between history and modern tech.
+
+The mood shifts from enigmatic to triumphant as bright pure white light emanates from within the T-rex, symbolizing enlightenment and discovery. The video concludes with a seamless zoom-out, capturing the entire scene bathed in a harmonious blend of the brand's color palette. Enhance the atmosphere with subtle, pulsating neon lighting effects that mimic heartbeat rhythms, encapsulating the dynamic and engaging narrative signature to Hearst Mining.
+
+============================================================
+VIDEO FILE: hearst_video_20260117_004523.mp4

@@ -717,6 +717,138 @@ def generate_edit_prompt(
     return generator.generate_edit_prompt(agent_context, topic, edit_instructions, image_style=image_style)
 
 
+def generate_video_prompt(
+    agent_context: Dict[str, Any],
+    topic: Dict[str, str],
+    feedback: str = None
+) -> str:
+    """
+    Generate a video generation prompt for SORA 2 API.
+    
+    Creates a prompt optimized for video generation, focusing on motion,
+    camera work, and dynamic visual storytelling.
+    
+    Args:
+        agent_context: Agent profile data
+        topic: Topic data
+        feedback: Optional user feedback for refinement
+    
+    Returns:
+        Video generation prompt for SORA 2
+    """
+    print(f"[AIPromptGenerator] Generating VIDEO prompt for SORA 2...")
+    start_time = time.time()
+    
+    # Enhance topic with feedback if provided
+    enhanced_topic = topic.copy()
+    if feedback:
+        enhanced_topic["user_feedback"] = feedback
+        if "description" in enhanced_topic:
+            enhanced_topic["description"] = f"{enhanced_topic['description']}\n\nUSER GUIDANCE: {feedback}"
+    
+    # Get branding guidelines if available
+    branding = agent_context.get('branding_guidelines', '').strip()
+    branding_section = ""
+    if branding:
+        branding_transformed = transform_hex_to_vivid_descriptions(branding)
+        branding_section = f"""
+COLOR PALETTE (incorporate these colors):
+{branding_transformed[:300]}
+"""
+    
+    # Construct meta-prompt for GPT-4o to create the video prompt
+    # NOTE: We intentionally do NOT include the agent's display_name to avoid Sora 2 moderation blocks
+    # Sora 2 blocks any prompts that mention real people by name
+    meta_prompt = f"""You are an expert at creating detailed video generation prompts for SORA 2 (OpenAI's video AI).
+
+AGENT PROFILE (use for style inspiration, but NEVER mention names):
+- Style/Persona: {agent_context['bio'][:200] if agent_context.get('bio') else 'Creative professional'}
+- Style Traits: {', '.join(agent_context['style_traits'])}
+- Themes: {', '.join(agent_context['themes'])}
+{branding_section}
+DAILY TOPIC:
+- Topic: {enhanced_topic['topic']}
+- Description: {enhanced_topic.get('description', '')}
+- Category: {enhanced_topic.get('category', 'general')}
+
+TASK:
+Create a detailed video generation prompt (10 seconds) that:
+
+1. CAPTURES THE ESSENCE (NO NAMES - CRITICAL!)
+   - Reflects the personality and style visually
+   - Includes signature aesthetic elements
+   - If a person is shown, use "a figure", "the subject", "someone", NOT names
+   - NEVER use real names, celebrity names, or character names
+
+2. RELATES TO THE DAILY TOPIC
+   - Connects the visual narrative to the topic
+   - Makes the connection creative and engaging
+   - Can be metaphorical or literal
+
+3. VIDEO-SPECIFIC ELEMENTS (CRITICAL)
+   - Describe MOTION and MOVEMENT (what moves, how fast, direction)
+   - Specify CAMERA WORK (pan, zoom, tracking, static, cinematic)
+   - Include TRANSITIONS (smooth cuts, fades, continuous shot)
+   - Describe ATMOSPHERE and MOOD progression
+   - Add dynamic visual effects or lighting changes
+
+4. VISUAL STYLE
+   - Cinematic quality, professional production feel
+   - Lighting that enhances mood (golden hour, neon, dramatic, soft)
+   - Color grading that matches the theme
+   - High detail and visual appeal
+
+5. LEGAL SAFETY (STRICT - WILL BE REJECTED OTHERWISE)
+   - ABSOLUTELY NO real person names (will be blocked by moderation)
+   - NO copyrighted characters or trademarked brands
+   - NO recognizable celebrities or public figures
+   - Use "a figure", "the subject", "someone" instead of names
+   - Keep content general-audience appropriate
+
+EXAMPLE VIDEO PROMPTS (notice: no names, only "a figure", "the subject"):
+- "Slow cinematic pan across a bustling city at golden hour, camera rises to reveal glittering skyscrapers, then smoothly zooms into a window where papers flutter in the breeze, warm light filtering through"
+- "Dynamic tracking shot following a figure walking through a rain-soaked neon-lit street, reflections shimmer on wet pavement, camera occasionally catches glimpses of their shadow as they pass storefronts"
+- "A subject sits at a desk in a cozy study, surrounded by books. The camera slowly orbits around them as golden afternoon light streams through venetian blinds, casting striped shadows across the scene"
+
+CRITICAL RULES:
+1. Your response should be ONLY the video prompt itself (150-250 words)
+2. NEVER include any names - use "a figure", "the subject", "someone" instead
+3. Focus on motion, camera work, and dynamic storytelling
+4. Make it vivid and cinematic!
+"""
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert video prompt engineer. Create prompts that describe motion, camera work, and cinematic storytelling for AI video generation."
+                },
+                {
+                    "role": "user",
+                    "content": meta_prompt
+                }
+            ],
+            temperature=0.85,
+            max_tokens=400
+        )
+        
+        video_prompt = response.choices[0].message.content.strip()
+        
+        duration = time.time() - start_time
+        tokens = response.usage.total_tokens if hasattr(response, 'usage') else 'N/A'
+        
+        print(f"[AIPromptGenerator] ✅ Video prompt generated ({len(video_prompt)} chars, {duration:.2f}s, {tokens} tokens)")
+        print(f"[AIPromptGenerator]    Preview: {video_prompt[:100]}...")
+        
+        return video_prompt
+        
+    except Exception as e:
+        print(f"[AIPromptGenerator] ❌ Error generating video prompt: {e}")
+        raise
+
+
 async def generate_edit_prompt_and_title_parallel(
     agent_context: Dict[str, Any],
     topic: Dict[str, str],

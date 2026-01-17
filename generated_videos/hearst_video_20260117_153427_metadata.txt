@@ -1,0 +1,22 @@
+AI Generated Video Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-17 15:34:32
+
+Model: SORA 2
+Duration: 8 seconds
+Resolution: 720p
+Type: Text-to-Video
+
+============================================================
+PROMPT:
+============================================================
+A seamless 10-second video begins with a slow, sweeping pan across a wide expanse of a high-tech mining facility. Massive server racks hum quietly under dramatic neon lime green lighting that illuminates the vast industrial space, contrasting sharply against the deep pure black surroundings. The camera smoothly tilts downward to track a figure, clad in sleek workwear, moving purposefully along a narrow path between towering machinery. Their movements are deliberate and measured, reflecting precision and focus.
+
+As the figure pauses, the camera executes a gentle zoom, capturing the expression of concentration as they interact with a complex control panel. The atmosphere shifts subtly as bright pure white LED lights flicker to life, casting a crisp, clinical glow over the scene, creating a sense of modernity and advanced technology.
+
+The scene transitions smoothly with a quick cut to a detailed close-up of the figure’s gloved hand adjusting controls, fingers deftly flipping switches and typing commands. The mood is one of methodical efficiency, punctuated by the rhythmic hum of the machines. A final dynamic pull-back shot reveals the expansive scale of the operation, as lines of servers extend into the shadowy distance. The color grading accentuates the mix of bright neon lime and neutral medium gray, creating an engaging and professional visual narrative that captures the essence of innovation in mining.
+
+============================================================
+VIDEO FILE: hearst_video_20260117_153427.mp4

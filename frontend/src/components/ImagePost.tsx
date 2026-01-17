@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ShareButton } from "@/components/ShareButton";
 import { DownloadButton } from "@/components/DownloadButton";
@@ -14,6 +14,9 @@ type PostData = {
   title: string | null;
   description: string | null;
   image_url: string;
+  video_url?: string | null;
+  video_duration?: number | null;
+  video_thumbnail_url?: string | null;
   post_type: string;
   ai_metadata: Record<string, any>;
   visibility: string;
@@ -82,6 +85,90 @@ export function ImagePost({
   const [liked, setLiked] = useState(post.user_has_liked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [isLiking, setIsLiking] = useState(false);
+  
+  // Video player state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [showVideoControls, setShowVideoControls] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Check if this is a video post
+  const isVideoPost = !!(post.video_url && (post.post_type === "video" || post.post_type === "ai_generated_video"));
+  
+  // Video autoplay on scroll (muted)
+  useEffect(() => {
+    if (!isVideoPost || !videoContainerRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (videoRef.current) {
+            if (entry.isIntersecting) {
+              videoRef.current.play().catch(() => {});
+              setIsPlaying(true);
+            } else {
+              videoRef.current.pause();
+              setIsPlaying(false);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(videoContainerRef.current);
+    return () => observer.disconnect();
+  }, [isVideoPost]);
+
+  // Update video progress bar
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isVideoPost) return;
+
+    const updateProgress = () => {
+      if (video.duration) {
+        setVideoProgress((video.currentTime / video.duration) * 100);
+      }
+    };
+
+    video.addEventListener("timeupdate", updateProgress);
+    return () => video.removeEventListener("timeupdate", updateProgress);
+  }, [isVideoPost]);
+
+  const toggleVideoPlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleVideoMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleVideoProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = x / rect.width;
+    videoRef.current.currentTime = percent * videoRef.current.duration;
+  };
+
+  const formatVideoDuration = (seconds: number | null | undefined): string => {
+    if (!seconds) return "";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : `0:${secs.toString().padStart(2, "0")}`;
+  };
 
   const handleLike = async () => {
     if (isLiking) return; // Prevent multiple clicks
@@ -159,23 +246,140 @@ export function ImagePost({
         </div>
       )}
 
-      {/* Image */}
-      <div className="relative bg-black">
-        <img src={`${post.image_url}?v=${post.created_at}`} 
-          alt={post.title || "Post image"} 
-          className="w-full object-contain max-h-[600px]"
-        />
-        
-        {/* AI Generated Badge */}
-        {isAIGenerated && (
-          <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            AI Generated
+      {/* Video or Image */}
+      {isVideoPost && post.video_url ? (
+        <div 
+          ref={videoContainerRef}
+          className="relative bg-black cursor-pointer group"
+          onMouseEnter={() => setShowVideoControls(true)}
+          onMouseLeave={() => setShowVideoControls(false)}
+          onClick={toggleVideoPlay}
+        >
+          <video
+            ref={videoRef}
+            src={post.video_url}
+            poster={post.video_thumbnail_url || post.image_url}
+            className="w-full max-h-[600px] object-contain"
+            loop
+            muted={isMuted}
+            playsInline
+            preload="metadata"
+          />
+
+          {/* Play/Pause Overlay */}
+          <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${
+            showVideoControls || !isPlaying ? "opacity-100" : "opacity-0"
+          }`}>
+            <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+              {isPlaying ? (
+                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                </svg>
+              ) : (
+                <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Controls Bar */}
+          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 transition-opacity ${
+            showVideoControls ? "opacity-100" : "opacity-0"
+          }`}>
+            {/* Progress Bar */}
+            <div 
+              className="h-1 bg-white/30 rounded-full mb-3 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVideoProgressClick(e);
+              }}
+            >
+              <div 
+                className="h-full bg-white rounded-full transition-all"
+                style={{ width: `${videoProgress}%` }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {/* Play/Pause Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleVideoPlay();
+                  }}
+                  className="text-white hover:text-white/80 transition-colors"
+                >
+                  {isPlaying ? (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Mute Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleVideoMute();
+                  }}
+                  className="text-white hover:text-white/80 transition-colors"
+                >
+                  {isMuted ? (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Duration */}
+                {post.video_duration && (
+                  <span className="text-white text-sm">
+                    {formatVideoDuration(post.video_duration)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* AI Video Badge */}
+          {post.post_type === "ai_generated_video" && (
+            <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              AI Generated
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="relative bg-black">
+          <img src={`${post.image_url}?v=${post.created_at}`} 
+            alt={post.title || "Post image"} 
+            className="w-full object-contain max-h-[600px]"
+          />
+          
+          {/* AI Generated Badge */}
+          {isAIGenerated && (
+            <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              AI Generated
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Description */}
       {post.description && (
@@ -243,10 +447,10 @@ export function ImagePost({
           variant="button"
         />
 
-        {/* Download Image */}
+        {/* Download Image/Video */}
         <DownloadButton
-          imageUrl={post.image_url}
-          filename={post.title ? `${post.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg` : undefined}
+          imageUrl={isVideoPost && post.video_url ? post.video_url : post.image_url}
+          filename={post.title ? `${post.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}${isVideoPost ? '.mp4' : '.jpg'}` : undefined}
           variant="button"
         />
       </div>

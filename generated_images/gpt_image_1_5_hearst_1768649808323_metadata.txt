@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @hearst
+Generated: 2026-01-17 15:36:48
+
+Model: GPT-Image-1.5 (OpenAI's latest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+**Prompt:**
+
+Create an image of a futuristic Bitcoin mining facility that embodies the essence of Hearst Mining. The facility should be an impressive industrial structure, seamlessly integrating into a serene landscape filled with cutting-edge technology. The building itself is a minimalist masterpiece, constructed with sleek geometric lines and a grid-based design, evoking a sense of calm efficiency and technological prowess. 
+
+The color palette dominates the scene with a vibrant neon lime green (#A7FB90) illuminating the facility's edges, casting an ethereal glow that symbolizes sustainable energy. Neutral medium gray (#9EB3A8) panels form the bulk of the structure, reflecting the company's focus on durability and industrial strength. Bright pure white (#E6F1E7, #F2F2F2) accents highlight the facility's innovative features and clean design, while deep pure black (#0E0F0F) shadows create depth and contrast, enhancing the high-tech atmosphere.
+
+The scene is bathed in soft, ambient lighting that accentuates the facility's futuristic elements, with technical illustrations subtly etched into the structure's surfaces, hinting at its advanced operations. In the foreground, an array of solar panels and wind turbines signifies Hearst's commitment to sustainability. The sky is a clear, digital blue, adding to the tranquil yet professional mood. This image captures the core positioning of Hearst Mining—industrial, energy-efficient, and forward-thinking—making it a striking representation of a Bitcoin mining facility of the future.
+
+============================================================
+IMAGE FILE: gpt_image_1_5_hearst_1768649808323.png

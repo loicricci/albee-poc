@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { UnifiedFeedItem } from "@/lib/api";
 import { CommentSection } from "@/components/CommentSection";
@@ -46,6 +46,93 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [repostComment, setRepostComment] = useState("");
   const [isLiking, setIsLiking] = useState(false);
+  
+  // Video player state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [showVideoControls, setShowVideoControls] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Check if this is a video post
+  const isVideoPost = !!(item.video_url && (item.post_type === "video" || item.post_type === "ai_generated_video"));
+  
+  // Video autoplay on scroll (muted)
+  useEffect(() => {
+    if (!isVideoPost || !videoContainerRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (videoRef.current) {
+            if (entry.isIntersecting) {
+              videoRef.current.play().catch(() => {});
+              setIsPlaying(true);
+            } else {
+              videoRef.current.pause();
+              setIsPlaying(false);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(videoContainerRef.current);
+    return () => observer.disconnect();
+  }, [isVideoPost]);
+
+  // Update video progress bar
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isVideoPost) return;
+
+    const updateProgress = () => {
+      if (video.duration) {
+        setVideoProgress((video.currentTime / video.duration) * 100);
+      }
+    };
+
+    video.addEventListener("timeupdate", updateProgress);
+    return () => video.removeEventListener("timeupdate", updateProgress);
+  }, [isVideoPost]);
+
+  const toggleVideoPlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleVideoMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleVideoProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = x / rect.width;
+    videoRef.current.currentTime = percent * videoRef.current.duration;
+  };
+
+  const formatVideoDuration = (seconds: number | null | undefined): string => {
+    if (!seconds) return "";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : `0:${secs.toString().padStart(2, "0")}`;
+  };
 
   // Get the actual post ID - for reposts, use post_id (original post), otherwise use id
   const actualPostId = item.type === "repost" && item.post_id ? item.post_id : item.id;
@@ -152,8 +239,114 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
           </div>
         )}
 
-        {/* Image */}
-        {item.image_url && (
+        {/* Video or Image */}
+        {isVideoPost && item.video_url ? (
+          <div 
+            ref={videoContainerRef}
+            className="relative bg-black cursor-pointer group"
+            onMouseEnter={() => setShowVideoControls(true)}
+            onMouseLeave={() => setShowVideoControls(false)}
+            onClick={toggleVideoPlay}
+          >
+            <video
+              ref={videoRef}
+              src={item.video_url}
+              poster={item.video_thumbnail_url || item.image_url}
+              className="w-full max-h-[600px] object-contain"
+              loop
+              muted={isMuted}
+              playsInline
+              preload="metadata"
+            />
+
+            {/* Play/Pause Overlay */}
+            <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${
+              showVideoControls || !isPlaying ? "opacity-100" : "opacity-0"
+            }`}>
+              <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                {isPlaying ? (
+                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
+              </div>
+            </div>
+
+            {/* Controls Bar */}
+            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 transition-opacity ${
+              showVideoControls ? "opacity-100" : "opacity-0"
+            }`}>
+              {/* Progress Bar */}
+              <div 
+                className="h-1 bg-white/30 rounded-full mb-3 cursor-pointer"
+                onClick={handleVideoProgressClick}
+              >
+                <div 
+                  className="h-full bg-white rounded-full transition-all"
+                  style={{ width: `${videoProgress}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {/* Play/Pause Button */}
+                  <button
+                    onClick={toggleVideoPlay}
+                    className="text-white hover:text-white/80 transition-colors"
+                  >
+                    {isPlaying ? (
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Mute Button */}
+                  <button
+                    onClick={toggleVideoMute}
+                    className="text-white hover:text-white/80 transition-colors"
+                  >
+                    {isMuted ? (
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                      </svg>
+                    ) : (
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Duration */}
+                  {item.video_duration && (
+                    <span className="text-white text-sm">
+                      {formatVideoDuration(item.video_duration)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* AI Video Badge */}
+            {item.post_type === "ai_generated_video" && (
+              <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                AI Video
+              </div>
+            )}
+          </div>
+        ) : item.image_url && (
           <div className="relative bg-black">
             <img 
               src={item.image_url} 
@@ -231,11 +424,11 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
             variant="button"
           />
 
-          {/* Download Image */}
-          {item.image_url && (
+          {/* Download Image/Video */}
+          {(item.image_url || item.video_url) && (
             <DownloadButton
-              imageUrl={item.image_url}
-              filename={item.title ? `${item.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg` : undefined}
+              imageUrl={isVideoPost && item.video_url ? item.video_url : item.image_url!}
+              filename={item.title ? `${item.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}${isVideoPost ? '.mp4' : '.jpg'}` : undefined}
               variant="button"
             />
           )}
