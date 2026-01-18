@@ -168,6 +168,40 @@ const clearAllCache = (): void => {
   console.log('[AppData] SessionStorage cache cleared');
 };
 
+// First Post Onboarding Tracking
+// Tracks whether user has completed or skipped the first post creation popup
+const FIRST_POST_KEY_PREFIX = 'first_post_onboarding_';
+
+export const getFirstPostStatus = (userId: string): 'completed' | 'skipped' | null => {
+  try {
+    const value = localStorage.getItem(`${FIRST_POST_KEY_PREFIX}${userId}`);
+    if (value === 'completed' || value === 'skipped') {
+      return value;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const setFirstPostStatus = (userId: string, status: 'completed' | 'skipped'): void => {
+  try {
+    localStorage.setItem(`${FIRST_POST_KEY_PREFIX}${userId}`, status);
+    console.log(`[AppData] First post status set to '${status}' for user ${userId}`);
+  } catch (e) {
+    console.warn('[AppData] Failed to set first post status:', e);
+  }
+};
+
+export const clearFirstPostStatus = (userId: string): void => {
+  try {
+    localStorage.removeItem(`${FIRST_POST_KEY_PREFIX}${userId}`);
+    console.log(`[AppData] First post status cleared for user ${userId}`);
+  } catch (e) {
+    // Ignore
+  }
+};
+
 export type AppData = {
   // User data
   profile: Profile | null;

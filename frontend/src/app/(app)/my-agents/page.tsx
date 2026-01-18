@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createAgent, getMyAgents, getAgentLimitStatus } from "@/lib/api";
+import { createAgent, getMyAgents, getAgentLimitStatus, getSubscriptionStatus, getSubscriptionLevels, requestUpgrade, SubscriptionStatus, SubscriptionLevel } from "@/lib/api";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { ChatButton } from "@/components/ChatButton";
 import { supabase } from "@/lib/supabaseClient";
@@ -23,6 +23,17 @@ type AgentLimitStatus = {
   max_agents: number;  // -1 means unlimited
   can_create_more: boolean;
   remaining: number;   // -1 means unlimited
+  subscription_level?: string;
+  level_name?: string;
+};
+
+// Level badge colors
+const LEVEL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  free: { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-300" },
+  starter: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
+  creator: { bg: "bg-purple-100", text: "text-purple-700", border: "border-purple-300" },
+  pro: { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300" },
+  admin: { bg: "bg-red-100", text: "text-red-700", border: "border-red-300" },
 };
 
 async function deleteAgent(agentId: string): Promise<void> {
@@ -52,6 +63,8 @@ function MyAgentsContent() {
 
   const [agents, setAgents] = useState<Agent[]>([]);
   const [limitStatus, setLimitStatus] = useState<AgentLimitStatus | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [subscriptionLevels, setSubscriptionLevels] = useState<SubscriptionLevel[]>([]);
 
   const [newHandle, setNewHandle] = useState("");
   const [newName, setNewName] = useState("");
@@ -68,6 +81,11 @@ function MyAgentsContent() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Upgrade modal state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedUpgradeLevel, setSelectedUpgradeLevel] = useState("");
+  const [requestingUpgrade, setRequestingUpgrade] = useState(false);
 
   async function load(forceRefresh: boolean = false) {
     setLoading(true);
@@ -94,10 +112,15 @@ function MyAgentsContent() {
       }
       
       // Fetch fresh data from API
-      const [agentsData, limitData] = await Promise.all([
+      const [agentsData, limitData, subStatus, subLevels] = await Promise.all([
         getMyAgents(),
-        getAgentLimitStatus()
+        getAgentLimitStatus(),
+        getSubscriptionStatus().catch(() => null),
+        getSubscriptionLevels().catch(() => ({ levels: [] }))
       ]);
+      
+      if (subStatus) setSubscriptionStatus(subStatus);
+      if (subLevels) setSubscriptionLevels(subLevels.levels || []);
 
       // backend might return {items:[...]} or just [...]
       const list = Array.isArray(agentsData) ? agentsData : agentsData.items;
@@ -209,6 +232,27 @@ function MyAgentsContent() {
     setAgentToDelete(null);
   }
 
+  async function handleRequestUpgrade() {
+    if (!selectedUpgradeLevel) return;
+    
+    setRequestingUpgrade(true);
+    setError(null);
+    
+    try {
+      await requestUpgrade(selectedUpgradeLevel);
+      alert("Upgrade request submitted successfully! An admin will review your request.");
+      setShowUpgradeModal(false);
+      setSelectedUpgradeLevel("");
+      // Refresh subscription status
+      const subStatus = await getSubscriptionStatus().catch(() => null);
+      if (subStatus) setSubscriptionStatus(subStatus);
+    } catch (e: any) {
+      setError(e.message || "Failed to submit upgrade request");
+    } finally {
+      setRequestingUpgrade(false);
+    }
+  }
+
   async function confirmDelete() {
     if (!agentToDelete?.id) return;
 
@@ -282,6 +326,56 @@ function MyAgentsContent() {
         </button>
       </div>
 
+      {/* Subscription Status Card */}
+      {subscriptionStatus && (
+        <div className="mb-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-[#001f98]/5 to-[#f8fafc] px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${LEVEL_COLORS[subscriptionStatus.level]?.bg || 'bg-gray-100'} ${LEVEL_COLORS[subscriptionStatus.level]?.text || 'text-gray-700'} border ${LEVEL_COLORS[subscriptionStatus.level]?.border || 'border-gray-300'}`}>
+                {subscriptionStatus.level_name} Plan
+              </div>
+              {subscriptionStatus.has_pending_upgrade && (
+                <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700 border border-yellow-300">
+                  Upgrade Pending
+                </span>
+              )}
+            </div>
+            {subscriptionStatus.next_level && !subscriptionStatus.has_pending_upgrade && (
+              <button
+                onClick={() => {
+                  setSelectedUpgradeLevel(subscriptionStatus.next_level || "");
+                  setShowUpgradeModal(true);
+                }}
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#C8A24A] to-[#B8942A] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:scale-105"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                Upgrade Plan
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4 p-6 md:grid-cols-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{subscriptionStatus.current_agent_count}</div>
+              <div className="text-xs text-gray-600">of {subscriptionStatus.max_agents === -1 ? "∞" : subscriptionStatus.max_agents} agents</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{subscriptionStatus.remaining_agents === -1 ? "∞" : subscriptionStatus.remaining_agents}</div>
+              <div className="text-xs text-gray-600">agents remaining</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{subscriptionStatus.posts_this_month}</div>
+              <div className="text-xs text-gray-600">of {subscriptionStatus.max_posts_per_month === -1 ? "∞" : subscriptionStatus.max_posts_per_month} posts/mo</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{subscriptionStatus.remaining_posts === -1 ? "∞" : subscriptionStatus.remaining_posts}</div>
+              <div className="text-xs text-gray-600">posts remaining</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Agent Limit Warning */}
       {limitStatus && !limitStatus.can_create_more && !limitStatus.is_admin && (
         <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 animate-slide-up">
@@ -291,8 +385,20 @@ function MyAgentsContent() {
           <div className="flex-1">
             <div className="text-sm font-medium text-amber-800">Agent Limit Reached</div>
             <div className="mt-1 text-xs text-amber-700">
-              Regular users are limited to {limitStatus.max_agents} agent{limitStatus.max_agents !== 1 ? 's' : ''}. 
-              Delete your existing agent to create a new one, or contact an administrator for additional agents.
+              {limitStatus.level_name || 'Your'} plan is limited to {limitStatus.max_agents} agent{limitStatus.max_agents !== 1 ? 's' : ''}. 
+              {subscriptionStatus?.next_level && !subscriptionStatus?.has_pending_upgrade ? (
+                <button 
+                  onClick={() => {
+                    setSelectedUpgradeLevel(subscriptionStatus.next_level || "");
+                    setShowUpgradeModal(true);
+                  }}
+                  className="ml-1 font-semibold text-amber-800 underline hover:text-amber-900"
+                >
+                  Upgrade your plan
+                </button>
+              ) : (
+                " Delete an existing agent to create a new one."
+              )}
             </div>
           </div>
         </div>
@@ -704,6 +810,131 @@ function MyAgentsContent() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                     Delete Permanently
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Plan Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-slide-up">
+            <div className="border-b border-gray-100 bg-gradient-to-r from-[#C8A24A]/10 to-[#f8fafc] px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A24A]/20">
+                    <svg className="h-5 w-5 text-[#C8A24A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Request Plan Upgrade</h3>
+                    <p className="text-sm text-gray-600">Select a plan to request</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    setSelectedUpgradeLevel("");
+                  }}
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 p-3">
+                <p className="text-sm text-blue-800">
+                  Your upgrade request will be reviewed by an administrator. You&apos;ll be notified once it&apos;s approved.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {subscriptionLevels
+                  .filter(level => {
+                    const currentOrder = subscriptionLevels.find(l => l.id === subscriptionStatus?.level)?.order ?? 0;
+                    return level.order > currentOrder;
+                  })
+                  .map(level => (
+                    <label
+                      key={level.id}
+                      className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all ${
+                        selectedUpgradeLevel === level.id
+                          ? `border-[#C8A24A] bg-[#C8A24A]/5 ring-2 ring-[#C8A24A]/20`
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          name="upgradeLevel"
+                          value={level.id}
+                          checked={selectedUpgradeLevel === level.id}
+                          onChange={(e) => setSelectedUpgradeLevel(e.target.value)}
+                          className="h-4 w-4 text-[#C8A24A] focus:ring-[#C8A24A]"
+                        />
+                        <div>
+                          <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${LEVEL_COLORS[level.id]?.bg || 'bg-gray-100'} ${LEVEL_COLORS[level.id]?.text || 'text-gray-700'} border ${LEVEL_COLORS[level.id]?.border || 'border-gray-300'}`}>
+                            {level.name}
+                          </div>
+                          <p className="mt-1 text-sm text-gray-600">{level.description}</p>
+                        </div>
+                      </div>
+                      <div className="text-right text-sm">
+                        <div className="font-semibold text-gray-900">{level.max_agents} agents</div>
+                        <div className="text-gray-500">{level.max_posts_per_month} posts/mo</div>
+                      </div>
+                    </label>
+                  ))}
+              </div>
+
+              {subscriptionLevels.filter(level => {
+                const currentOrder = subscriptionLevels.find(l => l.id === subscriptionStatus?.level)?.order ?? 0;
+                return level.order > currentOrder;
+              }).length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>You&apos;re already on the highest plan!</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+              <button
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  setSelectedUpgradeLevel("");
+                }}
+                disabled={requestingUpgrade}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRequestUpgrade}
+                disabled={requestingUpgrade || !selectedUpgradeLevel}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#C8A24A] to-[#B8942A] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {requestingUpgrade ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Request Upgrade
                   </>
                 )}
               </button>

@@ -15,6 +15,12 @@ const ChatModalContainer = dynamic(() => import("@/components/ChatModal").then(m
   loading: () => <div />, // Silent loading, modal appears when needed
 });
 
+// Lazy load AveeHelperButton (floating chat button)
+const AveeHelperButton = dynamic(() => import("@/components/AveeHelperButton").then(mod => ({ default: mod.AveeHelperButton })), {
+  ssr: false,
+  loading: () => null,
+});
+
 function NavItem({ href, label }: { href: string; label: string }) {
   const pathname = usePathname();
   const active = pathname === href || pathname.startsWith(href + "/");
@@ -130,6 +136,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AgentCacheProvider>
         <ChatProvider>
           {children}
+          <AveeHelperButton />
           <ChatModalContainer />
         </ChatProvider>
       </AgentCacheProvider>
@@ -181,6 +188,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div className="rounded-lg border p-4">{children}</div>
         </main>
+        <AveeHelperButton />
         <ChatModalContainer />
       </div>
       </ChatProvider>

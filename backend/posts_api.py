@@ -10,7 +10,7 @@ from pydantic import BaseModel
 import json
 
 from backend.db import SessionLocal
-from backend.auth_supabase import get_current_user_id
+from backend.auth_supabase import get_current_user_id, get_current_user
 from backend.models import (
     Post,
     PostLike,
@@ -88,10 +88,41 @@ class PostResponse(BaseModel):
 def create_post(
     post_data: PostCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user: dict = Depends(get_current_user),
 ):
     """Create a new post"""
+    from backend.subscription_api import get_level_limits, check_and_reset_monthly_posts
+    from backend.admin import ALLOWED_ADMIN_EMAILS
+    
+    user_id = user.get("id")
+    user_email = user.get("email", "")  # Auth email from JWT
     user_uuid = uuid.UUID(user_id)
+    
+    # Get profile for subscription level check
+    profile = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # Check if user is admin (admins have unlimited posts)
+    # Using auth email from JWT, not profile.email
+    is_admin = user_email and user_email.lower() in [e.lower() for e in ALLOWED_ADMIN_EMAILS]
+    
+    # Check monthly post limit for non-admin users
+    if not is_admin:
+        # Reset monthly counter if needed
+        check_and_reset_monthly_posts(profile, db)
+        
+        subscription_level = profile.subscription_level or "free"
+        level_limits = get_level_limits(subscription_level)
+        max_posts = level_limits["max_posts_per_month"]
+        posts_this_month = profile.posts_this_month or 0
+        
+        if posts_this_month >= max_posts:
+            level_name = level_limits["name"]
+            raise HTTPException(
+                status_code=403, 
+                detail=f"{level_name} users are limited to {max_posts} posts per month. Please upgrade your subscription or wait until next month."
+            )
     
     # Parse agent_id if provided
     agent_uuid = None
@@ -121,6 +152,11 @@ def create_post(
     )
     
     db.add(post)
+    
+    # Increment monthly post counter for non-admin users
+    if not is_admin:
+        profile.posts_this_month = (profile.posts_this_month or 0) + 1
+    
     db.commit()
     db.refresh(post)
     

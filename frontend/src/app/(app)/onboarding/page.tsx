@@ -8,10 +8,11 @@ import { invalidateCache, clearAllCaches } from "@/lib/apiCache";
 import { OnboardingStepName } from "@/components/onboarding/OnboardingStepName";
 import { OnboardingStepHandle } from "@/components/onboarding/OnboardingStepHandle";
 import { OnboardingStepProfile } from "@/components/onboarding/OnboardingStepProfile";
+import { OnboardingStepAgentType } from "@/components/onboarding/OnboardingStepAgentType";
 import { OnboardingStepInterview } from "@/components/onboarding/OnboardingStepInterview";
 import { OnboardingStepFollowAgents } from "@/components/onboarding/OnboardingStepFollowAgents";
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface OnboardingData {
   name: string;
@@ -19,6 +20,7 @@ interface OnboardingData {
   displayName: string;
   bio: string;
   avatarUrl: string;
+  agentType: "persona" | "company";
   persona: string | null;
 }
 
@@ -64,13 +66,21 @@ export default function OnboardingPage() {
 
     try {
       const token = await getAccessToken();
+      const agentType = onboardingData.agentType || "persona";
+      const displayName = onboardingData.displayName || onboardingData.name;
+      
+      // Create appropriate default persona based on agent type
+      const defaultPersona = agentType === "company" 
+        ? `We are ${displayName}, excited to connect with you!`
+        : `I'm ${displayName}, looking forward to connecting!`;
       
       const payload = {
         handle: onboardingData.handle!,
-        display_name: onboardingData.displayName || onboardingData.name,
+        display_name: displayName,
         bio: onboardingData.bio || "",
         avatar_url: onboardingData.avatarUrl || "",
-        persona: persona || `I'm ${onboardingData.displayName || onboardingData.name}, looking forward to connecting!`,
+        persona: persona || defaultPersona,
+        agent_type: agentType,
       };
 
       const res = await fetch(`${apiBase()}/onboarding/complete`, {
@@ -90,7 +100,7 @@ export default function OnboardingPage() {
       // Profile created successfully - now show follow agents step
       setProfileCreated(true);
       setOnboardingData({ ...onboardingData, persona });
-      setCurrentStep(5);
+      setCurrentStep(6);
     } catch (err: any) {
       setError(err.message || "Failed to create profile");
     } finally {
@@ -155,7 +165,17 @@ export default function OnboardingPage() {
     setCurrentStep(2);
   }
 
-  // Step 4: Interview
+  // Step 4: Agent Type
+  function handleAgentTypeNext(agentType: "persona" | "company") {
+    setOnboardingData({ ...onboardingData, agentType });
+    setCurrentStep(5);
+  }
+
+  function handleAgentTypeBack() {
+    setCurrentStep(3);
+  }
+
+  // Step 5: Interview
   function handleInterviewComplete(persona: string) {
     // Create profile first, then proceed to follow agents step
     createProfileAndProceed(persona);
@@ -167,10 +187,10 @@ export default function OnboardingPage() {
   }
 
   function handleInterviewBack() {
-    setCurrentStep(3);
+    setCurrentStep(4);
   }
 
-  // Step 5: Follow Agents
+  // Step 6: Follow Agents
   function handleFollowAgentsComplete() {
     // Profile already created - just redirect to app
     finishOnboarding();
@@ -260,15 +280,23 @@ export default function OnboardingPage() {
         )}
 
         {currentStep === 4 && onboardingData.displayName && (
+          <OnboardingStepAgentType
+            onNext={handleAgentTypeNext}
+            onBack={handleAgentTypeBack}
+          />
+        )}
+
+        {currentStep === 5 && onboardingData.displayName && onboardingData.agentType && (
           <OnboardingStepInterview
             displayName={onboardingData.displayName}
+            agentType={onboardingData.agentType}
             onComplete={handleInterviewComplete}
             onSkip={handleInterviewSkip}
             onBack={handleInterviewBack}
           />
         )}
 
-        {currentStep === 5 && profileCreated && (
+        {currentStep === 6 && profileCreated && (
           <OnboardingStepFollowAgents
             onComplete={handleFollowAgentsComplete}
           />

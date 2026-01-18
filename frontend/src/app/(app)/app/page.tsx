@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChatButton } from "@/components/ChatButton";
 import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
@@ -9,7 +9,8 @@ import { QuickUpdateComposer } from "@/components/QuickUpdateComposer";
 import { ShareButton } from "@/components/ShareButton";
 import Toast, { ToastType } from "@/components/Toast";
 import { FeedPostCard } from "@/components/FeedPostCard";
-import { useAppData } from "@/contexts/AppDataContext";
+import { FirstPostModal } from "@/components/FirstPostModal";
+import { useAppData, getFirstPostStatus, setFirstPostStatus } from "@/contexts/AppDataContext";
 import { followAgent as apiFollowAgent, markAgentRead as apiMarkAgentRead, toggleLikePost, repostPost as apiRepostPost } from "@/lib/apiClient";
 
 type Profile = {
@@ -607,7 +608,46 @@ export default function AppHomePage() {
   
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [showFirstPostModal, setShowFirstPostModal] = useState(false);
   const router = useRouter();
+
+  // Check if we should show the first post modal for new users
+  useEffect(() => {
+    // Only check once loading is complete and we have profile data
+    if (loading || !profile?.user_id) return;
+    
+    // Check if user has already completed or skipped first post
+    const firstPostStatus = getFirstPostStatus(profile.user_id);
+    if (firstPostStatus) {
+      // Already completed or skipped
+      return;
+    }
+    
+    // Check if user has at least one agent (created during onboarding)
+    if (avees.length === 0) {
+      // No agents yet - wait for them to be loaded
+      return;
+    }
+    
+    // Check if user has any posts in their feed (indicating they've already posted)
+    // If unified feed has items that are posts from the user's agents, don't show modal
+    const userHasPosts = unifiedFeedData?.items.some(item => {
+      if (item.type === 'post' || item.type === 'repost') {
+        // Check if this post belongs to one of the user's agents
+        return avees.some(agent => agent.id === item.agent_id);
+      }
+      return false;
+    });
+    
+    if (userHasPosts) {
+      // User already has posts, mark as completed
+      setFirstPostStatus(profile.user_id, 'completed');
+      return;
+    }
+    
+    // Show the first post modal for new users!
+    setShowFirstPostModal(true);
+  }, [loading, profile?.user_id, avees, unifiedFeedData]);
 
   const handleFollowAgent = async (aveeId: string) => {
     // OPTIMISTIC UPDATE: Show immediate feedback to user
@@ -678,6 +718,27 @@ export default function AppHomePage() {
     }
   };
 
+  // Handle first post modal actions
+  const handleFirstPostSkip = () => {
+    if (profile?.user_id) {
+      setFirstPostStatus(profile.user_id, 'skipped');
+    }
+    setShowFirstPostModal(false);
+  };
+
+  const handleFirstPostSuccess = () => {
+    if (profile?.user_id) {
+      setFirstPostStatus(profile.user_id, 'completed');
+    }
+    setShowFirstPostModal(false);
+    setToast({ message: "Congratulations! Your first post is live!", type: "success" });
+    // Refresh feed to show the new post
+    refreshFeed();
+  };
+
+  // Get the primary agent for the first post modal (first agent in the list)
+  const primaryAgent = avees.length > 0 ? avees[0] : null;
+
   return (
     <NewLayoutWrapper>
       {toast && (
@@ -687,6 +748,23 @@ export default function AppHomePage() {
           onClose={() => setToast(null)}
         />
       )}
+      
+      {/* First Post Modal for new users */}
+      {showFirstPostModal && primaryAgent && (
+        <FirstPostModal
+          isOpen={showFirstPostModal}
+          onClose={() => setShowFirstPostModal(false)}
+          onSkip={handleFirstPostSkip}
+          agent={{
+            id: primaryAgent.id,
+            handle: primaryAgent.handle,
+            display_name: primaryAgent.display_name,
+            avatar_url: primaryAgent.avatar_url,
+          }}
+          onSuccess={handleFirstPostSuccess}
+        />
+      )}
+      
       <div className="mx-auto flex max-w-7xl gap-6">
         {/* Left Sidebar - Hidden on smaller screens (< 1024px) */}
         {loading ? (

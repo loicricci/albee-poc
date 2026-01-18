@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { UnifiedFeedItem } from "@/lib/api";
+import { UnifiedFeedItem, updatePost } from "@/lib/api";
 import { CommentSection } from "@/components/CommentSection";
 import { ShareButton } from "@/components/ShareButton";
 import { DownloadButton } from "@/components/DownloadButton";
@@ -13,6 +13,7 @@ type FeedPostCardProps = {
   onLike: (postId: string, liked: boolean) => Promise<void>;
   onComment: (postId: string) => void;
   onRepost: (postId: string, content: string) => void;
+  onTitleUpdate?: (postId: string, newTitle: string) => void;
   currentUserId?: string;
   currentUserHandle?: string;
   currentUserAvatar?: string | null;
@@ -38,7 +39,7 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId, currentUserHandle, currentUserAvatar }: FeedPostCardProps) {
+export function FeedPostCard({ item, onLike, onComment, onRepost, onTitleUpdate, currentUserId, currentUserHandle, currentUserAvatar }: FeedPostCardProps) {
   const [liked, setLiked] = useState(item.user_has_liked || false);
   const [likeCount, setLikeCount] = useState(item.like_count || 0);
   const [showComments, setShowComments] = useState(false);
@@ -46,6 +47,15 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [repostComment, setRepostComment] = useState("");
   const [isLiking, setIsLiking] = useState(false);
+  
+  // Edit title state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(item.title || "");
+  const [currentTitle, setCurrentTitle] = useState(item.title || "");
+  const [isUpdatingTitle, setIsUpdatingTitle] = useState(false);
+  
+  // Check if current user is the owner of this post
+  const isOwner = currentUserId && item.owner_user_id === currentUserId;
   
   // Video player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -186,6 +196,46 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
     setShowDetailModal(true);
   };
 
+  // Handle title edit
+  const handleEditTitle = async () => {
+    if (isUpdatingTitle || editedTitle === currentTitle) {
+      setShowEditModal(false);
+      return;
+    }
+    
+    setIsUpdatingTitle(true);
+    const previousTitle = currentTitle;
+    
+    try {
+      // Optimistic update
+      setCurrentTitle(editedTitle);
+      
+      // Call API
+      await updatePost(actualPostId, { title: editedTitle });
+      
+      // Notify parent if callback provided
+      if (onTitleUpdate) {
+        onTitleUpdate(actualPostId, editedTitle);
+      }
+      
+      setShowEditModal(false);
+    } catch (error) {
+      console.error("Failed to update title:", error);
+      // Revert on error
+      setCurrentTitle(previousTitle);
+      setEditedTitle(previousTitle);
+      alert("Failed to update title. Please try again.");
+    } finally {
+      setIsUpdatingTitle(false);
+    }
+  };
+
+  const openEditModal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditedTitle(currentTitle);
+    setShowEditModal(true);
+  };
+
   // Handle interactions from modal
   const handleModalLike = async (postId: string, newLiked: boolean) => {
     await onLike(postId, newLiked);
@@ -232,10 +282,21 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
           </Link>
         </div>
 
-        {/* Title */}
-        {item.title && (
-          <div className="px-4 pb-2">
-            <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
+        {/* Title with Edit Button */}
+        {currentTitle && (
+          <div className="px-4 pb-2 flex items-start justify-between gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 flex-1">{currentTitle}</h3>
+            {isOwner && (
+              <button
+                onClick={openEditModal}
+                className="p-1.5 text-gray-400 hover:text-[#001f98] hover:bg-[#e6eaff] rounded-lg transition-colors flex-shrink-0"
+                title="Edit title"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
 
@@ -516,7 +577,7 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
 
       {/* Post Detail Modal */}
       <PostDetailModal
-        item={item}
+        item={{ ...item, title: currentTitle }}
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
         onLike={handleModalLike}
@@ -525,7 +586,73 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, currentUserId,
         liked={liked}
         likeCount={likeCount}
         isLiking={isLiking}
+        isOwner={isOwner}
+        onEditTitle={openEditModal}
       />
+
+      {/* Edit Title Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowEditModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Edit Post Title</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Title Input */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
+                Title
+              </label>
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                placeholder="Enter post title..."
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 focus:border-[#001f98] transition-all"
+                autoFocus
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-full text-gray-700 font-medium hover:border-[#001f98] hover:text-[#001f98] transition-all"
+                disabled={isUpdatingTitle}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditTitle}
+                disabled={isUpdatingTitle || editedTitle === currentTitle}
+                className={`flex-1 px-4 py-2 bg-[#001f98] text-white rounded-full font-medium shadow-lg shadow-[#001f98]/25 hover:bg-[#001670] hover:shadow-[#001f98]/40 hover:scale-105 transition-all duration-300 ${
+                  (isUpdatingTitle || editedTitle === currentTitle) ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                {isUpdatingTitle ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving...
+                  </span>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

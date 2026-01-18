@@ -16,6 +16,8 @@ type PostDetailModalProps = {
   liked: boolean;
   likeCount: number;
   isLiking: boolean;
+  isOwner?: boolean;
+  onEditTitle?: (e: React.MouseEvent) => void;
 };
 
 function formatDate(dateStr: string): string {
@@ -48,6 +50,8 @@ export function PostDetailModal({
   liked,
   likeCount,
   isLiking,
+  isOwner,
+  onEditTitle,
 }: PostDetailModalProps) {
   const displayName = item.agent_display_name || item.agent_handle;
   const actualPostId = item.type === "repost" && item.post_id ? item.post_id : item.id;
@@ -167,10 +171,24 @@ export function PostDetailModal({
             )}
           </div>
 
-          {/* Title */}
+          {/* Title with Edit Button */}
           {item.title && (
-            <div className="px-6 pt-4">
-              <h2 className="text-xl font-bold text-gray-900">{item.title}</h2>
+            <div className="px-6 pt-4 flex items-start justify-between gap-2">
+              <h2 className="text-xl font-bold text-gray-900 flex-1">{item.title}</h2>
+              {isOwner && onEditTitle && (
+                <button
+                  onClick={(e) => {
+                    onEditTitle(e);
+                    onClose(); // Close modal to show edit modal
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-[#001f98] hover:bg-[#e6eaff] rounded-lg transition-colors flex-shrink-0"
+                  title="Edit title"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+              )}
             </div>
           )}
 

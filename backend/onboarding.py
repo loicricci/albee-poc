@@ -37,8 +37,8 @@ def get_db():
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Interview system prompt
-INTERVIEW_SYSTEM_PROMPT = """You are a friendly AI interviewer helping users create their digital twin persona. 
+# Interview system prompts for different agent types
+INTERVIEW_SYSTEM_PROMPT_PERSONA = """You are a friendly AI interviewer helping users create their digital twin persona. 
 Ask conversational follow-up questions to learn about:
 - Their personality traits and communication style
 - Their interests, expertise, and passions
@@ -55,6 +55,32 @@ respond with a JSON object in this format:
 }
 
 Until then, just continue asking thoughtful follow-up questions to learn more about them."""
+
+INTERVIEW_SYSTEM_PROMPT_COMPANY = """You are a friendly AI interviewer helping users create a digital agent for their company or brand.
+Ask conversational follow-up questions to learn about:
+- The company's mission, vision, and core values
+- Products or services offered
+- Target audience and market
+- Brand voice and communication style
+- Key differentiators and unique selling points
+- Company culture and personality
+
+Be professional but friendly. Ask one question at a time.
+
+After gathering sufficient information (4-6 exchanges), when you have enough to create a comprehensive company persona, 
+respond with a JSON object in this format:
+{
+  "interview_complete": true,
+  "suggested_persona": "A 2-3 paragraph company profile written in first person plural (we) that captures the brand's essence and voice"
+}
+
+Until then, just continue asking thoughtful follow-up questions to learn more about the company."""
+
+def get_interview_prompt(agent_type: str) -> str:
+    """Get the appropriate interview system prompt based on agent type."""
+    if agent_type == "company":
+        return INTERVIEW_SYSTEM_PROMPT_COMPANY
+    return INTERVIEW_SYSTEM_PROMPT_PERSONA
 
 
 # Request/Response Models
@@ -74,6 +100,7 @@ class SuggestHandlesResponse(BaseModel):
 class InterviewChatRequest(BaseModel):
     message: str
     conversation_history: list[dict] = []
+    agent_type: str = "persona"  # 'persona' or 'company'
 
 
 class InterviewChatResponse(BaseModel):
@@ -89,6 +116,7 @@ class OnboardingCompleteRequest(BaseModel):
     avatar_url: Optional[str] = None
     persona: Optional[str] = None
     interview_data: Optional[dict] = None
+    agent_type: str = "persona"  # 'persona' or 'company'
     # T&C acceptance (optional - can also be read from Supabase user_metadata)
     terms_accepted: Optional[bool] = None
     terms_accepted_at: Optional[str] = None
@@ -190,12 +218,15 @@ async def interview_chat(
     req: InterviewChatRequest,
     user_id: str = Depends(get_current_user_id),
 ):
-    """Conduct AI interview to build user persona"""
+    """Conduct AI interview to build user/company persona"""
     if not req.message or not req.message.strip():
         raise HTTPException(status_code=400, detail="Message is required")
     
+    # Get appropriate interview prompt based on agent type
+    system_prompt = get_interview_prompt(req.agent_type)
+    
     # Build conversation for OpenAI
-    messages = [{"role": "system", "content": INTERVIEW_SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": system_prompt}]
     
     # Add conversation history
     for msg in req.conversation_history:
@@ -323,9 +354,14 @@ async def complete_onboarding(
         db.add(profile)
         db.flush()  # Flush to get profile created before agent
         
-        # Create primary agent (digital twin)
+        # Create primary agent (digital twin or company agent)
         # Use AI-generated persona if provided, otherwise create minimal one
-        persona = req.persona or f"I'm {display_name}, looking forward to connecting!"
+        agent_type = req.agent_type if req.agent_type in ("persona", "company") else "persona"
+        if agent_type == "company":
+            default_persona = f"We are {display_name}, excited to connect with you!"
+        else:
+            default_persona = f"I'm {display_name}, looking forward to connecting!"
+        persona = req.persona or default_persona
         
         agent = Avee(
             id=uuid.uuid4(),
@@ -335,6 +371,7 @@ async def complete_onboarding(
             bio=req.bio,
             avatar_url=req.avatar_url,
             persona=persona,
+            agent_type=agent_type,  # persona or company
             is_primary=True,  # Mark as primary agent (boolean)
         )
         db.add(agent)
@@ -358,6 +395,7 @@ async def complete_onboarding(
                 "handle": agent.handle,
                 "display_name": agent.display_name,
                 "persona": agent.persona,
+                "agent_type": agent.agent_type,
             }
         }
         

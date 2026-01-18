@@ -24,6 +24,7 @@ from backend.models import (
     AveePermission,
     AveeLayer,
     Relationship,
+    UpgradeRequest,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -46,6 +47,49 @@ def _parse_uuid(value: str, field_name: str) -> uuid.UUID:
 
 # Admin access is restricted to specific email(s)
 ALLOWED_ADMIN_EMAILS = ["loic.ricci@gmail.com"]
+
+
+async def get_auth_emails_map() -> dict:
+    """
+    Fetch all Supabase auth users and return a mapping of user_id -> email.
+    This is needed because Profile.email is a contact field, not the auth email.
+    """
+    import httpx
+    
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        return {}
+    
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(
+                f"{SUPABASE_URL}/auth/v1/admin/users",
+                headers={
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                },
+                params={"per_page": 1000}
+            )
+            
+            if response.status_code != 200:
+                return {}
+            
+            data = response.json()
+            users = data.get("users", [])
+            
+            # Create mapping: user_id -> email
+            return {user["id"]: user.get("email", "").lower() for user in users}
+    except Exception:
+        return {}
+
+
+def is_admin_email(email: str) -> bool:
+    """Check if an email is in the admin list"""
+    if not email:
+        return False
+    return email.lower() in [e.lower() for e in ALLOWED_ADMIN_EMAILS]
 
 async def require_admin(user: dict = Depends(get_current_user)):
     """
@@ -903,5 +947,325 @@ async def bulk_delete_old_conversations(
         "ok": True,
         "deleted_count": count or 0,
         "days_old": days_old,
+    }
+
+
+# =====================
+# SUBSCRIPTION LEVEL MANAGEMENT
+# =====================
+
+# Subscription level configuration (imported from subscription_api for consistency)
+SUBSCRIPTION_LEVELS = {
+    "free": {"name": "Free", "max_agents": 1, "max_posts_per_month": 5, "order": 0},
+    "starter": {"name": "Starter", "max_agents": 1, "max_posts_per_month": 20, "order": 1},
+    "creator": {"name": "Creator", "max_agents": 3, "max_posts_per_month": 50, "order": 2},
+    "pro": {"name": "Pro", "max_agents": 15, "max_posts_per_month": 300, "order": 3},
+    "admin": {"name": "Admin", "max_agents": -1, "max_posts_per_month": -1, "order": 99},  # -1 = unlimited
+}
+
+
+class SetUserLevelRequest(BaseModel):
+    level: str
+
+
+class ProcessUpgradeRequest(BaseModel):
+    admin_notes: str | None = None
+
+
+@router.get("/upgrade-requests")
+async def list_upgrade_requests(
+    status: str = None,
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """List all upgrade requests with optional status filter"""
+    
+    query = db.query(UpgradeRequest, Profile).join(
+        Profile, Profile.user_id == UpgradeRequest.user_id
+    )
+    
+    if status:
+        query = query.filter(UpgradeRequest.status == status)
+    
+    total = query.count()
+    results = query.order_by(UpgradeRequest.created_at.desc()).offset(skip).limit(limit).all()
+    
+    requests_data = []
+    for request, profile in results:
+        requests_data.append({
+            "id": str(request.id),
+            "user_id": str(request.user_id),
+            "user_handle": profile.handle,
+            "user_display_name": profile.display_name,
+            "user_avatar_url": profile.avatar_url,
+            "current_level": request.current_level,
+            "requested_level": request.requested_level,
+            "status": request.status,
+            "admin_notes": request.admin_notes,
+            "created_at": request.created_at.isoformat() if request.created_at else None,
+            "processed_at": request.processed_at.isoformat() if request.processed_at else None,
+        })
+    
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "requests": requests_data,
+    }
+
+
+@router.get("/upgrade-requests/stats")
+async def get_upgrade_request_stats(
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """Get statistics about upgrade requests"""
+    
+    pending_count = db.query(func.count(UpgradeRequest.id)).filter(
+        UpgradeRequest.status == "pending"
+    ).scalar()
+    
+    approved_count = db.query(func.count(UpgradeRequest.id)).filter(
+        UpgradeRequest.status == "approved"
+    ).scalar()
+    
+    rejected_count = db.query(func.count(UpgradeRequest.id)).filter(
+        UpgradeRequest.status == "rejected"
+    ).scalar()
+    
+    # Fetch auth emails from Supabase to correctly identify admins
+    auth_emails_map = await get_auth_emails_map()
+    
+    # Get all profiles and count by level using auth emails for admin detection
+    all_profiles = db.query(Profile).all()
+    
+    level_counts = {"admin": 0, "free": 0, "starter": 0, "creator": 0, "pro": 0}
+    
+    for p in all_profiles:
+        auth_email = auth_emails_map.get(str(p.user_id), "")
+        if is_admin_email(auth_email):
+            level_counts["admin"] += 1
+        else:
+            user_level = p.subscription_level or "free"
+            if user_level in level_counts:
+                level_counts[user_level] += 1
+    
+    return {
+        "pending_requests": pending_count or 0,
+        "approved_requests": approved_count or 0,
+        "rejected_requests": rejected_count or 0,
+        "users_by_level": level_counts,
+    }
+
+
+@router.post("/upgrade-requests/{request_id}/approve")
+async def approve_upgrade_request(
+    request_id: str,
+    body: ProcessUpgradeRequest = None,
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """Approve an upgrade request and update user's subscription level"""
+    
+    request_uuid = _parse_uuid(request_id, "request_id")
+    admin_uuid = uuid.UUID(admin_id)
+    
+    # Get the upgrade request
+    upgrade_request = db.query(UpgradeRequest).filter(
+        UpgradeRequest.id == request_uuid
+    ).first()
+    
+    if not upgrade_request:
+        raise HTTPException(status_code=404, detail="Upgrade request not found")
+    
+    if upgrade_request.status != "pending":
+        raise HTTPException(status_code=400, detail="Request has already been processed")
+    
+    # Get the user's profile
+    profile = db.query(Profile).filter(
+        Profile.user_id == upgrade_request.user_id
+    ).first()
+    
+    if not profile:
+        raise HTTPException(status_code=404, detail="User profile not found")
+    
+    # Update the profile's subscription level
+    profile.subscription_level = upgrade_request.requested_level
+    
+    # Update the upgrade request
+    upgrade_request.status = "approved"
+    upgrade_request.processed_at = datetime.utcnow()
+    upgrade_request.processed_by = admin_uuid
+    if body and body.admin_notes:
+        upgrade_request.admin_notes = body.admin_notes
+    
+    db.commit()
+    
+    return {
+        "ok": True,
+        "message": f"Upgrade request approved. User upgraded to {upgrade_request.requested_level}",
+        "user_id": str(upgrade_request.user_id),
+        "new_level": upgrade_request.requested_level,
+    }
+
+
+@router.post("/upgrade-requests/{request_id}/reject")
+async def reject_upgrade_request(
+    request_id: str,
+    body: ProcessUpgradeRequest = None,
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """Reject an upgrade request"""
+    
+    request_uuid = _parse_uuid(request_id, "request_id")
+    admin_uuid = uuid.UUID(admin_id)
+    
+    # Get the upgrade request
+    upgrade_request = db.query(UpgradeRequest).filter(
+        UpgradeRequest.id == request_uuid
+    ).first()
+    
+    if not upgrade_request:
+        raise HTTPException(status_code=404, detail="Upgrade request not found")
+    
+    if upgrade_request.status != "pending":
+        raise HTTPException(status_code=400, detail="Request has already been processed")
+    
+    # Update the upgrade request
+    upgrade_request.status = "rejected"
+    upgrade_request.processed_at = datetime.utcnow()
+    upgrade_request.processed_by = admin_uuid
+    if body and body.admin_notes:
+        upgrade_request.admin_notes = body.admin_notes
+    
+    db.commit()
+    
+    return {
+        "ok": True,
+        "message": "Upgrade request rejected",
+        "user_id": str(upgrade_request.user_id),
+    }
+
+
+@router.put("/profiles/{user_id}/level")
+async def set_user_level(
+    user_id: str,
+    body: SetUserLevelRequest,
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """Directly set a user's subscription level (admin only)"""
+    
+    user_uuid = _parse_uuid(user_id, "user_id")
+    level = body.level.lower()
+    
+    # Validate level
+    if level not in SUBSCRIPTION_LEVELS:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid level. Must be one of: {', '.join(SUBSCRIPTION_LEVELS.keys())}"
+        )
+    
+    # Get profile
+    profile = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    old_level = profile.subscription_level or "free"
+    profile.subscription_level = level
+    
+    db.commit()
+    
+    return {
+        "ok": True,
+        "message": f"User level updated from {old_level} to {level}",
+        "user_id": user_id,
+        "old_level": old_level,
+        "new_level": level,
+    }
+
+
+@router.get("/profiles-with-levels")
+async def list_profiles_with_levels(
+    skip: int = 0,
+    limit: int = 50,
+    search: str = "",
+    level: str = None,
+    db: Session = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """List all profiles with their subscription levels"""
+    
+    # Fetch auth emails from Supabase to correctly identify admins
+    auth_emails_map = await get_auth_emails_map()
+    
+    query = db.query(Profile)
+    
+    if search:
+        search_term = f"%{search.lower()}%"
+        query = query.filter(
+            (Profile.handle.ilike(search_term)) | 
+            (Profile.display_name.ilike(search_term))
+        )
+    
+    # For admin/level filtering, we need to fetch all and filter in Python
+    # because admin status is determined by Supabase auth email
+    all_profiles = query.order_by(Profile.created_at.desc()).all()
+    
+    # Filter profiles based on level (using auth email for admin check)
+    filtered_profiles = []
+    for p in all_profiles:
+        auth_email = auth_emails_map.get(str(p.user_id), "")
+        is_admin_user = is_admin_email(auth_email)
+        
+        if level == "admin":
+            if is_admin_user:
+                filtered_profiles.append((p, auth_email, is_admin_user))
+        elif level:
+            if not is_admin_user and p.subscription_level == level:
+                filtered_profiles.append((p, auth_email, is_admin_user))
+        else:
+            filtered_profiles.append((p, auth_email, is_admin_user))
+    
+    total = len(filtered_profiles)
+    paginated_profiles = filtered_profiles[skip:skip + limit]
+    
+    result = []
+    for p, auth_email, is_admin_user in paginated_profiles:
+        agent_count = db.query(func.count(Avee.id)).filter(
+            Avee.owner_user_id == p.user_id
+        ).scalar()
+        
+        if is_admin_user:
+            effective_level = "admin"
+            level_info = SUBSCRIPTION_LEVELS["admin"]
+        else:
+            effective_level = p.subscription_level or "free"
+            level_info = SUBSCRIPTION_LEVELS.get(effective_level, SUBSCRIPTION_LEVELS["free"])
+        
+        result.append({
+            "user_id": str(p.user_id),
+            "handle": p.handle,
+            "display_name": p.display_name,
+            "avatar_url": p.avatar_url,
+            "subscription_level": effective_level,
+            "level_name": level_info["name"],
+            "agent_count": agent_count or 0,
+            "max_agents": level_info["max_agents"],
+            "posts_this_month": p.posts_this_month or 0,
+            "max_posts_per_month": level_info["max_posts_per_month"],
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "is_admin": is_admin_user,
+            "auth_email": auth_email if is_admin_user else None,  # Only show auth email for admins
+        })
+    
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "profiles": result,
     }
 

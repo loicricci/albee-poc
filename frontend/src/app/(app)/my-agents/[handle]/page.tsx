@@ -37,6 +37,7 @@ type Agent = {
   bio?: string | null;
   avatar_url?: string | null;
   persona?: string | null;
+  agent_type?: "persona" | "company" | null;
 };
 
 export default function AgentEditorPage() {
@@ -52,6 +53,7 @@ export default function AgentEditorPage() {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [agentType, setAgentType] = useState<"persona" | "company">("persona");
   const [detailsSaving, setDetailsSaving] = useState(false);
   const [detailsMsg, setDetailsMsg] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -170,6 +172,7 @@ export default function AgentEditorPage() {
       setDisplayName(data?.display_name || "");
       setBio(data?.bio || "");
       setAvatarUrl(data?.avatar_url || "");
+      setAgentType((data?.agent_type as "persona" | "company") || "persona");
       setPersona((data?.persona || "").toString());
       
       // Load Twitter settings from agent data
@@ -280,9 +283,10 @@ export default function AgentEditorPage() {
         display_name: dn || "", 
         bio: b || "",
         avatar_url: avatarUrl.trim() || "",
+        agent_type: agentType,
       });
       
-      setAgent({ ...agent, display_name: dn, bio: b, avatar_url: avatarUrl.trim() });
+      setAgent({ ...agent, display_name: dn, bio: b, avatar_url: avatarUrl.trim(), agent_type: agentType });
       setDetailsMsg("Details saved successfully.");
     } catch (e: any) {
       setDetailsMsg(e.message || "Failed to save details");
@@ -1205,6 +1209,26 @@ export default function AgentEditorPage() {
                     @{agent.handle}
                   </div>
                   <p className="mt-1 text-xs text-[#001f98]/70">Handle cannot be changed</p>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">Agent Type</label>
+                  <select
+                    className="w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-[#001f98] focus:outline-none focus:ring-2 focus:ring-[#001f98]/20 bg-white"
+                    value={agentType}
+                    onChange={(e) => {
+                      setAgentType(e.target.value as "persona" | "company");
+                      setDetailsMsg(null);
+                    }}
+                  >
+                    <option value="persona">👤 Personal Twin</option>
+                    <option value="company">🏢 Company / Brand</option>
+                  </select>
+                  <p className="mt-1 text-xs text-[#001f98]/70">
+                    {agentType === "persona" 
+                      ? "A digital twin representing you — your personality and expertise" 
+                      : "An AI agent representing your business or brand"}
+                  </p>
                 </div>
 
                 <div>

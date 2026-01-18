@@ -152,6 +152,69 @@ export async function getAgentLimitStatus() {
   return apiFetch("/me/agent-limit-status", { method: "GET" });
 }
 
+// =====================================
+// SUBSCRIPTION API
+// =====================================
+
+export interface SubscriptionStatus {
+  level: string;
+  level_name: string;
+  max_agents: number;
+  max_posts_per_month: number;
+  current_agent_count: number;
+  posts_this_month: number;
+  can_create_agent: boolean;
+  can_create_post: boolean;
+  remaining_agents: number;
+  remaining_posts: number;
+  next_level: string | null;
+  has_pending_upgrade: boolean;
+  is_admin?: boolean;
+}
+
+export interface SubscriptionLevel {
+  id: string;
+  name: string;
+  max_agents: number;
+  max_posts_per_month: number;
+  description: string;
+  order: number;
+}
+
+export interface UpgradeRequest {
+  id: string;
+  current_level: string;
+  requested_level: string;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  processed_at: string | null;
+}
+
+export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
+  return apiFetch("/subscription/status", { method: "GET" });
+}
+
+export async function getSubscriptionLevels(): Promise<{ levels: SubscriptionLevel[] }> {
+  return apiFetch("/subscription/levels", { method: "GET" });
+}
+
+export async function requestUpgrade(level: string): Promise<{ id: string; message: string }> {
+  return apiFetch("/subscription/request-upgrade", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requested_level: level }),
+  });
+}
+
+export async function getMyUpgradeRequests(): Promise<{ requests: UpgradeRequest[]; total: number }> {
+  return apiFetch("/subscription/my-requests", { method: "GET" });
+}
+
+export async function cancelUpgradeRequest(requestId: string): Promise<{ message: string }> {
+  return apiFetch(`/subscription/cancel-request/${requestId}`, { method: "DELETE" });
+}
+
 export async function createAgent(params: { 
   handle: string; 
   display_name?: string;
@@ -205,6 +268,7 @@ export async function updateAgent(params: {
   bio?: string;
   avatar_url?: string;
   persona?: string;
+  agent_type?: "persona" | "company";
   branding_guidelines?: string;
   // Logo watermark settings
   logo_enabled?: boolean;
@@ -223,6 +287,7 @@ export async function updateAgent(params: {
       bio: params.bio !== undefined ? params.bio : undefined,
       avatar_url: params.avatar_url !== undefined ? params.avatar_url : undefined,
       persona: params.persona !== undefined ? params.persona : undefined,
+      agent_type: params.agent_type !== undefined ? params.agent_type : undefined,
       branding_guidelines: params.branding_guidelines !== undefined ? params.branding_guidelines : undefined,
       // Logo watermark settings
       logo_enabled: params.logo_enabled !== undefined ? params.logo_enabled : undefined,

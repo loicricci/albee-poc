@@ -18,16 +18,22 @@ interface Message {
 
 interface OnboardingStepInterviewProps {
   displayName: string;
+  agentType: "persona" | "company";
   onComplete: (persona: string, conversationHistory: Message[]) => void;
   onSkip: () => void;
   onBack: () => void;
 }
 
-export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBack }: OnboardingStepInterviewProps) {
+export function OnboardingStepInterview({ displayName, agentType, onComplete, onSkip, onBack }: OnboardingStepInterviewProps) {
+  // Different initial message based on agent type
+  const initialMessage = agentType === "company"
+    ? `Hi! I'm here to help create your company's digital agent for ${displayName}. Let's start - tell me about your company's mission and what makes it unique.`
+    : `Hi ${displayName}! I'm here to help create your digital twin. Let's start - what should I know about you?`;
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: `Hi ${displayName}! I'm here to help create your digital twin. Let's start - what should I know about you?`,
+      content: initialMessage,
     },
   ]);
   const [input, setInput] = useState("");
@@ -83,6 +89,7 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
         body: JSON.stringify({
           message: trimmed,
           conversation_history: messages.map(m => ({ role: m.role, content: m.content })),
+          agent_type: agentType,
         }),
       });
 
@@ -165,10 +172,12 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
 
       <div className="mb-6 text-center">
         <h1 className="text-3xl font-bold text-[#0B0B0C] dark:text-white mb-3">
-          Meet your AI interviewer
+          {agentType === "company" ? "Build Your Company Profile" : "Meet your AI interviewer"}
         </h1>
         <p className="text-[#001f98]/70 dark:text-zinc-400">
-          Let's create your digital twin persona together
+          {agentType === "company" 
+            ? "Let's create your company's AI agent persona together"
+            : "Let's create your digital twin persona together"}
         </p>
       </div>
 
@@ -326,11 +335,12 @@ export function OnboardingStepInterview({ displayName, onComplete, onSkip, onBac
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
+          <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
           <div className="h-2 w-2 rounded-full bg-[#001f98] dark:bg-white"></div>
           <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-white/[.20]"></div>
         </div>
         <p className="mt-2 text-xs text-[#001f98]/50 dark:text-zinc-500">
-          Step 4 of 5
+          Step 5 of 6
         </p>
       </div>
     </div>

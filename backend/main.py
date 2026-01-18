@@ -265,6 +265,10 @@ app.include_router(posts_router, tags=["posts"])
 from backend.notifications_api import router as notifications_router
 app.include_router(notifications_router, tags=["notifications"])
 
+# Import Subscription router
+from backend.subscription_api import router as subscription_router
+app.include_router(subscription_router, tags=["subscription"])
+
 
 # -----------------------------
 # ✅ Request models
@@ -277,6 +281,7 @@ class AveeUpdateIn(BaseModel):
     bio: str | None = None
     avatar_url: str | None = None
     persona: str | None = None
+    agent_type: str | None = None  # 'persona' or 'company'
     branding_guidelines: str | None = None  # Colors, fonts, visual style for image generation
     # Logo watermark settings for autopost images
     logo_enabled: bool | None = None
@@ -851,17 +856,25 @@ async def create_avee(
     if not prof:
         raise HTTPException(status_code=400, detail="Create profile first: POST /me/profile")
     
-    # Check agent limit for non-admin users
+    # Check agent limit based on subscription level (admins have unlimited)
     is_admin = _is_admin(user)
     if not is_admin:
+        from backend.subscription_api import SUBSCRIPTION_LEVELS, get_level_limits
+        
         existing_agent_count = db.query(func.count(Avee.id)).filter(
             Avee.owner_user_id == user_uuid
-        ).scalar()
+        ).scalar() or 0
         
-        if existing_agent_count >= 1:
+        # Get user's subscription level and limits
+        subscription_level = prof.subscription_level or "free"
+        level_limits = get_level_limits(subscription_level)
+        max_agents = level_limits["max_agents"]
+        
+        if existing_agent_count >= max_agents:
+            level_name = level_limits["name"]
             raise HTTPException(
                 status_code=403, 
-                detail="Regular users are limited to 1 agent. Please delete your existing agent to create a new one, or contact an administrator for more agents."
+                detail=f"{level_name} users are limited to {max_agents} agent{'s' if max_agents != 1 else ''}. Please upgrade your subscription or delete an existing agent to create a new one."
             )
 
     try:
@@ -988,6 +1001,9 @@ async def create_avee(
                     "message": "Agent created successfully but web research failed"
                 }
         
+        # FIX: Invalidate the user's agent list cache so the new agent appears immediately
+        invalidate_user_cache(user_id)
+        
         return response
 
     except Exception as e:
@@ -1012,6 +1028,7 @@ def get_avee_by_handle(
         "avatar_url": a.avatar_url,
         "bio": a.bio,
         "persona": a.persona,  # Include persona field
+        "agent_type": a.agent_type or "persona",  # 'persona' or 'company'
         "owner_user_id": str(a.owner_user_id),
         "branding_guidelines": a.branding_guidelines,
         # Logo watermark settings
@@ -1044,25 +1061,35 @@ async def get_agent_limit_status(
 ):
     """
     Get information about the current user's agent limit status.
-    Returns how many agents they have and how many they can create.
+    Returns how many agents they have and how many they can create based on subscription level.
     """
+    from backend.subscription_api import get_level_limits
+    
     user_id = user["id"]
     user_uuid = _parse_uuid(user_id, "user_id")
     is_admin = _is_admin(user)
     
+    # Get profile for subscription level
+    prof = db.query(Profile).filter(Profile.user_id == user_uuid).first()
+    subscription_level = prof.subscription_level if prof else "free"
+    level_limits = get_level_limits(subscription_level or "free")
+    
     current_count = db.query(func.count(Avee.id)).filter(
         Avee.owner_user_id == user_uuid
-    ).scalar()
+    ).scalar() or 0
     
-    max_agents = -1 if is_admin else 1  # -1 means unlimited
-    can_create_more = is_admin or current_count < 1
+    # Admins have unlimited agents (-1)
+    max_agents = -1 if is_admin else level_limits["max_agents"]
+    can_create_more = is_admin or current_count < level_limits["max_agents"]
     
     return {
         "is_admin": is_admin,
-        "current_agent_count": current_count or 0,
+        "current_agent_count": current_count,
         "max_agents": max_agents,
         "can_create_more": can_create_more,
-        "remaining": -1 if is_admin else max(0, 1 - (current_count or 0))
+        "remaining": -1 if is_admin else max(0, level_limits["max_agents"] - current_count),
+        "subscription_level": subscription_level or "free",
+        "level_name": level_limits["name"],
     }
 
 
@@ -1135,6 +1162,7 @@ def list_my_avees(
                 Avee.display_name,
                 Avee.avatar_url,
                 Avee.bio,
+                Avee.agent_type,
                 Avee.created_at
             )
             .filter(Avee.owner_user_id == user_uuid)
@@ -1152,6 +1180,7 @@ def list_my_avees(
             "display_name": a.display_name,
             "avatar_url": a.avatar_url,
             "bio": a.bio,
+            "agent_type": a.agent_type or "persona",
             "created_at": a.created_at,
         } for a in rows]
     
@@ -2371,6 +2400,13 @@ def update_avee(
             raise HTTPException(status_code=400, detail="Persona too long (max 40k chars)")
         a.persona = p if p else None
 
+    # Update agent_type if provided
+    if payload.agent_type is not None:
+        at = payload.agent_type.strip().lower()
+        if at not in ("persona", "company"):
+            raise HTTPException(status_code=400, detail="Agent type must be 'persona' or 'company'")
+        a.agent_type = at
+
     # Update branding_guidelines if provided
     if payload.branding_guidelines is not None:
         bg = payload.branding_guidelines.strip()
@@ -2556,6 +2592,9 @@ def delete_avee(
     # Delete the avee - CASCADE will handle related records (layers, permissions, etc.)
     db.delete(a)
     db.commit()
+    
+    # Invalidate the user's agent list cache so stale data is not returned
+    invalidate_user_cache(user_id)
     
     return {"ok": True, "message": "Avee deleted successfully"}
 

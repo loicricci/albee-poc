@@ -59,6 +59,11 @@ class Profile(Base):
     privacy_accepted_at = Column(DateTime(timezone=True))  # When user accepted Privacy Policy
     privacy_version = Column(String)  # Version of Privacy Policy accepted
     
+    # Subscription Level System
+    subscription_level = Column(String, default="free")  # free, starter, creator, pro
+    posts_this_month = Column(Integer, default=0)  # Counter for monthly post limit
+    posts_month_reset = Column(DateTime(timezone=True))  # When to reset the monthly counter
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -70,6 +75,9 @@ class Avee(Base):
     display_name = Column(String)
     avatar_url = Column(Text)
     bio = Column(Text)
+
+    # Agent type: 'persona' (personal digital twin) or 'company' (business/brand agent)
+    agent_type = Column(String, default="persona")  # 'persona' or 'company'
 
     # NEW (Step 2): persona prompt text stored per Avee
     persona = Column(Text)
@@ -753,4 +761,28 @@ class Notification(Base):
     
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+# --- Subscription Level System ---
+
+class UpgradeRequest(Base):
+    """Stores user requests to upgrade their subscription level"""
+    __tablename__ = "upgrade_requests"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.user_id", ondelete="CASCADE"), nullable=False)
+    
+    # Level transition
+    current_level = Column(String, nullable=False)  # Level at time of request
+    requested_level = Column(String, nullable=False)  # Desired level
+    
+    # Request status: pending, approved, rejected
+    status = Column(String, default="pending")
+    
+    # Admin processing
+    admin_notes = Column(Text)  # Optional notes from admin (especially for rejections)
+    processed_at = Column(DateTime(timezone=True))  # When the request was processed
+    processed_by = Column(UUID(as_uuid=True))  # Admin who processed the request
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 

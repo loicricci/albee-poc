@@ -619,6 +619,30 @@ export default function BackofficePage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Quick Actions */}
+                <div className="mt-8">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900">Quick Actions</h3>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <a
+                      href="/backoffice/levels"
+                      className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:shadow-md"
+                    >
+                      <div className="rounded-lg bg-amber-100 p-3 transition-colors group-hover:bg-amber-200">
+                        <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">Level Management</div>
+                        <div className="text-sm text-gray-600">Manage user subscription levels and upgrade requests</div>
+                      </div>
+                      <svg className="ml-auto h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
               </div>
             )}
 
