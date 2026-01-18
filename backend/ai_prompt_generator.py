@@ -43,6 +43,81 @@ def get_style_directive(image_style: Optional[str]) -> str:
     return IMAGE_STYLE_DIRECTIVES[image_style]
 
 
+def parse_structured_branding(branding_text: str) -> Dict[str, str]:
+    """
+    Parse structured branding guidelines into sections.
+    
+    Looks for sections marked with === SECTION NAME ===
+    
+    Returns dict with section names as keys and content as values.
+    """
+    sections = {}
+    current_section = None
+    current_content = []
+    
+    for line in branding_text.split('\n'):
+        stripped = line.strip()
+        if stripped.startswith('===') and stripped.endswith('==='):
+            # Save previous section
+            if current_section:
+                sections[current_section] = '\n'.join(current_content).strip()
+            
+            # Start new section
+            section_name = stripped.strip('=').strip()
+            current_section = section_name
+            current_content = []
+        elif current_section:
+            current_content.append(line)
+    
+    # Save last section
+    if current_section:
+        sections[current_section] = '\n'.join(current_content).strip()
+    
+    return sections
+
+
+def format_branding_for_artistic_brief(branding_text: str) -> str:
+    """
+    Format branding guidelines for the artistic brief meta-prompt.
+    
+    If structured sections exist, format them clearly.
+    Otherwise, transform hex codes and return as-is.
+    """
+    sections = parse_structured_branding(branding_text)
+    
+    if sections:
+        # We have structured branding - format it for the prompt
+        formatted_parts = []
+        
+        # Priority order for sections
+        priority_sections = [
+            "COLOR PALETTE",
+            "COMPOSITION STYLE", 
+            "VISUAL TECHNIQUES",
+            "MOOD & ATMOSPHERE",
+            "ARTISTIC REFERENCES",
+            "AVOID"
+        ]
+        
+        for section_name in priority_sections:
+            if section_name in sections:
+                content = sections[section_name]
+                # Transform hex codes in color palette
+                if "COLOR" in section_name:
+                    content = transform_hex_to_vivid_descriptions(content)
+                formatted_parts.append(f"[{section_name}]\n{content}")
+        
+        # Add any other sections not in priority list
+        for section_name, content in sections.items():
+            if section_name not in priority_sections:
+                formatted_parts.append(f"[{section_name}]\n{content}")
+        
+        return "\n\n".join(formatted_parts)
+    else:
+        # No structured sections - just transform hex codes
+        return transform_hex_to_vivid_descriptions(branding_text)
+
+
 def transform_hex_to_vivid_descriptions(branding_text: str) -> str:
     """
     Transform hex color codes into vivid, emphatic descriptions that image models understand better.
@@ -149,7 +224,11 @@ class AIPromptGenerator:
         image_style: Optional[str] = None
     ) -> str:
         """
-        Generate a detailed DALL-E 3 image prompt.
+        Generate an ARTISTIC BRIEF for AI image generation.
+        
+        This method creates mood-driven, technique-focused prompts instead of
+        literal scene descriptions. The output guides the AI on HOW the image
+        should FEEL rather than WHAT objects to draw.
         
         Args:
             agent_context: Agent profile data from ProfileContextLoader
@@ -157,26 +236,31 @@ class AIPromptGenerator:
             image_style: Optional image style (realistic, cartoon, anime, etc.)
         
         Returns:
-            Detailed image generation prompt for DALL-E 3
+            Artistic brief for image generation (100-150 words)
         """
-        print(f"[AIPromptGenerator] Generating image prompt...")
+        print(f"[AIPromptGenerator] Generating ARTISTIC BRIEF (not scene description)...")
         if image_style:
             print(f"[AIPromptGenerator] Using image style: {image_style}")
         start_time = time.time()
         
-        # Get branding guidelines if available
+        # Get branding guidelines and format for artistic brief
         branding = agent_context.get('branding_guidelines', '').strip()
         branding_section = ""
+        has_structured_branding = False
+        
         if branding:
-            # Transform hex codes to vivid descriptions that image models understand
-            branding_transformed = transform_hex_to_vivid_descriptions(branding)
+            # Check if we have structured branding (with === sections)
+            parsed_sections = parse_structured_branding(branding)
+            has_structured_branding = bool(parsed_sections)
+            
+            # Format branding for the prompt
+            formatted_branding = format_branding_for_artistic_brief(branding)
             
             branding_section = f"""
-CRITICAL COLOR PALETTE - YOU MUST USE THESE EXACT COLORS:
-{branding_transformed}
-
-MANDATORY: The image MUST prominently feature these specific colors as the DOMINANT palette.
-These colors should be immediately recognizable - they are the brand identity.
+═══════════════════════════════════════════════════════════════
+BRAND VISUAL DIRECTION (extracted from mood board):
+═══════════════════════════════════════════════════════════════
+{formatted_branding}
 """
         
         # Get style directive if style is specified
@@ -184,63 +268,92 @@ These colors should be immediately recognizable - they are the brand identity.
         style_section = ""
         if style_directive:
             style_section = f"""
-MANDATORY IMAGE STYLE:
-{style_directive}
-This style MUST be the primary visual approach for the entire image.
+STYLE OVERRIDE: {style_directive}
 """
         
-        # Construct meta-prompt for GPT-4o to create the image prompt
-        meta_prompt = f"""You are an expert at creating detailed image generation prompts for DALL-E 3.
+        # Build the avoid list from branding if available
+        avoid_section = ""
+        if has_structured_branding:
+            parsed = parse_structured_branding(branding)
+            if "AVOID" in parsed:
+                avoid_section = f"\nFROM BRAND GUIDELINES - AVOID:\n{parsed['AVOID']}"
+        
+        # Construct meta-prompt for GPT-4o to create an ARTISTIC BRIEF
+        meta_prompt = f"""You are an ART DIRECTOR creating a brief for AI image generation.
 
-AGENT PROFILE:
-- Name: {agent_context['display_name']}
-- Bio: {agent_context['bio']}
-- Persona Summary: {agent_context['persona'][:500]}
-- Style Traits: {', '.join(agent_context['style_traits'])}
-- Themes: {', '.join(agent_context['themes'])}
+Your job is to create an ARTISTIC BRIEF - NOT a scene description.
+
+═══════════════════════════════════════════════════════════════
+WHAT IS AN ARTISTIC BRIEF?
+═══════════════════════════════════════════════════════════════
+An artistic brief describes:
+- MOOD and ATMOSPHERE (how it should feel)
+- COLOR APPLICATION (how colors are used, not just what colors)
+- COMPOSITION TECHNIQUES (spatial arrangement, flow, balance)
+- VISUAL TEXTURE (gradients, shapes, depth)
+- ABSTRACT CONNECTION to the topic (through mood, not literal depiction)
+
+An artistic brief does NOT describe:
+- Specific scenes ("a room with...", "a person standing...")
+- Lists of objects to include
+- Literal interpretations of topics
+- Photorealistic faces or recognizable people
 {branding_section}{style_section}
-DAILY TOPIC:
-- Topic: {topic['topic']}
-- Description: {topic['description']}
-- Category: {topic['category']}
+═══════════════════════════════════════════════════════════════
+TOPIC TO INTERPRET ABSTRACTLY:
+═══════════════════════════════════════════════════════════════
+Topic: {topic['topic']}
+Category: {topic.get('category', 'general')}
+{f"Context: {topic.get('description', '')[:200]}" if topic.get('description') else ""}
 
-TASK:
-Create a detailed, vivid image generation prompt that:
+═══════════════════════════════════════════════════════════════
+AGENT ESSENCE (for mood inspiration, NOT literal depiction):
+═══════════════════════════════════════════════════════════════
+Themes: {', '.join(agent_context['themes'])}
+Traits: {', '.join(agent_context['style_traits'][:5])}
 
-1. INCORPORATES THE AGENT'S PERSONALITY
-   - Reflects their unique style and traits
-   - Includes signature visual elements from their persona
-   - Captures their energy and essence
+═══════════════════════════════════════════════════════════════
+YOUR TASK - CREATE AN ARTISTIC BRIEF:
+═══════════════════════════════════════════════════════════════
 
-2. RELATES TO THE DAILY TOPIC
-   - Connects the agent to the news topic in a creative way
-   - Makes the connection feel natural and engaging
-   - Can be metaphorical or literal
+Write a 100-150 word artistic brief that includes:
 
-3. VISUAL STYLE REQUIREMENTS
-   - If a MANDATORY IMAGE STYLE is specified above, you MUST follow it exactly
-   - Otherwise, specify artistic style (photorealistic, artistic, cinematic, etc.)
-   - Include lighting, composition, color palette details
-   - Describe the scene, setting, and atmosphere
-   - Add specific visual elements that make it unique
-   - If branding guidelines are provided:
-     * Make the branding colors the DOMINANT palette (not just accents)
-     * Describe each color vividly (e.g., "vibrant lime green", "deep charcoal black")
-     * The image should be immediately recognizable as using that color scheme
+1. DOMINANT COLOR & APPLICATION
+   - Which brand color dominates? How is it used? (gradients, solid, bleeding edges)
+   - Accent colors and where they appear
+   - Light/dark balance
 
-4. LEGAL SAFETY
-   - NO copyrighted characters or trademarked brands
-   - NO recognizable celebrities other than the agent
-   - NO specific product placements
-   - Use generic, creative interpretations
+2. COMPOSITION & FLOW
+   - Spatial arrangement (asymmetrical, centered, diagonal flow)
+   - Use of negative space
+   - Depth and layering
 
-5. TECHNICAL SPECS
-   - Image should be suitable for social media (wide format)
-   - High detail and professional quality
-   - Engaging and eye-catching
+3. VISUAL TECHNIQUES
+   - Textures (fabric-like, glass, organic, geometric)
+   - Shape language (flowing curves, sharp angles, organic forms)
+   - Any human presence should be ABSTRACT (silhouettes, partial forms, implied)
 
-IMPORTANT: Your response should be ONLY the image generation prompt itself (200-300 words), not an explanation. Make it detailed, vivid, and creative!
-"""
+4. MOOD CONNECTION TO TOPIC
+   - Connect to "{topic['topic']}" through FEELING, not literal depiction
+   - What emotional response should the image evoke?
+
+ABSOLUTELY FORBIDDEN (will produce generic AI slop):
+- Scene descriptions ("Create an image of...", "A room with...", "A person...")
+- Specific objects or products
+- Photorealistic faces or recognizable people
+- Words like "stunning", "beautiful", "high quality", "professional"
+- Lists of elements to include
+- Literal interpretations of the topic
+{avoid_section}
+
+OUTPUT FORMAT:
+Write ONLY the artistic brief (100-150 words). Start directly with color/composition direction.
+Do NOT include explanations, headers, or meta-commentary.
+
+Example of GOOD output:
+"Deep navy (#0E2A47) dominates with electric blue (#1F6BFF) accents bleeding through layered translucent forms. Asymmetrical composition with flowing curves suggesting movement left-to-right. Human presence implied through partial silhouette integrated into abstract shapes. Gradients create depth - lighter values at focal point. Mood: calm authority meeting technological sophistication. Texture: fabric-like softness contrasting with glass-sharp edges. Negative space at bottom third grounds the composition. Topic connection through atmosphere of quiet contemplation and forward momentum."
+
+Now write the artistic brief:"""
         
         try:
             response = client.chat.completions.create(
@@ -248,29 +361,38 @@ IMPORTANT: Your response should be ONLY the image generation prompt itself (200-
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert prompt engineer for image generation. Create detailed, vivid prompts that produce stunning results."
+                        "content": "You are an expert art director. You create artistic briefs that guide mood, technique, and atmosphere - never literal scene descriptions. Your briefs produce distinctive, editorial-quality images that avoid generic AI aesthetics."
                     },
                     {
                         "role": "user",
                         "content": meta_prompt
                     }
                 ],
-                temperature=0.8,  # Higher creativity for visual prompts
-                max_tokens=500
-                        )
+                temperature=0.75,  # Slightly lower for more consistent artistic direction
+                max_tokens=300  # Shorter output for focused briefs
+            )
             
             image_prompt = response.choices[0].message.content.strip()
+            
+            # Clean up any accidental scene descriptions or forbidden phrases
+            forbidden_starts = ["create an image", "generate an image", "a photorealistic", "a digital artwork showing"]
+            for forbidden in forbidden_starts:
+                if image_prompt.lower().startswith(forbidden):
+                    # Remove the forbidden start
+                    image_prompt = image_prompt[len(forbidden):].strip()
+                    if image_prompt.startswith("of "):
+                        image_prompt = image_prompt[3:].strip()
             
             duration = time.time() - start_time
             tokens = response.usage.total_tokens if hasattr(response, 'usage') else 'N/A'
             
-            print(f"[AIPromptGenerator] ✅ Image prompt generated ({len(image_prompt)} chars, {duration:.2f}s, {tokens} tokens)")
+            print(f"[AIPromptGenerator] ✅ Artistic brief generated ({len(image_prompt)} chars, {duration:.2f}s, {tokens} tokens)")
             print(f"[AIPromptGenerator]    Preview: {image_prompt[:100]}...")
             
             return image_prompt
             
         except Exception as e:
-            print(f"[AIPromptGenerator] ❌ Error generating image prompt: {e}")
+            print(f"[AIPromptGenerator] ❌ Error generating artistic brief: {e}")
             raise
     
     def generate_description(
@@ -424,11 +546,10 @@ Write the post now, as {agent_context['display_name']}:
         image_style: Optional[str] = None
     ) -> str:
         """
-        Generate a prompt specifically for OpenAI Image Edits API.
+        Generate an ARTISTIC EDIT BRIEF for OpenAI Image Edits API.
         
-        This prompt focuses on MODIFYING an existing reference image rather than
-        creating a new image from scratch. It incorporates the topic/context
-        while preserving the agent's likeness in the reference image.
+        This creates mood-driven edit instructions that transform the reference
+        image's atmosphere and context while preserving the subject.
         
         Args:
             agent_context: Agent profile data from ProfileContextLoader
@@ -437,84 +558,75 @@ Write the post now, as {agent_context['display_name']}:
             image_style: Optional image style (realistic, cartoon, anime, etc.)
         
         Returns:
-            Concise edit prompt for OpenAI Image Edits API (max ~900 chars)
+            Concise artistic edit brief (max ~900 chars)
         """
-        print(f"[AIPromptGenerator] Generating image EDIT prompt for reference image...")
+        print(f"[AIPromptGenerator] Generating ARTISTIC EDIT BRIEF...")
         if image_style:
             print(f"[AIPromptGenerator] Using image style: {image_style}")
         start_time = time.time()
         
-        # Get branding guidelines if available
+        # Get branding guidelines and format for artistic brief
         branding = agent_context.get('branding_guidelines', '').strip()
         branding_section = ""
+        avoid_items = []
+        
         if branding:
-            # Transform hex codes to vivid descriptions, then truncate for character limits
-            branding_transformed = transform_hex_to_vivid_descriptions(branding)
-            branding_truncated = branding_transformed[:400] if len(branding_transformed) > 400 else branding_transformed
-            branding_section = f"""
-CRITICAL COLORS (MUST USE):
-{branding_truncated}
-"""
+            parsed_sections = parse_structured_branding(branding)
+            
+            if parsed_sections:
+                # Extract key sections for edit prompt
+                color_info = parsed_sections.get("COLOR PALETTE", "")
+                if color_info:
+                    color_info = transform_hex_to_vivid_descriptions(color_info)[:300]
+                    branding_section += f"\nCOLORS: {color_info}"
+                
+                composition = parsed_sections.get("COMPOSITION STYLE", "")
+                if composition:
+                    branding_section += f"\nSTYLE: {composition[:150]}"
+                
+                techniques = parsed_sections.get("VISUAL TECHNIQUES", "")
+                if techniques:
+                    branding_section += f"\nTECHNIQUES: {techniques[:150]}"
+                
+                avoid = parsed_sections.get("AVOID", "")
+                if avoid:
+                    avoid_items = [a.strip() for a in avoid.split('\n') if a.strip()][:3]
+            else:
+                # No structured sections - just transform hex codes
+                branding_section = f"\nBRAND COLORS: {transform_hex_to_vivid_descriptions(branding)[:300]}"
         
         # Get style directive if style is specified
         style_directive = get_style_directive(image_style)
-        style_section = ""
-        if style_directive:
-            style_section = f"""
-MANDATORY STYLE: {style_directive}
-"""
         
-        # Construct meta-prompt for GPT-4o to create the edit prompt
-        meta_prompt = f"""You are an expert at creating prompts for the OpenAI Image Edits API.
+        # Build avoid string
+        avoid_str = ""
+        if avoid_items:
+            avoid_str = f"\nAVOID: {', '.join(avoid_items)}"
+        
+        # Construct meta-prompt for artistic edit brief
+        meta_prompt = f"""Create an ARTISTIC EDIT BRIEF for transforming a reference image.
 
-IMPORTANT: The Image Edits API MODIFIES an existing reference image. The prompt should describe:
-1. What to ADD or CHANGE in the image (background, context, elements)
-2. What visual elements to incorporate based on the topic
-3. Keep the prompt CONCISE (under 800 characters) as the API has a 1000 char limit
-4. If branding guidelines are provided, incorporate those colors and visual style elements
+The edit should transform ATMOSPHERE and CONTEXT, not add literal objects.
+{branding_section}
+{f"STYLE: {style_directive}" if style_directive else ""}
+{avoid_str}
 
-AGENT PROFILE:
-- Name: {agent_context['display_name']}
-- Style Traits: {', '.join(agent_context['style_traits'][:4])}
-- Themes: {', '.join(agent_context['themes'][:3])}
-{branding_section}{style_section}
-DAILY TOPIC TO INCORPORATE:
-- Topic: {topic['topic']}
-- Description: {topic['description'][:200]}
-- Category: {topic['category']}
+TOPIC TO EVOKE: {topic['topic']}
 
-{f"CUSTOM EDIT INSTRUCTIONS: {edit_instructions}" if edit_instructions else ""}
+Create a brief (under 700 chars) that describes:
+1. How to transform the ATMOSPHERE (lighting, color grading, mood)
+2. What ABSTRACT elements to add to the background (gradients, shapes, textures)
+3. How brand colors should be applied (as ambient light, color wash, accents)
 
-TASK:
-Create a concise image edit prompt that:
+DO NOT describe:
+- Specific objects or scenes
+- Literal interpretations of the topic
+- Changes to the subject/person
 
-1. MODIFIES THE BACKGROUND/CONTEXT
-   - Transform the setting to relate to the daily topic
-   - Add visual elements that connect to the topic
-   - Create an atmosphere matching the topic's theme
+GOOD EXAMPLE:
+"Transform atmosphere with deep navy (#0E2A47) color wash. Add flowing abstract forms in electric blue (#1F6BFF) behind subject. Gradient from dark edges to lighter center. Subtle fabric-like textures overlaying background. Mood: contemplative sophistication. Light source from upper left creating soft shadows."
 
-2. ADDS THEMATIC ELEMENTS
-   - Include objects, colors, or effects related to the topic
-   - Use metaphorical or literal visual connections
-   - Make the edit feel cohesive with the agent's style
-
-3. KEEPS THE SUBJECT
-   - The person in the reference image should remain recognizable
-   - Their pose and general appearance stay similar
-   - Focus edits on surroundings and context
-
-4. TECHNICAL REQUIREMENTS
-   - Be specific about what to change
-   - Use vivid but concise language
-   - Under 800 characters total
-
-EXAMPLES OF GOOD EDIT PROMPTS:
-- "Transform the background into a vibrant music festival stage with colorful lights and crowd silhouettes celebrating live performance"
-- "Add a futuristic cityscape backdrop with holographic displays showing scientific data, neon blue and purple lighting"
-- "Change the setting to an elegant art gallery with impressionist paintings on the walls, soft museum lighting"
-
-Write ONLY the edit prompt (under 800 chars), no explanation:
-"""
+Write ONLY the edit brief:"""
         
         try:
             response = client.chat.completions.create(
@@ -522,35 +634,40 @@ Write ONLY the edit prompt (under 800 chars), no explanation:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert at creating concise image edit prompts. Focus on describing modifications to existing images, not creating new ones from scratch."
+                        "content": "You create artistic edit briefs that transform image atmosphere through color, light, and abstract forms - never literal scene changes."
                     },
                     {
                         "role": "user",
                         "content": meta_prompt
                     }
                 ],
-                temperature=0.8,
-                max_tokens=300  # Shorter since we need concise output
+                temperature=0.75,
+                max_tokens=250
             )
             
             edit_prompt = response.choices[0].message.content.strip()
             
+            # Clean up any scene descriptions
+            forbidden_starts = ["transform the background into", "add a", "change the setting to"]
+            for forbidden in forbidden_starts:
+                if edit_prompt.lower().startswith(forbidden):
+                    edit_prompt = edit_prompt[len(forbidden):].strip()
+            
             # Ensure it's not too long for OpenAI Edits API (1000 char limit)
             if len(edit_prompt) > 900:
-                # Truncate at word boundary
                 edit_prompt = edit_prompt[:900].rsplit(' ', 1)[0] + "..."
                 print(f"[AIPromptGenerator] ⚠️  Edit prompt truncated to 900 chars")
             
             duration = time.time() - start_time
             tokens = response.usage.total_tokens if hasattr(response, 'usage') else 'N/A'
             
-            print(f"[AIPromptGenerator] ✅ Edit prompt generated ({len(edit_prompt)} chars, {duration:.2f}s, {tokens} tokens)")
+            print(f"[AIPromptGenerator] ✅ Artistic edit brief generated ({len(edit_prompt)} chars, {duration:.2f}s, {tokens} tokens)")
             print(f"[AIPromptGenerator]    Preview: {edit_prompt[:100]}...")
             
             return edit_prompt
             
         except Exception as e:
-            print(f"[AIPromptGenerator] ❌ Error generating edit prompt: {e}")
+            print(f"[AIPromptGenerator] ❌ Error generating edit brief: {e}")
             raise
 
     def generate_title(self, topic: Dict[str, str], agent_context: Dict[str, Any]) -> str:

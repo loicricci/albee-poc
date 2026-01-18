@@ -21,6 +21,7 @@ import { ChatButton } from "@/components/ChatButton";
 import { AgentUpdates } from "@/components/AgentUpdates";
 import { TrainingDocuments } from "@/components/TrainingDocuments";
 import { ReferenceImageUpload } from "@/components/ReferenceImageUpload";
+import { MoodBoardUpload } from "@/components/MoodBoardUpload";
 import { generateProfileFromVoice, updateAveeProfileFromVoice } from "@/lib/upload";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -1447,8 +1448,46 @@ export default function AgentEditorPage() {
           </div>
 
           {showBrandingSection && (
-            <div className="p-4 sm:p-6">
-              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 text-xs sm:text-sm">
+            <div className="p-4 sm:p-6 space-y-6">
+              {/* Mood Board Upload Section */}
+              <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="rounded-full bg-amber-200 p-1.5">
+                    <svg className="h-4 w-4 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Upload Mood Board</h3>
+                    <p className="text-xs text-amber-700">AI extracts visual direction from your images</p>
+                  </div>
+                </div>
+                
+                {agent?.id && (
+                  <MoodBoardUpload
+                    agentId={agent.id}
+                    agentHandle={handle}
+                    currentGuidelines={brandingGuidelines}
+                    onGuidelinesExtracted={(guidelines) => {
+                      setBrandingGuidelines(guidelines);
+                      setBrandingMsg("Visual direction extracted! Review and save below.");
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-amber-200"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-3 text-amber-600 font-medium">or edit manually</span>
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 text-xs sm:text-sm">
                 <div className="flex items-start gap-3">
                   <svg className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z" />
@@ -1458,12 +1497,18 @@ export default function AgentEditorPage() {
                     <p className="text-amber-800 mb-2">
                       These guidelines will be used when generating AI images during autopost to ensure visual consistency with your brand.
                     </p>
-                    <div className="font-medium text-amber-900 mb-1">Example format:</div>
+                    <div className="font-medium text-amber-900 mb-1">Recommended sections:</div>
                     <div className="rounded bg-amber-100/50 p-2 font-mono text-xs text-amber-800">
-                      Colors: #1DA1F2 (primary blue), #FF6B6B (accent coral)<br/>
-                      Fonts: Modern sans-serif, bold impactful headlines<br/>
-                      Style: Clean minimalist, high contrast, vintage-modern fusion<br/>
-                      Mood: Energetic, vibrant, professional
+                      === COLOR PALETTE ===<br/>
+                      Primary: #hexcode - description<br/><br/>
+                      === COMPOSITION STYLE ===<br/>
+                      Abstract, flowing forms, layered depth<br/><br/>
+                      === VISUAL TECHNIQUES ===<br/>
+                      Gradients, silhouettes, textures<br/><br/>
+                      === MOOD & ATMOSPHERE ===<br/>
+                      Contemplative, sophisticated<br/><br/>
+                      === AVOID ===<br/>
+                      Literal scenes, photorealistic faces
                     </div>
                   </div>
                 </div>
@@ -1475,13 +1520,13 @@ export default function AgentEditorPage() {
                   <span className="ml-2 text-xs font-normal text-[#001f98]/70">(max 5,000 chars)</span>
                 </label>
                 <textarea
-                  className="h-40 w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-[#C8A24A] focus:outline-none focus:ring-2 focus:ring-[#C8A24A]/20 font-mono"
+                  className="h-64 w-full rounded-lg border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-900 transition-all focus:border-[#C8A24A] focus:outline-none focus:ring-2 focus:ring-[#C8A24A]/20 font-mono"
                   value={brandingGuidelines}
                   onChange={(e) => {
                     setBrandingGuidelines(e.target.value);
                     setBrandingMsg(null);
                   }}
-                  placeholder="Colors: #hexcode (description)&#10;Fonts: Font style preferences&#10;Style: Visual style keywords&#10;Mood: Emotional tone of images"
+                  placeholder="=== COLOR PALETTE ===&#10;Primary: #hexcode - description&#10;&#10;=== COMPOSITION STYLE ===&#10;Abstract, flowing forms&#10;&#10;=== VISUAL TECHNIQUES ===&#10;Gradients, silhouettes&#10;&#10;=== MOOD & ATMOSPHERE ===&#10;Contemplative, sophisticated&#10;&#10;=== AVOID ===&#10;Literal scenes, photorealistic faces"
                   maxLength={5000}
                 />
                 <p className="mt-1 text-xs text-[#001f98]/70">{brandingGuidelines.length}/5,000 characters</p>

@@ -1,0 +1,22 @@
+AI Generated Video Metadata
+============================================================
+
+Agent: @avee
+Generated: 2026-01-19 01:39:23
+
+Model: SORA 2
+Duration: 8 seconds
+Resolution: 720p
+Type: Text-to-Video
+
+============================================================
+PROMPT:
+============================================================
+The scene opens with a tranquil living room bathed in warm, golden hour light, casting soft shadows across the space. The camera begins with a smooth, slow pan from right to left, capturing the serene environment. A figure is lounging comfortably on a plush sofa, engrossed in a book, while in the background, an AI-powered device gently hums, managing tasks autonomously. As the camera glides closer, it transitions to a soft focus on a nearby window where lush green trees sway gently in the breeze, creating a soothing rhythm.
+
+The atmosphere is peaceful, as the lighting subtly shifts to emphasize the rich textures of the deep navy walls, accented by pops of electric blue from a futuristic digital display. This seamless blend of colors adds a sense of innovation to the calm setting. The camera performs a gentle zoom onto the subject's hands, turning the pages of the book, then shifts upwards to capture their relaxed expression.
+
+In a continuous shot, the focus moves to an elegant clock on the mantelpiece, which symbolizes the free time the subject now enjoys. The video concludes with a smooth fade-out, leaving a lingering sense of ease and harmony, enhanced by the sophisticated color grading and cinematic quality, reflecting a world where technology works tirelessly behind the scenes.
+
+============================================================
+VIDEO FILE: avee_video_20260119_013919.mp4

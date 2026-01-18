@@ -5,6 +5,8 @@ import { NewLayoutWrapper } from "@/components/NewLayoutWrapper";
 import { getAppConfig, updateConfigValue, type AppConfig } from "@/lib/config";
 import { uploadImageToBucket } from "@/lib/upload";
 import { supabase } from "@/lib/supabaseClient";
+import { invalidateCache } from "@/lib/apiCache";
+import { useAppData } from "@/contexts/AppDataContext";
 
 export default function AppSettingsPage() {
   return (
@@ -24,6 +26,9 @@ function AppSettingsContent() {
 
   const [config, setConfig] = useState<AppConfig>({});
   const [dragging, setDragging] = useState<string | null>(null);
+  
+  // Get refreshAll from context to update global app config state
+  const { refreshAll } = useAppData();
 
   useEffect(() => {
     loadConfig();
@@ -63,8 +68,22 @@ function AppSettingsContent() {
       // Update config in database
       await updateConfigValue(configKey, publicUrl, data.session.access_token);
 
+      // CRITICAL: Invalidate the config cache so other pages get fresh data
+      invalidateCache("config");
+      
+      // Also clear sessionStorage cache for config
+      try {
+        sessionStorage.removeItem("app_data_config");
+      } catch (e) {
+        // Ignore sessionStorage errors
+      }
+
       // Update local state
       setConfig((prev) => ({ ...prev, [configKey]: publicUrl }));
+      
+      // Refresh global app data to update navbar logo immediately
+      refreshAll();
+      
       setSuccess(`${configKey.replace("app_", "").replace("_url", "")} uploaded successfully!`);
     } catch (e: any) {
       if (e.message?.includes("403") || e.message?.toLowerCase().includes("access denied")) {
@@ -89,7 +108,22 @@ function AppSettingsContent() {
       }
 
       await updateConfigValue(configKey, value, data.session.access_token);
+      
+      // CRITICAL: Invalidate the config cache so other pages get fresh data
+      invalidateCache("config");
+      
+      // Also clear sessionStorage cache for config
+      try {
+        sessionStorage.removeItem("app_data_config");
+      } catch (e) {
+        // Ignore sessionStorage errors
+      }
+      
       setConfig((prev) => ({ ...prev, [configKey]: value }));
+      
+      // Refresh global app data to update navbar immediately
+      refreshAll();
+      
       setSuccess(`${configKey} updated successfully!`);
     } catch (e: any) {
       if (e.message?.includes("403") || e.message?.toLowerCase().includes("access denied")) {

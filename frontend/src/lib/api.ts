@@ -460,6 +460,63 @@ export async function markAllAgentUpdatesAsRead(agentId: string) {
   });
 }
 
+// =====================================
+// MOOD BOARD ANALYSIS API
+// =====================================
+
+export type MoodBoardAnalysisResult = {
+  ok: boolean;
+  avee_id: string;
+  image_count: number;
+  tokens_used: number | string;
+  sections: Record<string, string>;
+  formatted_guidelines: string;
+  raw_analysis: string;
+};
+
+/**
+ * Analyze mood board images to extract visual direction for AI image generation.
+ * Uses GPT-4o Vision to analyze the visual content.
+ * 
+ * @param agentId - The agent ID
+ * @param files - Array of mood board images or PDF files
+ * @param additionalContext - Optional context about the brand
+ * @returns Extracted visual direction in structured format
+ */
+export async function analyzeMoodBoard(
+  agentId: string,
+  files: File[],
+  additionalContext?: string
+): Promise<MoodBoardAnalysisResult> {
+  if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE is not set");
+  
+  const token = await getToken();
+  
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("files", file);
+  }
+  
+  if (additionalContext) {
+    formData.append("additional_context", additionalContext);
+  }
+  
+  const res = await fetch(`${API_BASE}/avees/${agentId}/analyze-mood-board`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Analysis failed: ${res.status}`);
+  }
+  
+  return res.json();
+}
+
 // REST-style API wrapper for easier usage
 export const api = {
   get: async <T = any>(path: string): Promise<T> => {

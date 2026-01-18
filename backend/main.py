@@ -16,6 +16,7 @@ from backend.rag_utils import chunk_text
 from backend.openai_embed import embed_texts
 import backend.voice_service as voice_service
 from backend.performance import log_performance, track_query, metrics
+from backend.visual_direction_extractor import VisualDirectionExtractor
 from backend.cache import (
     profile_cache, agent_cache, config_cache, network_cache,
     invalidate_user_cache, invalidate_agent_cache, invalidate_network_cache_for_user,
@@ -2456,6 +2457,14 @@ def update_avee(
         a.location = loc if loc else None
 
     db.commit()
+    
+    # Invalidate agent cache so new settings (logo, etc.) are picked up
+    invalidate_agent_cache(str(avee_uuid))
+    
+    # Also invalidate the agent_context cache used by profile_context_loader
+    # This cache uses handle as key, not UUID
+    if a.handle:
+        agent_cache.delete(f"agent_context:{a.handle}")
 
     return {"ok": True, "avee_id": str(a.id)}
 
@@ -2497,8 +2506,10 @@ def update_avee_twitter_settings(
     
     db.commit()
     
-    # Invalidate cache
+    # Invalidate caches
     invalidate_agent_cache(str(avee_uuid))
+    if avee.handle:
+        agent_cache.delete(f"agent_context:{avee.handle}")
     
     return {
         "ok": True,
@@ -2559,8 +2570,10 @@ def update_avee_linkedin_settings(
     
     db.commit()
     
-    # Invalidate cache
+    # Invalidate caches
     invalidate_agent_cache(str(avee_uuid))
+    if avee.handle:
+        agent_cache.delete(f"agent_context:{avee.handle}")
     
     return {
         "ok": True,
@@ -3466,6 +3479,120 @@ async def update_avee_profile_from_voice(
         },
         "suggested_handle": profile["suggested_handle"],
     }
+
+
+# -----------------------------
+# Mood Board Analysis
+# -----------------------------
+@app.post("/avees/{avee_id}/analyze-mood-board")
+async def analyze_mood_board(
+    avee_id: str,
+    files: list[UploadFile] = File(...),
+    additional_context: str | None = Form(None),
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Analyze mood board images to extract visual direction for AI image generation.
+    
+    Accepts multiple images (PNG, JPG, WebP) or a PDF document.
+    Uses GPT-4o Vision to analyze the visual content and extract:
+    - Color palette (with hex codes)
+    - Composition style
+    - Visual techniques
+    - Mood & atmosphere
+    - Artistic references
+    - What to avoid
+    
+    The extracted visual direction can be used to populate branding_guidelines.
+    
+    Args:
+        avee_id: Agent ID
+        files: One or more mood board images or a PDF
+        additional_context: Optional context about the brand/agent
+    
+    Returns:
+        Extracted visual direction in structured format
+    """
+    owner_uuid = _parse_uuid(user_id, "user_id")
+    avee_uuid = _parse_uuid(avee_id, "avee_id")
+    
+    # Verify ownership
+    a = db.query(Avee).filter(Avee.id == avee_uuid).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Avee not found")
+    if a.owner_user_id != owner_uuid:
+        raise HTTPException(status_code=403, detail="Only owner can analyze mood boards for this Avee")
+    
+    if not files:
+        raise HTTPException(status_code=400, detail="At least one file is required")
+    
+    # Validate file types and collect image data
+    images = []
+    
+    for file in files:
+        content_type = file.content_type or ""
+        filename = file.filename or ""
+        
+        # Read file content
+        content = await file.read()
+        
+        if content_type == "application/pdf" or filename.lower().endswith(".pdf"):
+            # Extract images from PDF
+            try:
+                extractor = VisualDirectionExtractor()
+                pdf_images = extractor.extract_from_pdf(content)
+                images.extend(pdf_images)
+            except ImportError as e:
+                raise HTTPException(
+                    status_code=500, 
+                    detail="PDF processing not available. Please upload images instead."
+                )
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Failed to process PDF: {str(e)}")
+        
+        elif content_type.startswith("image/") or filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
+            images.append(content)
+        
+        else:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Unsupported file type: {content_type or filename}. Use PNG, JPG, WebP, GIF, or PDF."
+            )
+    
+    if not images:
+        raise HTTPException(status_code=400, detail="No valid images found in uploaded files")
+    
+    # Limit number of images to prevent excessive API costs
+    MAX_IMAGES = 10
+    if len(images) > MAX_IMAGES:
+        images = images[:MAX_IMAGES]
+        print(f"[MoodBoard] Warning: Limited to {MAX_IMAGES} images")
+    
+    # Add agent context if available
+    context = additional_context or ""
+    if a.display_name:
+        context = f"Brand/Agent Name: {a.display_name}\n{context}"
+    if a.bio:
+        context = f"{context}\nBrand Description: {a.bio[:500]}"
+    
+    # Analyze with GPT-4o Vision
+    try:
+        extractor = VisualDirectionExtractor()
+        result = extractor.analyze_mood_board(images, context.strip() or None)
+        
+        return {
+            "ok": True,
+            "avee_id": str(a.id),
+            "image_count": result["image_count"],
+            "tokens_used": result["tokens_used"],
+            "sections": result["sections"],
+            "formatted_guidelines": result["formatted_guidelines"],
+            "raw_analysis": result["raw_analysis"]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
 @app.post("/chat/tts")

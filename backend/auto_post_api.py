@@ -1559,8 +1559,25 @@ async def confirm_post(
                 from backend.twitter_posting_service import get_twitter_posting_service
                 posting_service = get_twitter_posting_service()
                 
+                # #region agent log
+                import json as _json; _log_path = "/Users/loicricci/gabee-poc/.cursor/debug.log"
+                _payload = {"location": "auto_post_api.py:1563", "message": "checking_should_auto_post", "data": {"post_id": str(post_id), "avee_uuid": str(avee_uuid), "user_uuid": str(user_uuid)}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "E"}
+                try:
+                    with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+                except: pass
+                # #endregion
+                
                 # Check if agent should auto-post
-                if posting_service.should_auto_post(avee_uuid, db):
+                should_post = posting_service.should_auto_post(avee_uuid, db)
+                
+                # #region agent log
+                _payload = {"location": "auto_post_api.py:1567", "message": "should_auto_post_result", "data": {"should_post": should_post, "avee_uuid": str(avee_uuid)}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "E"}
+                try:
+                    with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+                except: pass
+                # #endregion
+                
+                if should_post:
                     post_uuid = uuid.UUID(post_id)
                     
                     # Attempt to post to Twitter
@@ -1578,6 +1595,13 @@ async def confirm_post(
                         print(f"[AutoPost Confirm] Failed to auto-post to Twitter: {twitter_error}")
                         
             except Exception as twitter_exc:
+                # #region agent log
+                import traceback as _tb
+                _payload = {"location": "auto_post_api.py:1580", "message": "twitter_exception_caught", "data": {"error": str(twitter_exc), "traceback": _tb.format_exc()}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "D"}
+                try:
+                    with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+                except: pass
+                # #endregion
                 twitter_error = str(twitter_exc)
                 print(f"[AutoPost Confirm] Twitter auto-post error: {twitter_error}")
         

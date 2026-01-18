@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @avee
+Generated: 2026-01-19 00:42:13
+
+Model: GPT-Image-1.5 (OpenAI's latest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a captivating digital artwork titled "Welcome to Avee," embodying the essence of Avee's brand identity. The scene is set in a serene, modern space, dimly lit with ambient hues of Deep Ocean Blue (#0E2A47) enveloping the background, creating a calm and focused atmosphere. A sleek, minimalist desk stands at the center, crafted from rich, dark materials, with a smooth surface that reflects the surrounding Electric Blue (#1F6BFF) accents, like neon echoes of digital whispers.
+
+On the desk, a contemporary device glows softly, displaying a harmonious interface in Bright Pure White (#F4F7FB) with text rendered in the Inter typeface, exuding modern elegance. Around the device, abstract shapes and lines in Steel Blue (#2F5F8F) and Cyan Glow (#4FB3FF) float gracefully, symbolizing the flow of curated information and selective interaction.
+
+Suspended above, gentle beams of light, in Soft Ice Blue (#E9F1FA), cascade down, casting subtle shadows that add depth and intrigue. The composition is balanced and grounded, with an air of calm authority, reflecting Avee's selective, respectful nature.
+
+Ensure the colors dominate the palette, presenting a soothing yet striking visual with a professional and polished finish. The artwork should be wide-format, perfect for social media, capturing the viewer's attention while conveying the message of protection and relevance in an ever-noisy world.
+
+============================================================
+IMAGE FILE: gpt_image_1_5_avee_1768768933853.png

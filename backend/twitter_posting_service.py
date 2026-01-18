@@ -38,17 +38,45 @@ class TwitterPostingService:
         Returns:
             bool - True if should auto-post
         """
+        # #region agent log
+        import json as _json; _log_path = "/Users/loicricci/gabee-poc/.cursor/debug.log"
+        # #endregion
         try:
             # Get agent
             agent = db.query(Avee).filter(Avee.id == agent_id).first()
             if not agent:
+                # #region agent log
+                _payload = {"location": "twitter_posting_service.py:44", "message": "agent_not_found", "data": {"agent_id": str(agent_id)}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "E"}
+                try:
+                    with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+                except: pass
+                # #endregion
                 return False
+            
+            # #region agent log
+            _payload = {"location": "twitter_posting_service.py:48", "message": "checking_twitter_sharing_enabled", "data": {"agent_id": str(agent_id), "handle": agent.handle, "twitter_sharing_enabled": agent.twitter_sharing_enabled, "twitter_posting_mode": agent.twitter_posting_mode, "owner_user_id": str(agent.owner_user_id)}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "A,B"}
+            try:
+                with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+            except: pass
+            # #endregion
             
             # Check if Twitter sharing is enabled and mode is auto
             if not agent.twitter_sharing_enabled:
+                # #region agent log
+                _payload = {"location": "twitter_posting_service.py:49", "message": "twitter_sharing_disabled", "data": {"agent_id": str(agent_id)}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "A"}
+                try:
+                    with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+                except: pass
+                # #endregion
                 return False
             
             if agent.twitter_posting_mode != "auto":
+                # #region agent log
+                _payload = {"location": "twitter_posting_service.py:52", "message": "twitter_mode_not_auto", "data": {"agent_id": str(agent_id), "mode": agent.twitter_posting_mode}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "B"}
+                try:
+                    with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+                except: pass
+                # #endregion
                 return False
             
             # Check if owner has Twitter connected
@@ -56,12 +84,39 @@ class TwitterPostingService:
                 ProfileTwitterConfig.user_id == agent.owner_user_id
             ).first()
             
+            # #region agent log
+            _payload = {"location": "twitter_posting_service.py:59", "message": "checking_twitter_config", "data": {"agent_id": str(agent_id), "owner_user_id": str(agent.owner_user_id), "config_exists": config is not None, "is_active": config.is_active if config else None}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "C"}
+            try:
+                with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+            except: pass
+            # #endregion
+            
             if not config or not config.is_active:
+                # #region agent log
+                _payload = {"location": "twitter_posting_service.py:60", "message": "twitter_config_invalid", "data": {"config_exists": config is not None, "is_active": config.is_active if config else None}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "C"}
+                try:
+                    with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+                except: pass
+                # #endregion
                 return False
+            
+            # #region agent log
+            _payload = {"location": "twitter_posting_service.py:62", "message": "should_auto_post_true", "data": {"agent_id": str(agent_id)}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "E"}
+            try:
+                with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+            except: pass
+            # #endregion
             
             return True
             
         except Exception as e:
+            # #region agent log
+            import traceback as _tb
+            _payload = {"location": "twitter_posting_service.py:65", "message": "should_auto_post_exception", "data": {"error": str(e), "traceback": _tb.format_exc()}, "timestamp": __import__("time").time(), "sessionId": "debug-session", "hypothesisId": "D"}
+            try:
+                with open(_log_path, "a") as _f: _f.write(_json.dumps(_payload) + "\n")
+            except: pass
+            # #endregion
             logger.error(f"Error checking auto-post status for agent {agent_id}: {e}")
             return False
     

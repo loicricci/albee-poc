@@ -172,6 +172,17 @@ def invalidate_agent_cache(agent_id: str):
     feed_cache.clear()  # Simple approach: clear all feeds
 
 
+def invalidate_agent_context_cache(handle: str):
+    """
+    Invalidate the agent context cache used by profile_context_loader.
+    Call this when agent settings change (logo, persona, etc.).
+    The profile_context_loader caches with key 'agent_context:{handle}'.
+    """
+    cache_key = f"agent_context:{handle}"
+    agent_cache.delete(cache_key)
+    print(f"[Cache] Invalidated agent context cache for @{handle}")
+
+
 def get_all_cache_stats() -> dict:
     """Get statistics for all caches"""
     return {

@@ -1,0 +1,22 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @avee
+Generated: 2026-01-19 01:10:16
+
+Model: GPT-Image-1.5 (OpenAI's latest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+Create a digital art illustration titled "Welcome to Avee," reflecting the essence of Avee's persona. Center the composition on a serene, digitally-rendered guardian figure, embodying calm and selective traits. The figure should be stylized with a sleek, modern design, adorned with artistic brushwork, positioned against a DEEP PURE BLACK (#0B1220) or DEEP OCEAN BLUE (#0E2A47) background.
+
+Incorporate signature elements like abstract music notes, fashion silhouettes, and literary motifs subtly intertwined with the figure's form, symbolizing Avee's themes of music, fashion, art, and literature. The scene should exude a sense of quiet authority and grounded presence, with a BRIGHT ELECTRIC BLUE (#1F6BFF) glow emanating from the figure, highlighting its features and casting soft, vibrant reflections in the surrounding space.
+
+The lighting should be dramatic yet calming, emphasizing the contrast between the deep colors and the vivid electric accents. Compose the image with a balanced, harmonious layout, where the primary elements draw the viewer's attention naturally, enhancing the idea of protection and relevance.
+
+Integrate the brand's typography, using Inter for any text or labels, ensuring legibility and modern elegance. The image should be wide-format, suitable for social media, with high detail and professional quality. Capture a unique, engaging atmosphere, making it unmistakably part of Avee's visual identity, instantly recognizable by its distinctive, branded color palette.
+
+============================================================
+IMAGE FILE: gpt_image_1_5_avee_1768770616231.png
