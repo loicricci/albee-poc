@@ -55,7 +55,7 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, onTitleUpdate,
   const [isUpdatingTitle, setIsUpdatingTitle] = useState(false);
   
   // Check if current user is the owner of this post
-  const isOwner = currentUserId && item.owner_user_id === currentUserId;
+  const isOwner = !!currentUserId && item.owner_user_id === currentUserId;
   
   // Video player state
   const [isPlaying, setIsPlaying] = useState(false);
