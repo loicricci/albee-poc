@@ -256,7 +256,7 @@ export function OnboardingStepFollowAgents({ onComplete }: OnboardingStepFollowA
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-start gap-3 mb-3">
                     {/* Avatar */}
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 dark:border-white/[.10] bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center shadow-sm">
+                    <div className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 dark:border-white/[.10] flex items-center justify-center shadow-sm ${agent.avee_avatar_url ? 'bg-white' : 'bg-gradient-to-br from-[#001f98] to-[#001670]'}`}>
                       {agent.avee_avatar_url ? (
                         <img src={agent.avee_avatar_url} alt="" className="h-full w-full object-cover" />
                       ) : (

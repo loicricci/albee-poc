@@ -41,6 +41,10 @@ type SearchResult = {
 };
 
 function TopNavigation() {
+  // #region agent log
+  const componentInstanceId = typeof window !== 'undefined' ? (window as any).__topNavInstanceId = ((window as any).__topNavInstanceId || 0) + 1 : 0;
+  fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'NewLayoutWrapper.tsx:43',message:'TopNavigation render',data:{instanceId:componentInstanceId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+  // #endregion
   const router = useRouter();
   const pathname = usePathname();
   
@@ -82,21 +86,65 @@ function TopNavigation() {
     }
   }, [isOnMessagesPage]);
   
-  // Fetch unread counts on mount and when profile changes
+  // Track profile user_id to detect actual user changes (not just object reference changes)
+  const profileUserIdRef = useRef<string | null>(null);
+  // Track last fetch time to deduplicate rapid successive calls
+  const lastFetchTimeRef = useRef<number>(0);
+  // Track if initial fetch has been done
+  const initialFetchDoneRef = useRef<boolean>(false);
+  
+  // Fetch unread counts - only when profile user changes or on interval
   useEffect(() => {
-    if (!profile) return;
+    const currentUserId = profile?.user_id || null;
     
-    const fetchUnreadCounts = async () => {
+    // #region agent log
+    const effectId = `effect_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'NewLayoutWrapper.tsx:87',message:'useEffect triggered (FIXED)',data:{effectId,hasProfile:!!profile,currentUserId,prevUserId:profileUserIdRef.current,initialFetchDone:initialFetchDoneRef.current,pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1-H3'})}).catch(()=>{});
+    // #endregion
+    
+    if (!profile || !currentUserId) return;
+    
+    // Check if this is actually a new user or first mount
+    const isNewUser = profileUserIdRef.current !== currentUserId;
+    const needsInitialFetch = !initialFetchDoneRef.current;
+    
+    // Update the ref
+    profileUserIdRef.current = currentUserId;
+    
+    const fetchUnreadCounts = async (isInterval = false) => {
+      // Deduplicate: skip if fetched within last 2 seconds (except for intervals)
+      const now = Date.now();
+      if (!isInterval && now - lastFetchTimeRef.current < 2000) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'NewLayoutWrapper.tsx:105',message:'fetchUnreadCounts SKIPPED (dedupe)',data:{timeSinceLastFetch:now-lastFetchTimeRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
+        return;
+      }
+      lastFetchTimeRef.current = now;
+      
+      // #region agent log
+      const fetchId = `fetch_${Date.now()}`;
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'NewLayoutWrapper.tsx:112',message:'fetchUnreadCounts called (FIXED)',data:{fetchId,effectId,isInterval,pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
+      
       try {
         const [notifResult, msgResult] = await Promise.all([
           getUnreadNotificationCount(),
           getUnreadMessagesCount(),
         ]);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'NewLayoutWrapper.tsx:120',message:'API calls completed (FIXED)',data:{fetchId,notifCount:notifResult?.unread_count,msgCount:msgResult?.unread_count},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
         // Only update counts if not on the respective page
-        if (!isOnNotificationsPage) {
+        // Check current pathname at response time (may have changed during fetch)
+        const currentPath = window.location.pathname;
+        const onNotifPage = currentPath === "/notifications" || currentPath.startsWith("/notifications/");
+        const onMsgPage = currentPath === "/messages" || currentPath.startsWith("/messages/");
+        
+        if (!onNotifPage) {
           setUnreadNotificationCount(notifResult?.unread_count || 0);
         }
-        if (!isOnMessagesPage) {
+        if (!onMsgPage) {
           setUnreadMessageCount(msgResult?.unread_count || 0);
         }
       } catch (e) {
@@ -104,12 +152,22 @@ function TopNavigation() {
       }
     };
     
-    fetchUnreadCounts();
+    // Only fetch immediately if this is a new user or first mount
+    if (isNewUser || needsInitialFetch) {
+      initialFetchDoneRef.current = true;
+      fetchUnreadCounts(false);
+    }
     
-    // Refresh counts every 30 seconds
-    const interval = setInterval(fetchUnreadCounts, 30000);
-    return () => clearInterval(interval);
-  }, [profile, isOnNotificationsPage, isOnMessagesPage]);
+    // Set up interval for periodic refresh (30 seconds)
+    const interval = setInterval(() => fetchUnreadCounts(true), 30000);
+    
+    return () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3b88ece-ecd1-4046-9aab-ee22bba05a0c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'NewLayoutWrapper.tsx:145',message:'useEffect cleanup (FIXED)',data:{effectId,pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
+      clearInterval(interval);
+    };
+  }, [profile?.user_id]); // Only depend on user_id, not the full profile object
 
   // Perform search function
   // FIX: Uses centralized authQueue for consistent token handling

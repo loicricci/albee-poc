@@ -144,7 +144,7 @@ function LeftSidebar({
                   className="flex items-center justify-between gap-2 rounded-lg border border-gray-100 p-2 transition-colors hover:bg-gray-50"
                 >
                   {/* Avatar */}
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 bg-[#001f98] flex items-center justify-center">
+                  <div className={`h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 flex items-center justify-center ${avee.avatar_url ? 'bg-white' : 'bg-[#001f98]'}`}>
                     {avee.avatar_url ? (
                       <img src={avee.avatar_url} alt="" className="h-full w-full object-cover" />
                     ) : (

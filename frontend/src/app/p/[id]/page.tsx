@@ -155,7 +155,7 @@ export default async function PublicPostPage({
               href={`/u/${post.agent_handle}`}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-              <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#001f98] to-[#3366cc]">
+              <div className={`h-12 w-12 rounded-full overflow-hidden flex items-center justify-center ${post.agent_avatar_url ? 'bg-white border border-gray-200' : 'bg-gradient-to-br from-[#001f98] to-[#3366cc]'}`}>
                 {post.agent_avatar_url ? (
                   <img src={post.agent_avatar_url} alt={displayName} className="h-full w-full object-cover" />
                 ) : (

@@ -102,7 +102,7 @@ export function PostPreviewModal({
         <div className="flex-1 overflow-y-auto p-6">
           {/* Agent Info */}
           <div className="mb-4 flex items-center gap-3">
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-gray-200 bg-gradient-to-br from-[#001f98] to-[#001670]">
+            <div className={`h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-gray-200 ${preview.avatar_url ? 'bg-white' : 'bg-gradient-to-br from-[#001f98] to-[#001670]'}`}>
               {preview.avatar_url ? (
                 <img 
                   src={preview.avatar_url} 

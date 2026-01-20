@@ -266,7 +266,10 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, onTitleUpdate,
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
+            <div 
+              className={`h-10 w-10 rounded-full overflow-hidden flex items-center justify-center ${item.agent_avatar_url ? 'bg-white border border-gray-200' : ''}`}
+              style={item.agent_avatar_url ? undefined : {background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}
+            >
               {item.agent_avatar_url ? (
                 <img src={item.agent_avatar_url} alt={displayName} className="h-full w-full object-cover" />
               ) : (
@@ -526,7 +529,10 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, onTitleUpdate,
             {/* Original Post Preview */}
             <div className="mb-4 p-3 border border-gray-200 rounded-lg bg-[#f8fafc]">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
+                <div 
+                  className={`h-8 w-8 rounded-full overflow-hidden flex items-center justify-center ${item.agent_avatar_url ? 'bg-white border border-gray-200' : ''}`}
+                  style={item.agent_avatar_url ? undefined : {background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}
+                >
                   {item.agent_avatar_url ? (
                     <img src={item.agent_avatar_url} alt={displayName} className="h-full w-full object-cover" />
                   ) : (

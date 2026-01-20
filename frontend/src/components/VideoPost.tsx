@@ -190,7 +190,7 @@ export function VideoPost({
           href={`/u/${post.owner_handle}`}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center">
+          <div className={`h-10 w-10 rounded-full overflow-hidden flex items-center justify-center ${post.owner_avatar_url ? 'bg-white border border-gray-200' : 'bg-gradient-to-br from-[#001f98] to-[#001670]'}`}>
             {post.owner_avatar_url ? (
               <img src={post.owner_avatar_url} alt={displayName} className="h-full w-full object-cover" />
             ) : (

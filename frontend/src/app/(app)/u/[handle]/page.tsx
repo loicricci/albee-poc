@@ -318,7 +318,7 @@ function ProfileContent() {
         <div className="relative px-6 pb-6">
           {/* Avatar */}
           <div className="relative -mt-20 mb-4">
-            <div className="h-32 w-32 overflow-hidden rounded-2xl border-4 border-white bg-gradient-to-br from-[#001f98] to-[#001670] shadow-lg flex items-center justify-center">
+            <div className={`h-32 w-32 overflow-hidden rounded-2xl border-4 border-white shadow-lg flex items-center justify-center ${avatarUrl ? 'bg-white' : 'bg-gradient-to-br from-[#001f98] to-[#001670]'}`}>
               {avatarUrl ? (
                 <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
               ) : (

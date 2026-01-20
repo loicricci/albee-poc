@@ -433,7 +433,7 @@ function LeftSidebar({
           {profile ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 shrink-0 rounded-full border-2 border-[#001f98]/20 bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center text-white font-semibold overflow-hidden">
+                <div className={`h-12 w-12 shrink-0 rounded-full border-2 flex items-center justify-center font-semibold overflow-hidden ${hasValidAvatar ? 'bg-white border-gray-200' : 'bg-gradient-to-br from-[#001f98] to-[#001670] border-[#001f98]/20 text-white'}`}>
                   {hasValidAvatar ? (
                     <img 
                       src={profile.avatar_url!} 
@@ -521,7 +521,7 @@ function LeftSidebar({
                 <div key={rec.id} className="pt-4 first:pt-0">
                   <div className="flex items-start gap-3 mb-2">
                     {/* Avatar */}
-                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 bg-gradient-to-br from-[#001f98] to-[#001670] flex items-center justify-center">
+                    <div className={`h-10 w-10 shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 flex items-center justify-center ${hasValidRecAvatar ? 'bg-white' : 'bg-[#001f98]'}`}>
                       {hasValidRecAvatar ? (
                         <img 
                           src={rec.avatar_url!} 
