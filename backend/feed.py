@@ -12,9 +12,18 @@ import uuid
 from datetime import datetime
 import asyncio
 
-from backend.db import SessionLocal
+from backend.db import SessionLocal, engine
 from backend.auth_supabase import get_current_user_id
 from backend.models import Avee, AgentUpdate, AgentFollower, UpdateReadStatus, Profile, Post, PostLike, PostShare
+
+
+# #region agent log - H7: Pool status helper for debugging
+def _log_pool(ctx: str):
+    try:
+        p = engine.pool
+        print(f"[DB-POOL] {ctx} | in={p.checkedin()} out={p.checkedout()} overflow={p.overflow()}", flush=True)
+    except: pass
+# #endregion
 
 router = APIRouter()
 
@@ -134,7 +143,7 @@ def get_db():
 # -----------------------------
 
 @router.get("/feed", response_model=FeedResponse)
-async def get_feed(
+def get_feed(  # Changed from async def to def - sync DB calls MUST run in thread pool
     limit: int = 20,
     offset: int = 0,
     user_id: uuid.UUID = Depends(get_current_user_id),
@@ -326,7 +335,7 @@ async def get_feed(
 
 
 @router.post("/feed/mark-read")
-async def mark_updates_read(
+def mark_updates_read(  # Changed from async def to def - sync DB calls MUST run in thread pool
     data: MarkReadRequest,
     user_id: uuid.UUID = Depends(get_current_user_id),
     db: Session = Depends(get_db),
@@ -389,7 +398,7 @@ async def mark_updates_read(
 
 
 @router.get("/feed/agent/{agent_id}/updates", response_model=List[FeedItemUpdate])
-async def get_agent_updates_for_feed(
+def get_agent_updates_for_feed(  # Changed from async def to def - sync DB calls MUST run in thread pool
     agent_id: str,
     user_id: uuid.UUID = Depends(get_current_user_id),
     db: Session = Depends(get_db),
@@ -467,7 +476,7 @@ async def get_agent_updates_for_feed(
 
 
 @router.post("/feed/agent/{agent_id}/mark-all-read")
-async def mark_agent_updates_read(
+def mark_agent_updates_read(  # Changed from async def to def - sync DB calls MUST run in thread pool
     agent_id: str,
     user_id: uuid.UUID = Depends(get_current_user_id),
     db: Session = Depends(get_db),
@@ -544,7 +553,7 @@ async def mark_agent_updates_read(
 # -----------------------------
 
 @router.get("/feed/unified", response_model=UnifiedFeedResponse)
-async def get_unified_feed(
+def get_unified_feed(  # Changed from async def to def - sync DB calls MUST run in thread pool
     limit: int = 20,
     offset: int = 0,
     user_id: uuid.UUID = Depends(get_current_user_id),
@@ -567,9 +576,25 @@ async def get_unified_feed(
     total_start = time.time()
     timings = {}
     
+    # #region agent log - H6/H7/H10: Track when handler starts (after auth + db session acquired)
+    import os
+    _log_pool("UNIFIED FEED START")
+    _railway_env = os.getenv("RAILWAY_ENVIRONMENT", "local")
+    print(f"[UnifiedFeed DEBUG] Handler started - env={_railway_env}, auth done, DB session acquired at t=0ms", flush=True)
+    # #endregion
+    
     try:
         # Rollback any previous failed transaction
         db.rollback()
+        
+        # #region agent log - H10: Measure DB ping latency (Railway vs Local comparison)
+        _ping_start = time.time()
+        try:
+            db.execute(text("SELECT 1"))
+            print(f"[UnifiedFeed DEBUG] DB ping latency: {(time.time()-_ping_start)*1000:.0f}ms", flush=True)
+        except Exception as e:
+            print(f"[UnifiedFeed DEBUG] DB ping FAILED: {e}", flush=True)
+        # #endregion
         
         # Set aggressive statement timeout for production
         try:
@@ -671,15 +696,16 @@ async def get_unified_feed(
                 db.rollback()
                 pass
         
-        # #region agent log - DEBUG: Track posts query
+        # #region agent log - DEBUG: Track posts query with pool status (H6/H7)
         print(f"[UnifiedFeed DEBUG] Starting Step 3: Fetch agent posts (all_agent_ids={len(all_agent_ids)})...", flush=True)
+        _log_pool("FEED before posts query")
         # #endregion
         # Step 3: Fetch ONLY the latest posts (limited!)
         step3_start = time.time()
         agent_posts = []
         if all_agent_ids:
-            # #region agent log - DEBUG: Track posts query
-            print(f"[UnifiedFeed DEBUG] Executing posts query with {len(all_agent_ids)} agent IDs...", flush=True)
+            # #region agent log - DEBUG: Track posts query (H6)
+            print(f"[UnifiedFeed DEBUG] Executing posts query with {len(all_agent_ids)} agent IDs at t={time.time()}...", flush=True)
             # #endregion
             # Use LIMIT directly in database query!
             agent_posts = (
@@ -694,8 +720,9 @@ async def get_unified_feed(
                 .limit(fetch_limit)  # CRITICAL: Limit at database level!
                 .all()
             )
-            # #region agent log - DEBUG: Track posts query
-            print(f"[UnifiedFeed DEBUG] Posts query completed!", flush=True)
+            # #region agent log - DEBUG: Track posts query (H6)
+            _log_pool("FEED after posts query")
+            print(f"[UnifiedFeed DEBUG] Posts query completed in {(time.time()-step3_start)*1000:.0f}ms!", flush=True)
             # #endregion
         timings['step3_posts'] = (time.time() - step3_start) * 1000
         print(f"[UnifiedFeed] Found {len(agent_posts)} agent posts", flush=True)

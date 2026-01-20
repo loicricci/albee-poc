@@ -11,9 +11,18 @@ from sqlalchemy import desc, and_, or_
 from pydantic import BaseModel
 from datetime import datetime
 
-from backend.db import SessionLocal
+from backend.db import SessionLocal, engine
 from backend.auth_supabase import get_current_user_id
 from backend.models import Notification, Profile, Avee, Post
+
+
+# #region agent log - H1: Pool status helper
+def _log_pool(ctx: str):
+    try:
+        p = engine.pool
+        print(f"[DB-POOL] {ctx} | in={p.checkedin()} out={p.checkedout()} overflow={p.overflow()}", flush=True)
+    except: pass
+# #endregion
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -295,20 +304,35 @@ def get_unread_count(
 ):
     """Get the count of unread notifications"""
     from sqlalchemy import text
+    import time as _t
+    
+    # #region agent log - H1/H3/H4: Track timing to identify where 14s delay occurs
+    _req_start = _t.time()
+    _log_pool("NOTIF before get_db")
+    print(f"[NOTIF-DEBUG] START unread-count, user_id received at t=0ms", flush=True)
+    # #endregion
     
     # Set statement timeout to prevent hanging queries (5 seconds)
     try:
+        # #region agent log - H1: Track DB connection acquisition time
+        _db_start = _t.time()
         db.execute(text("SET LOCAL statement_timeout = '5s'"))
+        print(f"[NOTIF-DEBUG] DB connection acquired + timeout set at t={(_t.time()-_req_start)*1000:.0f}ms", flush=True)
+        # #endregion
     except Exception as e:
         print(f"[Notifications] Warning: Could not set statement timeout: {e}")
     
     try:
         user_uuid = uuid.UUID(user_id)
         
+        # #region agent log - H1/H2: Track query execution time
+        _query_start = _t.time()
         count = db.query(Notification).filter(
             Notification.user_id == user_uuid,
             Notification.is_read == "false"
         ).count()
+        print(f"[NOTIF-DEBUG] Query completed at t={(_t.time()-_req_start)*1000:.0f}ms (query took {(_t.time()-_query_start)*1000:.0f}ms)", flush=True)
+        # #endregion
         
         return {"unread_count": count}
     except Exception as e:
