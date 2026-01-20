@@ -1,0 +1,18 @@
+AI Generated Image Metadata
+============================================================
+
+Agent: @king_arthur
+Generated: 2026-01-19 01:50:59
+
+Model: GPT-Image-1.5 (OpenAI's latest image model)
+Size: 1024x1024
+
+============================================================
+PROMPT:
+============================================================
+King Arthur, clad in weathered medieval armor, strides across the desolate lunar terrain. His posture is regal, and his gaze is fixed on the distant Earth, a vibrant blue orb against the inky blackness of space. This scene is captured in a cinematic photograph style with a focus on natural lighting and realistic textures, imbuing the image with an authentic, historical feel. The lighting is soft yet directional, originating from the top left, casting long shadows across the moon's craggy surface and accentuating the textures of Arthur's armor with a subtle silvery sheen. 
+
+The color palette is cool, dominated by grey tones of the lunar dust and punctuated by the azure glow reflecting from Earth, casting an ethereal blue hue across the scene. King Arthur is positioned in the right third of the composition, creating a sense of forward motion into the vastness of space, with a trail of footprints creating a visual pathway through the negative space. The mood is one of introspective majesty, blending the legendary with the futuristic. The atmosphere evokes a sense of timeless adventure and solitary exploration. Arthur's face remains partially shadowed, evoking mystery and determination.
+
+============================================================
+IMAGE FILE: gpt_image_1_5_king_arthur_1768773059718.png

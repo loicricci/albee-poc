@@ -224,11 +224,13 @@ class AIPromptGenerator:
         image_style: Optional[str] = None
     ) -> str:
         """
-        Generate an ARTISTIC BRIEF for AI image generation.
+        Generate a VISUAL PROMPT for AI image generation.
         
-        This method creates mood-driven, technique-focused prompts instead of
-        literal scene descriptions. The output guides the AI on HOW the image
-        should FEEL rather than WHAT objects to draw.
+        This method creates prompts with a layered approach:
+        1. SUBJECT/NARRATIVE (LITERAL) - Who/what, doing what, where
+        2. STYLE/MEDIUM (ARTISTIC) - Art style, rendering approach
+        3. VISUAL EXECUTION (BRANDING) - Colors, composition, lighting
+        4. AVOID LIST - Generic AI adjectives to exclude
         
         Args:
             agent_context: Agent profile data from ProfileContextLoader
@@ -236,9 +238,9 @@ class AIPromptGenerator:
             image_style: Optional image style (realistic, cartoon, anime, etc.)
         
         Returns:
-            Artistic brief for image generation (100-150 words)
+            Visual prompt for image generation (150-200 words)
         """
-        print(f"[AIPromptGenerator] Generating ARTISTIC BRIEF (not scene description)...")
+        print(f"[AIPromptGenerator] Generating VISUAL PROMPT (subject + artistic direction)...")
         if image_style:
             print(f"[AIPromptGenerator] Using image style: {image_style}")
         start_time = time.time()
@@ -278,82 +280,90 @@ STYLE OVERRIDE: {style_directive}
             if "AVOID" in parsed:
                 avoid_section = f"\nFROM BRAND GUIDELINES - AVOID:\n{parsed['AVOID']}"
         
-        # Construct meta-prompt for GPT-4o to create an ARTISTIC BRIEF
-        meta_prompt = f"""You are an ART DIRECTOR creating a brief for AI image generation.
+        # Construct meta-prompt for GPT-4o to create a VISUAL PROMPT
+        meta_prompt = f"""You are a VISUAL PROMPT ENGINEER creating prompts for AI image generation.
 
-Your job is to create an ARTISTIC BRIEF - NOT a scene description.
+Your job is to create a VISUAL PROMPT that combines LITERAL subject matter with ARTISTIC execution.
 
 ═══════════════════════════════════════════════════════════════
-WHAT IS AN ARTISTIC BRIEF?
+LAYERED PROMPT STRUCTURE (FOLLOW THIS ORDER):
 ═══════════════════════════════════════════════════════════════
-An artistic brief describes:
-- MOOD and ATMOSPHERE (how it should feel)
-- COLOR APPLICATION (how colors are used, not just what colors)
-- COMPOSITION TECHNIQUES (spatial arrangement, flow, balance)
-- VISUAL TEXTURE (gradients, shapes, depth)
-- ABSTRACT CONNECTION to the topic (through mood, not literal depiction)
 
-An artistic brief does NOT describe:
-- Specific scenes ("a room with...", "a person standing...")
-- Lists of objects to include
-- Literal interpretations of topics
-- Photorealistic faces or recognizable people
+1. SUBJECT & NARRATIVE (LITERAL - BE SPECIFIC)
+   - WHO or WHAT is the main subject
+   - WHAT are they doing (action/pose)
+   - WHERE is this happening (setting/environment)
+   
+2. STYLE & MEDIUM
+   - Art style (illustration, cinematic, painterly, etc.)
+   - Rendering approach and visual treatment
+
+3. VISUAL EXECUTION
+   - How brand colors are applied (lighting, accents, atmosphere)
+   - Composition (rule of thirds, asymmetrical, etc.)
+   - Lighting direction and mood
+
+4. MOOD & ATMOSPHERE
+   - Emotional tone
+   - What feeling should the image evoke
 {branding_section}{style_section}
 ═══════════════════════════════════════════════════════════════
-TOPIC TO INTERPRET ABSTRACTLY:
+TOPIC TO DEPICT:
 ═══════════════════════════════════════════════════════════════
 Topic: {topic['topic']}
 Category: {topic.get('category', 'general')}
 {f"Context: {topic.get('description', '')[:200]}" if topic.get('description') else ""}
 
 ═══════════════════════════════════════════════════════════════
-AGENT ESSENCE (for mood inspiration, NOT literal depiction):
+AGENT CONTEXT (for style and thematic influence):
 ═══════════════════════════════════════════════════════════════
 Themes: {', '.join(agent_context['themes'])}
 Traits: {', '.join(agent_context['style_traits'][:5])}
 
 ═══════════════════════════════════════════════════════════════
-YOUR TASK - CREATE AN ARTISTIC BRIEF:
+YOUR TASK - CREATE A VISUAL PROMPT:
 ═══════════════════════════════════════════════════════════════
 
-Write a 100-150 word artistic brief that includes:
+Write a 150-200 word visual prompt that includes:
 
-1. DOMINANT COLOR & APPLICATION
-   - Which brand color dominates? How is it used? (gradients, solid, bleeding edges)
-   - Accent colors and where they appear
-   - Light/dark balance
+1. SUBJECT & NARRATIVE (REQUIRED - START WITH THIS)
+   - Describe the subject literally based on the topic
+   - Include action, pose, or state
+   - Describe the setting/environment clearly
 
-2. COMPOSITION & FLOW
-   - Spatial arrangement (asymmetrical, centered, diagonal flow)
+2. STYLE & MEDIUM
+   - Define the artistic style (e.g., "fantasy illustration", "cinematic photograph", "painterly digital art")
+   - Specify rendering approach
+
+3. COLOR & LIGHTING (from branding)
+   - How brand colors appear (as lighting, atmosphere, accents on subject)
+   - Light source direction and quality
+   - Color temperature and mood
+
+4. COMPOSITION
+   - Subject placement (rule of thirds, centered, etc.)
    - Use of negative space
    - Depth and layering
 
-3. VISUAL TECHNIQUES
-   - Textures (fabric-like, glass, organic, geometric)
-   - Shape language (flowing curves, sharp angles, organic forms)
-   - Any human presence should be ABSTRACT (silhouettes, partial forms, implied)
+5. MOOD
+   - Emotional tone connecting subject to theme
+   - Atmospheric quality
 
-4. MOOD CONNECTION TO TOPIC
-   - Connect to "{topic['topic']}" through FEELING, not literal depiction
-   - What emotional response should the image evoke?
-
-ABSOLUTELY FORBIDDEN (will produce generic AI slop):
-- Scene descriptions ("Create an image of...", "A room with...", "A person...")
-- Specific objects or products
-- Photorealistic faces or recognizable people
-- Words like "stunning", "beautiful", "high quality", "professional"
-- Lists of elements to include
-- Literal interpretations of the topic
+AVOID (produces generic AI output):
+- Generic quality adjectives: "stunning", "beautiful", "high quality", "professional", "amazing", "masterpiece"
+- Hyper-detailed photorealistic face close-ups (use stylized or partially shadowed faces instead)
+- Contradictory style instructions
+- Overly long prompts (keep under 200 words)
 {avoid_section}
 
 OUTPUT FORMAT:
-Write ONLY the artistic brief (100-150 words). Start directly with color/composition direction.
-Do NOT include explanations, headers, or meta-commentary.
+Write ONLY the visual prompt (150-200 words). Start with the subject description.
+Do NOT include explanations, headers, numbered sections, or meta-commentary.
 
 Example of GOOD output:
-"Deep navy (#0E2A47) dominates with electric blue (#1F6BFF) accents bleeding through layered translucent forms. Asymmetrical composition with flowing curves suggesting movement left-to-right. Human presence implied through partial silhouette integrated into abstract shapes. Gradients create depth - lighter values at focal point. Mood: calm authority meeting technological sophistication. Texture: fabric-like softness contrasting with glass-sharp edges. Negative space at bottom third grounds the composition. Topic connection through atmosphere of quiet contemplation and forward momentum."
+"King Arthur in weathered medieval armor walks across the barren lunar surface, Earth a blue marble on the distant horizon. Fantasy illustration style with cinematic dramatic lighting from below. Deep navy sky with electric blue rim lighting illuminating the armor's edges and creating ethereal glow. Asymmetrical composition with figure positioned in the left third, vast grey lunar landscape stretching into negative space on the right. Footprints trail behind in the fine dust. Mood: epic isolation meets contemplative wonder. Stylized face with determined expression, partially shadowed by the helmet. Starfield visible in the dark sky above."
 
-Now write the artistic brief:"""
+Now write the visual prompt:"""
         
         try:
             response = client.chat.completions.create(
@@ -361,15 +371,15 @@ Now write the artistic brief:"""
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert art director. You create artistic briefs that guide mood, technique, and atmosphere - never literal scene descriptions. Your briefs produce distinctive, editorial-quality images that avoid generic AI aesthetics."
+                        "content": "You are an expert visual prompt engineer. You create image prompts that combine LITERAL subject/narrative with ARTISTIC execution. The subject matter is specific and clear; the visual style is creative and distinctive. Your prompts produce high-quality images that depict the topic accurately while avoiding generic AI aesthetics."
                     },
                     {
                         "role": "user",
                         "content": meta_prompt
                     }
                 ],
-                temperature=0.75,  # Slightly lower for more consistent artistic direction
-                max_tokens=300  # Shorter output for focused briefs
+                temperature=0.75,
+                max_tokens=400  # Slightly more tokens for subject + artistic direction
             )
             
             image_prompt = response.choices[0].message.content.strip()
@@ -386,13 +396,13 @@ Now write the artistic brief:"""
             duration = time.time() - start_time
             tokens = response.usage.total_tokens if hasattr(response, 'usage') else 'N/A'
             
-            print(f"[AIPromptGenerator] ✅ Artistic brief generated ({len(image_prompt)} chars, {duration:.2f}s, {tokens} tokens)")
+            print(f"[AIPromptGenerator] ✅ Visual prompt generated ({len(image_prompt)} chars, {duration:.2f}s, {tokens} tokens)")
             print(f"[AIPromptGenerator]    Preview: {image_prompt[:100]}...")
             
             return image_prompt
             
         except Exception as e:
-            print(f"[AIPromptGenerator] ❌ Error generating artistic brief: {e}")
+            print(f"[AIPromptGenerator] ❌ Error generating visual prompt: {e}")
             raise
     
     def generate_description(

@@ -2,6 +2,20 @@ import uuid
 import httpx
 from typing import Optional
 
+# #region agent log - H1/H2: Track module import timing for debugging 502 errors
+import time as _startup_time
+import json as _json
+_startup_start = _startup_time.time()
+_log_path = "/Users/loicricci/gabee-poc/.cursor/debug.log"
+def _debug_log(msg, data=None, hyp=""):
+    print(f"[STARTUP DEBUG] {msg}", flush=True)  # Also print to Railway logs
+    try:
+        with open(_log_path, "a") as f:
+            f.write(_json.dumps({"timestamp": _startup_time.time()*1000, "message": msg, "data": data, "hypothesisId": hyp, "elapsed_ms": (_startup_time.time()-_startup_start)*1000}) + "\n")
+    except: pass
+_debug_log("BEGIN module imports at t=0ms", hyp="H2")
+# #endregion
+
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -11,6 +25,9 @@ import io
 
 from pydantic import BaseModel  # ✅ added
 
+# #region agent log - H2: Track model imports
+_debug_log("Importing backend.models...", hyp="H2")
+# #endregion
 from backend.models import Document, DocumentChunk
 from backend.rag_utils import chunk_text
 from backend.openai_embed import embed_texts

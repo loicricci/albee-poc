@@ -636,13 +636,22 @@ async def get_unified_feed(
                 .all()
             )
         timings['step2_updates'] = (time.time() - step2_start) * 1000
-        print(f"[UnifiedFeed] Found {len(updates)} updates")
+        print(f"[UnifiedFeed] Found {len(updates)} updates", flush=True)
         
+        # #region agent log - DEBUG: Track read status query
+        print(f"[UnifiedFeed DEBUG] Extracting update_ids...", flush=True)
+        # #endregion
         # Get read status for ONLY these updates (not all!)
         update_ids = [u[0].id for u in updates]
+        # #region agent log - DEBUG: Track read status query
+        print(f"[UnifiedFeed DEBUG] Got {len(update_ids)} update_ids, querying read status...", flush=True)
+        # #endregion
         read_update_ids = set()
         if update_ids:
             try:
+                # #region agent log - DEBUG: Track read status query timing
+                _read_status_start = time.time()
+                # #endregion
                 read_updates = (
                     db.query(UpdateReadStatus.update_id)
                     .filter(
@@ -651,15 +660,27 @@ async def get_unified_feed(
                     )
                     .all()
                 )
+                # #region agent log - DEBUG: Track read status query timing
+                print(f"[UnifiedFeed DEBUG] Read status query took {(time.time()-_read_status_start)*1000:.0f}ms", flush=True)
+                # #endregion
                 read_update_ids = {uid[0] for uid in read_updates}
-            except Exception:
+            except Exception as e:
+                # #region agent log - DEBUG: Catch exception
+                print(f"[UnifiedFeed DEBUG] Read status EXCEPTION: {e}", flush=True)
+                # #endregion
                 db.rollback()
                 pass
         
+        # #region agent log - DEBUG: Track posts query
+        print(f"[UnifiedFeed DEBUG] Starting Step 3: Fetch agent posts (all_agent_ids={len(all_agent_ids)})...", flush=True)
+        # #endregion
         # Step 3: Fetch ONLY the latest posts (limited!)
         step3_start = time.time()
         agent_posts = []
         if all_agent_ids:
+            # #region agent log - DEBUG: Track posts query
+            print(f"[UnifiedFeed DEBUG] Executing posts query with {len(all_agent_ids)} agent IDs...", flush=True)
+            # #endregion
             # Use LIMIT directly in database query!
             agent_posts = (
                 db.query(Post, Avee, Profile)
@@ -673,8 +694,11 @@ async def get_unified_feed(
                 .limit(fetch_limit)  # CRITICAL: Limit at database level!
                 .all()
             )
+            # #region agent log - DEBUG: Track posts query
+            print(f"[UnifiedFeed DEBUG] Posts query completed!", flush=True)
+            # #endregion
         timings['step3_posts'] = (time.time() - step3_start) * 1000
-        print(f"[UnifiedFeed] Found {len(agent_posts)} agent posts")
+        print(f"[UnifiedFeed] Found {len(agent_posts)} agent posts", flush=True)
         
         # Step 4: Fetch user's own posts (limited!)
         user_posts = (
