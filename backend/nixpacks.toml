@@ -1,0 +1,16 @@
+# Force CPU-only PyTorch to avoid downloading 4GB+ of CUDA libraries
+# Railway doesn't have GPUs, so CUDA is useless and wastes build time
+
+[phases.setup]
+nixPkgs = ["python311"]
+
+[phases.install]
+cmds = [
+    # Install CPU-only PyTorch first from the dedicated index
+    "pip install torch --index-url https://download.pytorch.org/whl/cpu",
+    # Then install the rest of the requirements (torch will be skipped as already installed)
+    "pip install -r requirements.txt"
+]
+
+[start]
+cmd = "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"
