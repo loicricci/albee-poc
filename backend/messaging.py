@@ -915,89 +915,62 @@ def get_unread_messages_count(
     Get total count of unread messages across all conversations.
     Returns the sum of unread messages from conversations where user is a participant
     AND user is NOT the agent owner (those belong to Agent Activity, not My Chats).
+    
+    OPTIMIZED: Uses a single SQL query instead of multiple queries with Python filtering.
     """
-    user_uuid = _parse_uuid(user_id, "user_id")
+    # Set statement timeout to prevent hanging queries (5 seconds)
+    try:
+        db.execute(text("SET LOCAL statement_timeout = '5s'"))
+    except Exception as e:
+        print(f"[Messaging] Warning: Could not set statement timeout: {e}")
     
-    # Get all conversations for this user with agent ownership info
-    # Use LEFT JOIN to get avee owner info for agent conversations
-    conversations_with_owner = db.execute(
-        text("""
-            SELECT 
-                dc.id,
-                dc.participant1_user_id,
-                dc.participant2_user_id,
-                dc.chat_type,
-                dc.target_avee_id,
-                a.owner_user_id as avee_owner_user_id
-            FROM direct_conversations dc
-            LEFT JOIN avees a ON dc.target_avee_id = a.id
-            WHERE dc.participant1_user_id = :user_id 
-               OR dc.participant2_user_id = :user_id
-        """),
-        {"user_id": str(user_uuid)}
-    ).fetchall()
-    
-    if not conversations_with_owner:
-        return {"unread_count": 0}
-    
-    # Filter out conversations where user is the agent owner
-    # (those appear in Agent Activity, not My Chats)
-    participant1_conv_ids = []
-    participant2_conv_ids = []
-    
-    for row in conversations_with_owner:
-        conv_id = str(row[0])
-        p1_user_id = str(row[1]) if row[1] else None
-        p2_user_id = str(row[2]) if row[2] else None
-        chat_type = row[3]
-        avee_owner_user_id = str(row[5]) if row[5] else None
+    try:
+        user_uuid = _parse_uuid(user_id, "user_id")
         
-        # Skip if this is an agent chat AND user owns the agent
-        is_agent_owner = (chat_type == "agent" and avee_owner_user_id == str(user_uuid))
-        if is_agent_owner:
-            continue
-        
-        # Add to appropriate list based on participant role
-        if p1_user_id == str(user_uuid):
-            participant1_conv_ids.append(conv_id)
-        if p2_user_id == str(user_uuid):
-            participant2_conv_ids.append(conv_id)
-    
-    total_unread = 0
-    
-    # Count unread for participant1 conversations
-    if participant1_conv_ids:
-        conv_ids_str = ",".join([f"'{cid}'" for cid in participant1_conv_ids])
-        result1 = db.execute(
-            text(f"""
-                SELECT COUNT(*) as unread_count
-                FROM direct_messages
-                WHERE conversation_id IN ({conv_ids_str})
-                  AND read_by_participant1 = 'false'
-                  AND sender_user_id != :user_id
+        # OPTIMIZED: Single query that handles all logic in SQL
+        # - Joins conversations with avees to check ownership
+        # - Filters out conversations where user owns the agent
+        # - Uses CASE WHEN to count based on participant role
+        result = db.execute(
+            text("""
+                SELECT COALESCE(SUM(unread_count), 0) as total_unread
+                FROM (
+                    -- Count unread for participant1 role
+                    SELECT 
+                        (SELECT COUNT(*) FROM direct_messages dm 
+                         WHERE dm.conversation_id = dc.id 
+                         AND dm.read_by_participant1 = 'false'
+                         AND (dm.sender_user_id IS NULL OR dm.sender_user_id != :user_id)) as unread_count
+                    FROM direct_conversations dc
+                    LEFT JOIN avees a ON dc.target_avee_id = a.id
+                    WHERE dc.participant1_user_id = :user_id
+                      AND NOT (dc.chat_type = 'agent' AND a.owner_user_id = :user_id)
+                    
+                    UNION ALL
+                    
+                    -- Count unread for participant2 role
+                    SELECT 
+                        (SELECT COUNT(*) FROM direct_messages dm 
+                         WHERE dm.conversation_id = dc.id 
+                         AND dm.read_by_participant2 = 'false'
+                         AND (dm.sender_user_id IS NULL OR dm.sender_user_id != :user_id)) as unread_count
+                    FROM direct_conversations dc
+                    LEFT JOIN avees a ON dc.target_avee_id = a.id
+                    WHERE dc.participant2_user_id = :user_id
+                      AND NOT (dc.chat_type = 'agent' AND a.owner_user_id = :user_id)
+                ) subq
             """),
             {"user_id": str(user_uuid)}
         ).fetchone()
-        if result1:
-            total_unread += result1[0]
+        
+        return {"unread_count": result[0] if result else 0}
     
-    # Count unread for participant2 conversations
-    if participant2_conv_ids:
-        conv_ids_str = ",".join([f"'{cid}'" for cid in participant2_conv_ids])
-        result2 = db.execute(
-            text(f"""
-                SELECT COUNT(*) as unread_count
-                FROM direct_messages
-                WHERE conversation_id IN ({conv_ids_str})
-                  AND read_by_participant2 = 'false'
-                  AND sender_user_id != :user_id
-            """),
-            {"user_id": str(user_uuid)}
-        ).fetchone()
-        if result2:
-            total_unread += result2[0]
-    
-    return {"unread_count": total_unread}
+    except Exception as e:
+        print(f"[Messaging] Error getting unread count: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return 0 on error to prevent frontend from breaking
+        return {"unread_count": 0, "error": "temporary"}
 
 
 @router.post("/conversations")

@@ -294,14 +294,27 @@ def get_unread_count(
     user_id: str = Depends(get_current_user_id),
 ):
     """Get the count of unread notifications"""
-    user_uuid = uuid.UUID(user_id)
+    from sqlalchemy import text
     
-    count = db.query(Notification).filter(
-        Notification.user_id == user_uuid,
-        Notification.is_read == "false"
-    ).count()
+    # Set statement timeout to prevent hanging queries (5 seconds)
+    try:
+        db.execute(text("SET LOCAL statement_timeout = '5s'"))
+    except Exception as e:
+        print(f"[Notifications] Warning: Could not set statement timeout: {e}")
     
-    return {"unread_count": count}
+    try:
+        user_uuid = uuid.UUID(user_id)
+        
+        count = db.query(Notification).filter(
+            Notification.user_id == user_uuid,
+            Notification.is_read == "false"
+        ).count()
+        
+        return {"unread_count": count}
+    except Exception as e:
+        print(f"[Notifications] Error getting unread count: {e}")
+        # Return 0 on error to prevent frontend from breaking
+        return {"unread_count": 0, "error": "temporary"}
 
 
 @router.post("/mark-read")

@@ -37,7 +37,7 @@ const clearAllLocalStorageCaches = () => {
   clearApiCaches();
   
   // Also clear legacy keys that are NOT prefixed with cache_
-  // These are used by SessionContext and profile pages
+  // These are used by profile pages and other legacy code
   // NOTE: Do NOT clear 'supabase.auth.token' - this is managed by Supabase
   // and is required for session persistence across page reloads!
   const legacyKeys = [
@@ -63,6 +63,7 @@ const clearAllLocalStorageCaches = () => {
 };
 
 // Cache keys for sessionStorage
+// FIX: Removed CURRENT_USER - user tracking consolidated to apiCache.ts (localStorage only)
 const CACHE_KEYS = {
   PROFILE: 'app_data_profile',
   AVEES: 'app_data_avees',
@@ -70,40 +71,22 @@ const CACHE_KEYS = {
   FEED: 'app_data_feed',
   UNIFIED_FEED: 'app_data_unified_feed',
   RECOMMENDATIONS: 'app_data_recommendations',
-  CURRENT_USER: 'app_data_current_user', // Track which user's data is cached
 };
 
 // Global loading lock to prevent multiple concurrent loadAppData calls
 let isLoadingLocked = false;
 let loadingPromise: Promise<void> | null = null;
 
-// Get the cached user ID from sessionStorage
-const getCachedUserId = (): string | null => {
-  try {
-    return sessionStorage.getItem(CACHE_KEYS.CURRENT_USER);
-  } catch (e) {
-    return null;
-  }
-};
-
-// Set the cached user ID in sessionStorage
-const setCachedUserId = (userId: string | null): void => {
-  try {
-    if (userId) {
-      const previousUserId = getCachedUserId();
-      if (previousUserId && previousUserId !== userId) {
-        // User changed! Clear all sessionStorage cache
-        console.log(`[AppData] User changed from ${previousUserId} to ${userId}, clearing sessionStorage cache`);
-        clearAllCache();
-      }
-      sessionStorage.setItem(CACHE_KEYS.CURRENT_USER, userId);
-    } else {
-      sessionStorage.removeItem(CACHE_KEYS.CURRENT_USER);
-    }
-  } catch (e) {
-    console.warn('Failed to set cached user ID:', e);
-  }
-};
+/**
+ * FIX: Consolidated user ID tracking to use ONLY localStorage via apiCache.ts
+ * Previously had duplicate tracking in both localStorage and sessionStorage.
+ * Now uses getCurrentCacheUser() from apiCache.ts as the single source of truth.
+ * 
+ * The setCurrentCacheUser() function in apiCache.ts already handles:
+ * - Detecting user changes
+ * - Clearing caches when user changes
+ * - Validating cached data belongs to current user
+ */
 
 // Cache helper functions - now with user validation
 const getCachedData = <T,>(key: string, currentUserId?: string): T | null => {
@@ -150,7 +133,7 @@ const setCachedData = <T,>(key: string, data: T, userId?: string): void => {
     sessionStorage.setItem(key, JSON.stringify({ 
       data, 
       timestamp: Date.now(),
-      userId: userId || getCachedUserId(), // Include user ID for validation
+      userId: userId || getCurrentCacheUser(), // FIX: Use centralized user tracking from apiCache
     }));
   } catch (e) {
     console.warn('Failed to cache data:', e);
@@ -222,6 +205,7 @@ export type AppData = {
   isLoading: boolean;
   isLoadingCritical: boolean; // Profile and auth
   isLoadingFeed: boolean;     // Feed/recommendations (Phase 2)
+  isDataReady: boolean;       // FIX: True when initial data load is complete (coordinates login->app transition)
   
   // Refresh functions
   refreshProfile: () => Promise<void>;
@@ -286,6 +270,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingCritical, setIsLoadingCritical] = useState(true);
   const [isLoadingFeed, setIsLoadingFeed] = useState(true);
+  const [isDataReady, setIsDataReady] = useState(false);  // FIX: Coordinates login->app transition
 
   // Refresh functions
   const refreshProfile = async () => {
@@ -333,10 +318,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     // Reset feed loading state at the start of each load
     setIsLoadingFeed(true);
     
+    // FIX: Wrap entire async operation to ensure lock is always released
     loadingPromise = (async () => {
     try {
       // Get current user ID for cache validation
-      const currentUserId = getCachedUserId();
+      // FIX: Use centralized user tracking from apiCache
+      const currentUserId = getCurrentCacheUser();
       
       // Step 1: Load from cache immediately (instant render!)
       // Pass current user ID to validate cached data belongs to this user
@@ -431,6 +418,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         // Always set loading states to false so the page can render
         setIsLoadingCritical(false);
         setIsLoading(false);
+        setIsLoadingFeed(false);  // FIX: Reset feed loading state on onboarding redirect
+        setIsDataReady(true);     // FIX: Mark data as ready for onboarding flow
         
         // Only redirect if NOT already on onboarding page
         if (!alreadyOnOnboarding) {
@@ -459,6 +448,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       // This makes the page usable in ~1.5s instead of waiting ~10s for Phase 2
       setIsLoadingCritical(false);
       setIsLoading(false);
+      setIsDataReady(true);  // FIX: Signal that initial data is ready for rendering
       
       const phase1TotalTime = performance.now() - loadStartTime;
       console.log(`[AppData] Page ready in ${Math.round(phase1TotalTime)}ms (Phase 1 complete)`);
@@ -550,7 +540,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       console.error("[AppData] Failed to load app data:", e);
       setIsLoading(false);
       setIsLoadingCritical(false);
+      setIsLoadingFeed(false);  // FIX: Reset feed loading state on error
+      setIsDataReady(true);     // FIX: Mark data as ready (even on error) to allow UI to proceed
     } finally {
+      // FIX: Robust loading lock - ALWAYS release lock when async operation completes
+      // This is now inside the IIFE's finally, ensuring the lock is released
+      // after the async work is done (or failed)
       isLoadingLocked = false;
       loadingPromise = null;
     }
@@ -577,10 +572,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       if (data.session?.access_token) {
         // CRITICAL: Set the current user ID for cache isolation
         // This ensures we validate cached data belongs to this user
+        // FIX: Uses only setCurrentCacheUser() from apiCache (consolidated from dual storage)
         const userId = data.session.user?.id;
         if (userId) {
-          setCurrentCacheUser(userId);  // localStorage cache isolation
-          setCachedUserId(userId);      // sessionStorage cache isolation
+          setCurrentCacheUser(userId);
           console.log('[AppDataContext] Initial load - set cache user ID:', userId);
         }
         
@@ -591,9 +586,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       } else {
         // No session - clear any stale cache user
         setCurrentCacheUser(null);
-        setCachedUserId(null);
         setIsLoading(false);
         setIsLoadingCritical(false);
+        setIsLoadingFeed(false);  // FIX: Reset feed loading state when no session
+        setIsDataReady(true);     // FIX: Mark as ready (no data to load)
         // CRITICAL: Set isInitialLoad to false so that when user logs in,
         // the SIGNED_IN handler runs fully and clears caches
         isInitialLoad = false;
@@ -620,10 +616,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             console.log('[AppDataContext] Skipping duplicate initial load (had previous session)');
             
             // Even though we skip loading, still ensure user ID is set correctly
+            // FIX: Uses only setCurrentCacheUser() from apiCache (consolidated from dual storage)
             const userId = session?.user?.id;
             if (userId) {
               setCurrentCacheUser(userId);
-              setCachedUserId(userId);
               console.log('[AppDataContext] Set cache user ID during skip:', userId);
             }
             
@@ -650,6 +646,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             setIsLoading(true);
             setIsLoadingCritical(true);
             setIsLoadingFeed(true);
+            setIsDataReady(false);  // FIX: Mark data as not ready until loadAppData completes
             
             // Only clear caches if user actually changed (different user logging in)
             // This preserves cache for same user re-logins (e.g., token refresh, page reload)
@@ -676,9 +673,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             
             // Set the current user ID for cache isolation
             // This ensures cached data is validated against the current user
+            // FIX: Uses only setCurrentCacheUser() from apiCache (consolidated from dual storage)
             if (userId) {
-              setCurrentCacheUser(userId);  // localStorage cache isolation
-              setCachedUserId(userId);      // sessionStorage cache isolation
+              setCurrentCacheUser(userId);
               console.log('[AppDataContext] Set cache user ID:', userId);
             }
             
@@ -719,6 +716,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           setOnboardingStatus(null);
           setIsLoading(false);
           setIsLoadingCritical(false);
+          setIsLoadingFeed(false);  // FIX: Reset feed loading state when no session
+          setIsDataReady(true);     // FIX: Mark as ready (no data to load)
         }
       }
     );
@@ -740,6 +739,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     isLoading,
     isLoadingCritical,
     isLoadingFeed,
+    isDataReady,  // FIX: Exposes data readiness for login->app coordination
     refreshProfile,
     refreshFeed,
     refreshAll,

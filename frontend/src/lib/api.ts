@@ -1,47 +1,23 @@
 "use client";
 
 import { supabase } from "@/lib/supabaseClient";
+import { getAuthToken } from "@/lib/authQueue";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
+/**
+ * Get auth token using centralized authQueue
+ * This ensures consistent auth state across all API calls
+ * FIX: Consolidated to use authQueue instead of direct supabase.auth.getSession() calls
+ */
 async function getToken(): Promise<string> {
-  // First, try to get the current session
-  const { data, error } = await supabase.auth.getSession();
+  const token = await getAuthToken();
   
-  if (error) {
-    // Don't log "Invalid Refresh Token" errors as they're expected when user is not logged in
-    if (!error.message?.includes("Refresh Token")) {
-      console.error("[API] Error getting session:", error);
-    }
-    throw new Error(error.message);
+  if (!token) {
+    throw new Error("Not logged in (no token)");
   }
-
-  // If no session, user is not logged in
-  if (!data.session) {
-    throw new Error("Not logged in (no session)");
-  }
-
-  // Check if token is expired or about to expire (within 60 seconds)
-  const expiresAt = data.session.expires_at;
-  const now = Math.floor(Date.now() / 1000);
   
-  if (expiresAt && expiresAt - now < 60) {
-    console.log("[API] Token expiring soon, attempting refresh...");
-    
-    // Try to refresh the session
-    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-    
-    if (refreshError || !refreshData.session) {
-      console.error("[API] Token refresh failed:", refreshError);
-      // If refresh fails, the session is truly expired
-      throw new Error("Session expired (refresh failed)");
-    }
-    
-    console.log("[API] Token refreshed successfully");
-    return refreshData.session.access_token;
-  }
-
-  return data.session.access_token;
+  return token;
 }
 
 async function fetchWithTimeout(

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter, usePathname } from "next/navigation";
 import { useAppData } from "@/contexts/AppDataContext";
 import { getUnreadNotificationCount, getUnreadMessagesCount } from "@/lib/api";
+import { getAuthToken } from "@/lib/authQueue";
 
 export function NewLayoutWrapper({ children }: { children: ReactNode }) {
   return (
@@ -111,6 +112,7 @@ function TopNavigation() {
   }, [profile, isOnNotificationsPage, isOnMessagesPage]);
 
   // Perform search function
+  // FIX: Uses centralized authQueue for consistent token handling
   const performSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -121,8 +123,10 @@ function TopNavigation() {
     setIsSearching(true);
 
     try {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session?.access_token) {
+      // Use centralized auth token instead of direct supabase.auth.getSession()
+      const token = await getAuthToken();
+      if (!token) {
+        console.log("[Search] No auth token available");
         return;
       }
 
@@ -132,7 +136,7 @@ function TopNavigation() {
       url.searchParams.set("limit", "8");
 
       const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
@@ -140,18 +144,9 @@ function TopNavigation() {
         setSearchResults(Array.isArray(results) ? results : []);
         setShowSearchDropdown(true);
       } else if (res.status === 401) {
-        // Token expired - try to refresh and retry once
-        const { data: refreshData } = await supabase.auth.refreshSession();
-        if (refreshData.session?.access_token) {
-          const retryRes = await fetch(url.toString(), {
-            headers: { Authorization: `Bearer ${refreshData.session.access_token}` },
-          });
-          if (retryRes.ok) {
-            const results = await retryRes.json();
-            setSearchResults(Array.isArray(results) ? results : []);
-            setShowSearchDropdown(true);
-          }
-        }
+        // Token expired - authQueue will handle refresh on next call
+        console.warn("[Search] 401 error, token may have expired");
+        setSearchResults([]);
       }
     } catch (e) {
       console.error("Search error:", e);

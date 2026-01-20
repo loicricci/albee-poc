@@ -97,7 +97,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
   // Use AppDataContext for auth state - no redundant session checks!
-  const { profile, isLoadingCritical } = useAppData();
+  // FIX: Also use isDataReady to coordinate login->app transition
+  const { profile, isLoadingCritical, isDataReady } = useAppData();
 
   const title = useMemo(() => pageTitle(pathname), [pathname]);
   
@@ -118,7 +119,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   // Show skeleton loading state while AppDataContext loads auth data
-  if (isLoadingCritical) {
+  // FIX: Also check isDataReady to prevent flash of empty content during login->app transition
+  if (isLoadingCritical || !isDataReady) {
     return <LoadingSkeleton />;
   }
 
