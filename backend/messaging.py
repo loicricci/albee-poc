@@ -14,17 +14,8 @@ from sqlalchemy import or_, and_, func, desc, text
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 
-from backend.db import SessionLocal, engine
+from backend.db import SessionLocal
 from backend.auth_supabase import get_current_user_id
-
-
-# #region agent log - H1: Pool status helper
-def _log_pool(ctx: str):
-    try:
-        p = engine.pool
-        print(f"[DB-POOL] {ctx} | in={p.checkedin()} out={p.checkedout()} overflow={p.overflow()}", flush=True)
-    except: pass
-# #endregion
 from backend.models import (
     DirectConversation,
     DirectMessage,
@@ -927,30 +918,14 @@ def get_unread_messages_count(
     
     OPTIMIZED: Uses a single SQL query instead of multiple queries with Python filtering.
     """
-    import time as _t
-    
-    # #region agent log - H1/H3/H4: Track timing to identify where 14s delay occurs
-    _req_start = _t.time()
-    _log_pool("MSG before get_db")
-    print(f"[MSG-DEBUG] START unread-count, user_id received at t=0ms", flush=True)
-    # #endregion
-    
     # Set statement timeout to prevent hanging queries (5 seconds)
     try:
-        # #region agent log - H1: Track DB connection acquisition time
-        _db_start = _t.time()
         db.execute(text("SET LOCAL statement_timeout = '5s'"))
-        print(f"[MSG-DEBUG] DB connection acquired + timeout set at t={(_t.time()-_req_start)*1000:.0f}ms", flush=True)
-        # #endregion
     except Exception as e:
         print(f"[Messaging] Warning: Could not set statement timeout: {e}")
     
     try:
         user_uuid = _parse_uuid(user_id, "user_id")
-        
-        # #region agent log - H1/H2: Track query execution time
-        _query_start = _t.time()
-        # #endregion
         
         # OPTIMIZED: Single query that handles all logic in SQL
         # - Joins conversations with avees to check ownership
@@ -987,10 +962,6 @@ def get_unread_messages_count(
             """),
             {"user_id": str(user_uuid)}
         ).fetchone()
-        
-        # #region agent log - H1/H2: Log query completion
-        print(f"[MSG-DEBUG] Query completed at t={(_t.time()-_req_start)*1000:.0f}ms (query took {(_t.time()-_query_start)*1000:.0f}ms)", flush=True)
-        # #endregion
         
         return {"unread_count": result[0] if result else 0}
     

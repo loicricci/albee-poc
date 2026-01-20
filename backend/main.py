@@ -177,21 +177,9 @@ async def log_http_requests(request, call_next):
         if "," in client_ip:
             client_ip = client_ip.split(",")[0].strip()
         
-        # #region agent log - DEBUG: Log origin for CORS debugging
-        origin = request.headers.get("origin", "no-origin")
-        if "avee.ai" in origin or request.url.path in ["/feed/unified", "/me/profile", "/notifications/unread-count"]:
-            print(f"[CORS-DEBUG] Origin={origin} Path={request.url.path} Method={request.method}", flush=True)
-        # #endregion
-        
         response = await call_next(request)
         
         duration_ms = (time.time() - start_time) * 1000
-        
-        # #region agent log - DEBUG: Log CORS response headers for avee.ai debugging
-        if "avee.ai" in origin:
-            cors_header = response.headers.get("access-control-allow-origin", "NOT-SET")
-            print(f"[CORS-DEBUG] Response ACAO header: {cors_header} for origin {origin}", flush=True)
-        # #endregion
         
         # Log format: IP - "METHOD /path" STATUS DURATIONms
         http_logger.info(
