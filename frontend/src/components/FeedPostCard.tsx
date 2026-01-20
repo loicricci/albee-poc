@@ -438,17 +438,17 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, onTitleUpdate,
         )}
 
         {/* Interaction Buttons */}
-        <div className="flex items-center border-t border-gray-200 px-4 py-2 gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center border-t border-gray-200 px-2 sm:px-4 py-2 gap-0.5 sm:gap-1" onClick={(e) => e.stopPropagation()}>
           {/* Like */}
           <button
             onClick={handleLike}
             disabled={isLiking}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-[#e6eaff] ${
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all hover:bg-[#e6eaff] ${
               liked ? "text-[#C8A24A]" : "text-gray-600"
             } ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <svg 
-              className={`h-5 w-5 ${isLiking ? "animate-pulse" : ""}`}
+              className={`h-4 w-4 sm:h-5 sm:w-5 ${isLiking ? "animate-pulse" : ""}`}
               fill={liked ? "currentColor" : "none"} 
               viewBox="0 0 24 24" 
               stroke="currentColor"
@@ -461,9 +461,9 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, onTitleUpdate,
           {/* Comment */}
           <button
             onClick={handleComment}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             <span>{item.comment_count || 0}</span>
@@ -472,12 +472,12 @@ export function FeedPostCard({ item, onLike, onComment, onRepost, onTitleUpdate,
           {/* Repost */}
           <button
             onClick={() => setShowRepostModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span>Repost</span>
+            <span className="hidden sm:inline">Repost</span>
           </button>
 
           {/* Share to External Platforms */}

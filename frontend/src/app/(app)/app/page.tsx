@@ -765,7 +765,7 @@ export default function AppHomePage() {
         />
       )}
       
-      <div className="mx-auto flex max-w-7xl gap-6">
+      <div className="mx-auto flex max-w-7xl gap-4 lg:gap-6">
         {/* Left Sidebar - Hidden on smaller screens (< 1024px) */}
         {loading ? (
           <div className="hidden lg:block w-80 shrink-0">
@@ -786,11 +786,11 @@ export default function AppHomePage() {
         )}
 
         {/* Main Feed */}
-        <main className="flex-1">
-          <div className="mb-6 flex items-center justify-between">
+        <main className="flex-1 min-w-0">
+          <div className="mb-4 sm:mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Your Feed</h1>
-              <p className="mt-1 text-sm text-[#001f98]/70">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Your Feed</h1>
+              <p className="mt-1 text-xs sm:text-sm text-[#001f98]/70">
                 Latest updates from your followed Agents
                 {feedData && feedData.total_unread > 0 && (
                   <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#C8A24A]/10 px-2 py-0.5 text-xs font-semibold text-[#C8A24A]">
@@ -803,7 +803,7 @@ export default function AppHomePage() {
           </div>
 
           {/* Quick Update Composer */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <QuickUpdateComposer agents={avees} onUpdatePosted={async () => {
               // Refresh feeds after posting update
               await refreshFeed();
@@ -834,8 +834,8 @@ export default function AppHomePage() {
               })}
             </div>
           ) : (
-            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#001f98]/10">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-12 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[#001f98]/10">
                 <svg className="h-8 w-8 text-[#001f98]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                 </svg>

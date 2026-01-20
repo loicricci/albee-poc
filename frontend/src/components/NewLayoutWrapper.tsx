@@ -12,7 +12,7 @@ export function NewLayoutWrapper({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f8fafc] via-white to-[#f8fafc]">
       <TopNavigation />
-      <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         {children}
       </div>
     </div>
@@ -47,6 +47,9 @@ function TopNavigation() {
   // #endregion
   const router = useRouter();
   const pathname = usePathname();
+  
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Get shared app data from context
   const { profile, appConfig } = useAppData();
@@ -266,10 +269,11 @@ function TopNavigation() {
   }
 
   return (
+    <>
     <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-xl shadow-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
         {/* Left side - Logo and Search */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* App Logo */}
           <Link
             href="/app"
@@ -396,11 +400,11 @@ function TopNavigation() {
         </div>
 
         {/* Right side - Navigation buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Home Icon */}
           <Link
             href="/app"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
+            className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
             title="Home Feed"
           >
             <svg
@@ -422,7 +426,7 @@ function TopNavigation() {
           {/* My Agents Icon - All users now access the full agent editor */}
           <Link
             href="/my-agents"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
+            className="hidden sm:flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
             title="My Agents"
           >
             <svg
@@ -444,7 +448,7 @@ function TopNavigation() {
           {/* Network Icon */}
           <Link
             href="/network"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+            className="hidden sm:flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
             title="Network"
           >
             <svg
@@ -466,7 +470,7 @@ function TopNavigation() {
           {/* Messages Icon */}
           <Link
             href="/messages"
-            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
+            className="hidden md:flex relative h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:text-[#001f98] hover:bg-[#e6eaff]"
             title="Messages"
           >
             <svg
@@ -494,7 +498,7 @@ function TopNavigation() {
           {/* Notifications Icon */}
           <Link
             href="/notifications"
-            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
+            className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#e6eaff] hover:text-[#001f98]"
             title="Notifications"
           >
             <svg
@@ -519,8 +523,19 @@ function TopNavigation() {
             )}
           </Link>
 
-          {/* Divider */}
-          <div className="h-6 w-px bg-gray-300"></div>
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="flex sm:hidden h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-[#e6eaff]"
+            aria-label="Open menu"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          {/* Divider - hidden on mobile */}
+          <div className="hidden sm:block h-6 w-px bg-gray-300"></div>
 
           {/* Profile Menu */}
           <div className="relative" ref={profileDropdownRef}>
@@ -638,5 +653,133 @@ function TopNavigation() {
         </div>
       </div>
     </div>
+    
+    {/* Mobile Menu Overlay */}
+    {isMobileMenuOpen && (
+      <div className="fixed inset-0 z-[60] sm:hidden">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        {/* Menu panel */}
+        <div className="absolute right-0 top-0 h-full w-[280px] bg-white shadow-xl animate-in slide-in-from-right duration-300">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <Link href="/app" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+              {appConfig.app_logo_url ? (
+                <img src={appConfig.app_logo_url} alt={appConfig.app_name || "Logo"} className="h-6 w-auto" />
+              ) : (
+                <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#001f98] to-[#3366cc]" />
+              )}
+              <span className="font-bold text-gray-900">{appConfig.app_name || "Avee"}</span>
+            </Link>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Close menu"
+            >
+              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Mobile Navigation Links */}
+          <nav className="p-4 space-y-1">
+            <Link
+              href="/app"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-[#e6eaff] transition-colors"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              Home
+            </Link>
+            <Link
+              href="/my-agents"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-[#e6eaff] transition-colors"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
+              </svg>
+              My Agents
+            </Link>
+            <Link
+              href="/network"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-[#e6eaff] transition-colors"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Network
+            </Link>
+            <Link
+              href="/messages"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-[#e6eaff] transition-colors"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Messages
+              {unreadMessageCount > 0 && (
+                <span className="ml-auto bg-[#001f98] text-white text-xs px-2 py-0.5 rounded-full">
+                  {unreadMessageCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/notifications"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-[#e6eaff] transition-colors"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              Notifications
+              {unreadNotificationCount > 0 && (
+                <span className="ml-auto bg-[#001f98] text-white text-xs px-2 py-0.5 rounded-full">
+                  {unreadNotificationCount}
+                </span>
+              )}
+            </Link>
+          </nav>
+          
+          {/* Profile Section */}
+          <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-gray-50">
+            {profile && (
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-[#001f98] to-[#001670]">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt={profile.display_name || profile.handle} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-white font-bold">
+                      {(profile.display_name || profile.handle)?.[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-900 truncate">{profile.display_name || profile.handle}</div>
+                  <div className="text-sm text-gray-500 truncate">@{profile.handle}</div>
+                </div>
+              </div>
+            )}
+            <button
+              onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 text-red-600 font-medium hover:bg-red-100 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

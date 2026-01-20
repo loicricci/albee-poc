@@ -145,7 +145,7 @@ export function PostDetailModal({
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center" style={{background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'}}>
+              <div className={`h-12 w-12 rounded-full overflow-hidden flex items-center justify-center ${item.agent_avatar_url ? 'bg-white border border-gray-200' : ''}`} style={!item.agent_avatar_url ? {background: 'linear-gradient(135deg, #001f98 0%, #3366cc 100%)'} : undefined}>
                 {item.agent_avatar_url ? (
                   <img src={item.agent_avatar_url} alt={displayName} className="h-full w-full object-cover" />
                 ) : (
